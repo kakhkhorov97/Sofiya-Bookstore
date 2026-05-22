@@ -8,3 +8,8 @@
 
 // const person: string = "Shawn"
 // const number: number = 100;
+
+
+// Architectural pattern: MVC | Dependency Injection | MVP
+
+// Design pattern: Middleware, Decorator 
