@@ -1,18 +1,28 @@
-//Task - M
+// Task N
 
-function getSquareNumbers(numbers: number[]) {
-    const result = [];
-    for (const num of numbers) {
-        result.push({
-        number: num,
-        square: num * num
-
-        });
-     } 
-     return result;
+function palindromeCheck(text: string): boolean {
+    const reversed = text.split("").reverse().join("");
+    return text === reversed
 }
 
-console.log(getSquareNumbers([5, 8, 3]));
+console.log(palindromeCheck("level"))
+
+
+//Task - M
+
+// function getSquareNumbers(numbers: number[]) {
+//     const result = [];
+//     for (const num of numbers) {
+//         result.push({
+//         number: num,
+//         square: num * num
+
+//         });
+//      } 
+//      return result;
+// }
+
+// console.log(getSquareNumbers([5, 8, 3]));
 
 
  

@@ -1,17 +1,27 @@
+# Task N
+
+
+def palindromeCheck(text):
+    return text == text[::-1]
+
+
+print(palindromeCheck("level"))
+
+
 # Task M
-def getSquareNumbers(numbers):
-    result = []
+# def getSquareNumbers(numbers):
+#     result = []
 
-    for num in numbers:
-        result.append({
-            "number": num,
-            "square": num ** 2
-        })
+#     for num in numbers:
+#         result.append({
+#             "number": num,
+#             "square": num ** 2
+#         })
 
-    return result
+#     return result
 
 
-print(getSquareNumbers([5, 4, 8]))
+# print(getSquareNumbers([5, 4, 8]))
 
 
 # def reverseSentence(sentence):
