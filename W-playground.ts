@@ -6,4 +6,16 @@
         KEBAB case: folder
         SNAKE case: css
 
+ - Error handling   
+
  */
+
+
+ /* Responses can be:
+  - Send 
+  - Json
+  - redirect
+  - end
+  - render
+
+  */
