@@ -15,5 +15,5 @@ routerAdmin
     /** Product  */
 
 
-    /** User */
+    /** User  */
 export default routerAdmin;
