@@ -14,7 +14,7 @@ class MemberService {
     const exist = await this.memberModel
       .findOne({ memberType: MemberType.RESTUARANT })
       .exec();
-      if (exist) throw new Errors(HttpCode.BAD_REQUEST, Message.CREATE_FAILED);
+      if (exist) throw new Errors(HttpCode.BAD_REQUEST, Message.CREATE_FAILED); 
     try {
       const result = await this.memberModel.create(input);
       result.memberPassword = "";
