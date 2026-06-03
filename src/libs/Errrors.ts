@@ -16,6 +16,10 @@ SOMETHING_WENT_WRONG = "Something went wrong!",
 NO_DATA_FOUND = "No data is found!",
 CREATE_FAILED = "Create is failed!",
 UPDATE_FAILED = "Update is failed!",
+
+USED_NICK_PHONE = "You inserted already used nick or phone!",
+NO_MEMBER_NICK = "No member with that member nick!",
+WRONG_PASSWORD = "Wrong password, please try again!", 
 }
 
 
