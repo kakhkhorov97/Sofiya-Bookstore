@@ -1,16 +1,31 @@
+# Task P
+
+
+def objectToList(obj):
+    result = []
+
+    for key, value in obj.items():
+        result.append([key, value])
+
+    return result
+
+
+print(objectToList({"a": 10, "b": 20}))
+
+
 # Task O
 
-def calculateSumOfNumbers(arr):
-    total = 0
+# def calculateSumOfNumbers(arr):
+#     total = 0
 
-    for item in arr:
-        if type(item) == int or type(item) == float:
-            total += item
+#     for item in arr:
+#         if type(item) == int or type(item) == float:
+#             total += item
 
-    return total
+#     return total
 
 
-print(calculateSumOfNumbers([10, "10", {"son": 10}, True, 35]))
+# print(calculateSumOfNumbers([10, "10", {"son": 10}, True, 35]))
 
 # Task N
 
