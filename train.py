@@ -1,16 +1,26 @@
+# Task Q
+
+def hasProperty(obj, prop):
+    return prop in obj
+
+
+print(hasProperty({"name": "BMW"}, "name"))
+print(hasProperty({"name": "BMW"}, "age"))
+
+
 # Task P
 
 
-def objectToList(obj):
-    result = []
+# def objectToList(obj):
+#     result = []
 
-    for key, value in obj.items():
-        result.append([key, value])
+#     for key, value in obj.items():
+#         result.append([key, value])
 
-    return result
+#     return result
 
 
-print(objectToList({"a": 10, "b": 20}))
+# print(objectToList({"a": 10, "b": 20}))
 
 
 # Task O
