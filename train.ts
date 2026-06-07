@@ -1,11 +1,29 @@
-// Task N
+// Task Q
 
-function palindromeCheck(text: string): boolean {
-    const reversed = text.split("").reverse().join("");
-    return text === reversed
+
+function hasProperty(obj: Object, prop:string):boolean {
+    return prop in obj;
 }
 
-console.log(palindromeCheck("level"))
+console.log(hasProperty({ name: "BMW" }, "name"));
+console.log(hasProperty({ name: "BMW" }, "age"));
+
+//Task P
+
+// function objectToArray(obj: object): [string, any][] {
+//   return Object.entries(obj);
+// }
+
+// console.log(objectToArray({ a: 10, b: 20 }));
+
+// Task N
+
+// function palindromeCheck(text: string): boolean {
+//     const reversed = text.split("").reverse().join("");
+//     return text === reversed
+// }
+
+// console.log(palindromeCheck("level"))
 
 
 //Task - M
