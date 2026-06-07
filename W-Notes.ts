@@ -10,8 +10,7 @@
 
  */
 
-
- /* Responses can be:
+/* Responses can be:
   - Send 
   - Json
   - redirect
@@ -20,14 +19,19 @@
 
   */
 
-  /* API
+/* API
    - Traditional API
    - Rest API
    - GraphQL API
    . . . .  
    */
 
-   /*
+/*
     - Traditional FrontEnd Development (FD) =>   BSSR (SSR)   => EJS
     - Modern FrontEnd Development (FD)      =>   SPA          => REACT
     */
+
+/* Cookies
+    - Request join 
+    - Self-destroy
+*/
