@@ -1,11 +1,26 @@
+# Task R
+
+def calculate(expression):
+    parts = expression.split(" ")
+
+    num1 = int(parts[0])
+    operator = parts[1]
+    num2 = int(parts[2])
+
+    if operator == "+":
+        return num1 + num2
+
+
+print(calculate("1 + 3"))
+
 # Task Q
 
-def hasProperty(obj, prop):
-    return prop in obj
+# def hasProperty(obj, prop):
+#     return prop in obj
 
 
-print(hasProperty({"name": "BMW"}, "name"))
-print(hasProperty({"name": "BMW"}, "age"))
+# print(hasProperty({"name": "BMW"}, "name"))
+# print(hasProperty({"name": "BMW"}, "age"))
 
 
 # Task P
