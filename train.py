@@ -1,17 +1,31 @@
+# Task S
+
+def missingNumber(nums):
+    n = len(nums)
+
+    expected_sum = n * (n + 1) // 2
+    actual_sum = sum(nums)
+
+    return expected_sum - actual_sum
+
+
+print(missingNumber([3, 0, 1]))
+
+
 # Task R
 
-def calculate(expression):
-    parts = expression.split(" ")
+# def calculate(expression):
+#     parts = expression.split(" ")
 
-    num1 = int(parts[0])
-    operator = parts[1]
-    num2 = int(parts[2])
+#     num1 = int(parts[0])
+#     operator = parts[1]
+#     num2 = int(parts[2])
 
-    if operator == "+":
-        return num1 + num2
+#     if operator == "+":
+#         return num1 + num2
 
 
-print(calculate("1 + 3"))
+# print(calculate("1 + 3"))
 
 # Task Q
 
