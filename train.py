@@ -1,15 +1,24 @@
+# Task T
+
+def mergeSortedArrays(arr1, arr2):
+    return sorted(arr1 + arr2)
+
+
+result = mergeSortedArrays([0, 3, 4], [4, 6])
+print(result)
+
 # Task S
 
-def missingNumber(nums):
-    n = len(nums)
+# def missingNumber(nums):
+#     n = len(nums)
 
-    expected_sum = n * (n + 1) // 2
-    actual_sum = sum(nums)
+#     expected_sum = n * (n + 1) // 2
+#     actual_sum = sum(nums)
 
-    return expected_sum - actual_sum
+#     return expected_sum - actual_sum
 
 
-print(missingNumber([3, 0, 1]))
+# print(missingNumber([3, 0, 1]))
 
 
 # Task R

@@ -32,7 +32,8 @@ export interface ProductInput {
   producViews?: number;
 }
 
-export interface ProductUpdateInput {
+export interface ProductUpdate Input {
+  id: ObjectId;
   productStatus?: ProductStatus;
   productCollection: ProductCollection;
   productName: string;
