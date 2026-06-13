@@ -31,3 +31,16 @@ export interface ProductInput {
   productImages?: string[];
   producViews?: number;
 }
+
+export interface ProductUpdateInput {
+  productStatus?: ProductStatus;
+  productCollection: ProductCollection;
+  productName: string;
+  productPrice: number;
+  productLeftCount: number;
+  productSize?: ProductSize;
+  productVolume?: number;
+  productDecs?: string;
+  productImages?: string[];
+  producViews?: number;
+}
