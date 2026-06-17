@@ -1,5 +1,9 @@
 import Errors, { HttpCode, Message } from "../libs/Errrors";
-import { Product, ProductInput } from "../libs/types/product";
+import {
+  Product,
+  ProductInput,
+  ProductUpdateInput,
+} from "../libs/types/product";
 import ProductModel from "../schema/Product.model";
 
 class ProductService {
@@ -32,7 +36,7 @@ class ProductService {
 
   public async updateChosenProduct(
     id: string,
-    input: ProductInput,
+    input: ProductUpdateInput,
   ): Promise<Product> {
     id = shapeIntoMongooseObjectId(id);
 

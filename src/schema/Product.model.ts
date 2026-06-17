@@ -43,7 +43,7 @@ const productSchema = new Schema(
 
     productVolume: {
       type: Number,
-      enum: ProductSize,
+      enum: ProductVolume,
       default: ProductVolume.ONE,
     },
 
@@ -65,7 +65,7 @@ const productSchema = new Schema(
 );
 
 productSchema.index(
-  { ProductName: 1, ProductSize: 1, ProductVolume: 1 },
+  { productName: 1, productSize: 1, productVolume: 1 },
   { unique: true },
 );
 
