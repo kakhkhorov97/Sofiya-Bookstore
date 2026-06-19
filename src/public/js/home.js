@@ -40,7 +40,7 @@ function fitElementToParent(el, padding) {
             translateY: [2, -4],
             easing: "easeOutQuad",
             autoplay: false,
-          })
+          }),
         );
       }
     },
@@ -71,7 +71,7 @@ function fitElementToParent(el, padding) {
         delay: anime.stagger(60, { direction: "reverse" }),
         easing: "linear",
       },
-      0
+      0,
     );
 
   const shadowAnimation = anime(
@@ -85,7 +85,7 @@ function fitElementToParent(el, padding) {
       easing: "easeOutQuint",
       autoplay: false,
     },
-    0
+    0,
   );
 
   function init() {
