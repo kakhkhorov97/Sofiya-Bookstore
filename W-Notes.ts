@@ -35,3 +35,9 @@
     - Request join 
     - Self-destroy
 */
+
+/* Validation 
+    - FrontEnd Validation 
+    - BackEnd  Validation 
+    -  Database  Validation 
+ */
