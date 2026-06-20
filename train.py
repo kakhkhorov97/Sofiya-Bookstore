@@ -1,11 +1,28 @@
+# Task V
+
+def countChars(text):
+    result = {}
+
+    for char in text:
+        if char in result:
+            result[char] += 1
+        else:
+            result[char] = 1
+
+    return result
+
+
+print(countChars("hello"))
+
+
 # Task T
 
-def mergeSortedArrays(arr1, arr2):
-    return sorted(arr1 + arr2)
+# def mergeSortedArrays(arr1, arr2):
+#     return sorted(arr1 + arr2)
 
 
-result = mergeSortedArrays([0, 3, 4], [4, 6])
-print(result)
+# result = mergeSortedArrays([0, 3, 4], [4, 6])
+# print(result)
 
 # Task S
 
