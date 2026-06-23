@@ -1,18 +1,32 @@
-# Task V
+# Task W
 
-def countChars(text):
-    result = {}
+def chunkArray(arr, size):
+    result = []
 
-    for char in text:
-        if char in result:
-            result[char] += 1
-        else:
-            result[char] = 1
+    for i in range(0, len(arr), size):
+        result.append(arr[i:i + size])
 
     return result
 
 
-print(countChars("hello"))
+print(chunkArray([1, 2, 3, 4, 5], 2))
+
+
+# Task V
+
+# def countChars(text):
+#     result = {}
+
+#     for char in text:
+#         if char in result:
+#             result[char] += 1
+#         else:
+#             result[char] = 1
+
+#     return result
+
+
+# print(countChars("hello"))
 
 
 # Task T
