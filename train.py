@@ -1,15 +1,43 @@
+# Task X
+
+def count_occurrences(obj, target_key):
+    count = 0
+
+    for key, value in obj.items():
+        # Count the key if it matches
+        if key == target_key:
+            count += 1
+
+        # If the value is another dictionary, search recursively
+        if isinstance(value, dict):
+            count += count_occurrences(value, target_key)
+
+    return count
+
+
+# Example
+data = {
+    "model": "A",
+    "s": {
+        "model": "B"
+    }
+}
+
+print(count_occurrences(data, "model"))
+
+
 # Task W
 
-def chunkArray(arr, size):
-    result = []
+# def chunkArray(arr, size):
+#     result = []
 
-    for i in range(0, len(arr), size):
-        result.append(arr[i:i + size])
+#     for i in range(0, len(arr), size):
+#         result.append(arr[i:i + size])
 
-    return result
+#     return result
 
 
-print(chunkArray([1, 2, 3, 4, 5], 2))
+# print(chunkArray([1, 2, 3, 4, 5], 2))
 
 
 # Task V
