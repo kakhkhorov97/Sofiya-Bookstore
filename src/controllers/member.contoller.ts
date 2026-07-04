@@ -1,6 +1,11 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { T } from "../libs/types/common";
-import { LoginInput, Member, MemberInput } from "../libs/types/member";
+import {
+  ExtendedRequest,
+  LoginInput,
+  Member,
+  MemberInput,
+} from "../libs/types/member";
 import MemberService from "../models/Member.service";
 import Errors, { HttpCode, Message } from "../libs/Errrors";
 import AuthService from "../models/Auth.service";
@@ -53,16 +58,46 @@ memberController.login = async (req: Request, res: Response) => {
   }
 };
 
-memberController.verifyAuth = async (req: Request, res: Response) => {
+memberController.logout = (req: ExtendedRequest, res: Response) => {
   try {
-    let member = null;
-    const token = req.cookies["accessToken"];
-    if (token) member = await authService.checkAuth(token);
+    console.log("logout");
+    res.cookie("accessToken", null, { maxAge: 0, httpOnly: true });
+    res.status(HttpCode.OK).json({ logout: true });
+  } catch (err) {
+    console.log("Error, logout:", err);
+    if (err instanceof Errors) res.status(err.code).json(err);
+    else res.status(Errors.stndard.code).json(Errors.stndard);
+  }
+};
 
-    if (!member)
+memberController.getMemberDetail = async (
+  req: ExtendedRequest,
+  res: Response,
+) => {
+  try {
+    console.log("getMemberDetail");
+    const result = await memberService.getMemberDetail(req.member);
+
+    res.status(HttpCode.OK).json(result);
+  } catch (err) {
+    console.log("Error, getMemberDetail:", err);
+    if (err instanceof Errors) res.status(err.code).json(err);
+    else res.status(Errors.standard.code).json(Errors.standard);
+  }
+};
+
+memberController.verifyAuth = async (
+  req: ExtendedRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const token = req.cookies["accessToken"];
+    if (token) req.member = await authService.checkAuth(token);
+
+    if (!req.member)
       throw new Errors(HttpCode.UNAUTHORIZED, Message.NOT_AUTHENTICATED);
-    console.log("member:", member);
-    res.status(HttpCode.OK).json({ member: member });
+    next();
   } catch (err) {
     console.log("Error, verifyAuth:", err);
     if (err instanceof Errors) res.status(err.code).json(err);
@@ -70,4 +105,18 @@ memberController.verifyAuth = async (req: Request, res: Response) => {
   }
 };
 
+memberController.retriveAuth = async (
+  req: ExtendedRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const token = req.cookies["accessToken"];
+    if (token) req.member = await authService.checkAuth(token);
+    next();
+  } catch (err) {
+    console.log("Error, retriveAuth:", err);
+    next();
+  }
+};
 export default memberController;
