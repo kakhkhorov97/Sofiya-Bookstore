@@ -129,7 +129,7 @@ restaurantController.updataChosenUser = async (req: Request, res: Response) => {
   } catch (err) {
     console.log("Error, updataChosenUser:", err);
     if (err instanceof Errors) res.status(err.code).json(err);
-    else res.status(Errors.stndard.code).json(Errors.stndard);
+    else res.status(Errors.standard.code).json(Errors.standard);
   }
 };
 

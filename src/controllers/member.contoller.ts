@@ -5,6 +5,7 @@ import {
   LoginInput,
   Member,
   MemberInput,
+  MemberUpdateInput,
 } from "../libs/types/member";
 import MemberService from "../models/Member.service";
 import Errors, { HttpCode, Message } from "../libs/Errrors";
@@ -34,7 +35,7 @@ memberController.signup = async (req: Request, res: Response) => {
   } catch (err) {
     console.log("Error, signup:", err);
     if (err instanceof Errors) res.status(err.code).json(err);
-    else res.status(Errors.stndard.code).json(Errors.stndard);
+    else res.status(Errors.standard.code).json(Errors.standard);
   }
 };
 
@@ -54,7 +55,7 @@ memberController.login = async (req: Request, res: Response) => {
   } catch (err) {
     console.log("Error, login:", err);
     if (err instanceof Errors) res.status(err.code).json(err);
-    else res.status(Errors.stndard.code).json(Errors.stndard);
+    else res.status(Errors.standard.code).json(Errors.standard);
   }
 };
 
@@ -66,7 +67,7 @@ memberController.logout = (req: ExtendedRequest, res: Response) => {
   } catch (err) {
     console.log("Error, logout:", err);
     if (err instanceof Errors) res.status(err.code).json(err);
-    else res.status(Errors.stndard.code).json(Errors.stndard);
+    else res.status(Errors.standard.code).json(Errors.standard);
   }
 };
 
@@ -81,6 +82,22 @@ memberController.getMemberDetail = async (
     res.status(HttpCode.OK).json(result);
   } catch (err) {
     console.log("Error, getMemberDetail:", err);
+    if (err instanceof Errors) res.status(err.code).json(err);
+    else res.status(Errors.standard.code).json(Errors.standard);
+  }
+};
+
+memberController.updateMember = async (req: ExtendedRequest, res: Response) => {
+  try {
+    console.log("updateMember");
+
+    const input: MemberUpdateInput = req.body;
+    if (req.file) input.memberImage = req.file.path;
+    const result = await memberService.updateMember(req.member, input);
+
+    res.status(HttpCode.OK).json(result);
+  } catch (err) {
+    console.log("Error, updateMember:", err);
     if (err instanceof Errors) res.status(err.code).json(err);
     else res.status(Errors.standard.code).json(Errors.standard);
   }
@@ -101,7 +118,7 @@ memberController.verifyAuth = async (
   } catch (err) {
     console.log("Error, verifyAuth:", err);
     if (err instanceof Errors) res.status(err.code).json(err);
-    else res.status(Errors.stndard.code).json(Errors.stndard);
+    else res.status(Errors.standard.code).json(Errors.standard);
   }
 };
 
