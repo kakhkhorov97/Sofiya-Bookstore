@@ -56,7 +56,7 @@ const productSchema = new Schema(
       default: [],
     },
 
-    producViews: {
+    productViews: {
       type: Number,
       default: 0,
     },

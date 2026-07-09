@@ -76,12 +76,15 @@ class ProductService {
       };
       const existView = await this.viewService.checkViewExistence(input);
 
-      console.log("existView:", existView);
+      console.log("existView:", !!existView);
       if (!existView) {
         // Insert View
         console.log("PLANNING TO INSERT NEW VIEW");
+
+        console.log("Before insert");
         await this.viewService.insertMemberView(input);
 
+        console.log("After insert");
         // Increase Counts
         result = await this.productModel
           .findByIdAndUpdate(
