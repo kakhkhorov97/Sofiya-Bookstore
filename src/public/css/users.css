@@ -7,7 +7,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: linear-gradient(-45deg, #110303bf, #e37813, #011c1aba, #968383);
+  background-color: #0A0600;
+
 }
 
 .users-container a {
@@ -37,7 +38,6 @@
   padding-bottom: 80px;
   width: 100%;
   height: auto;
-
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -92,7 +92,7 @@
   padding: 0px 7px;
   /*width: 100%;*/
   height: 27px;
-  background: #ffffff;
+  background: #f6f5f4;
   border: 1px solid #dddddd;
   border-radius: 8px;
   font-family: "GT Walsheim Pro";

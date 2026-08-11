@@ -29,7 +29,7 @@
       <div class="board">
         <div class="dishes-table">
           <span class="new-dish-txt" style="margin-bottom: 30px">
-            RESTAURANT MENU
+            BookStore List
           </span>
           <table class="table table-bordered table-hover">
             <thead class="thead-light">
@@ -46,7 +46,7 @@
 
             <% products.map(function(value, key) { %>
 
-               <tbody style="background: white">
+               <tbody style="background: #F5E6C8">
               <td> <%= key + 1 %> </td>
               <td> <%= value.productName %> </td>
               <td> <%= value.productCollection %> </td>
@@ -70,7 +70,7 @@
             style="align-items: flex-end; margin-bottom: 25px"
           >
             <button class="btn btn-primary" id="process-btn">
-              New Product
+              New Book
             </button>
           </div>
         </div>
@@ -82,11 +82,11 @@
           enctype="multipart/form-data"
         >
           <div class="long-input" style="display: flex; align-items: center">
-            <span class="new-dish-txt">NEW PRODUCT DETAIL</span>
+            <span class="new-dish-txt">NEW BOOK DETAIL</span>
           </div>
           <div class="login-input-frame">
             <div class="long-input">
-              <label>Product Name</label>
+              <label>Book Title</label>
               <input
                 type="text"
                 placeholder="Name"
@@ -103,7 +103,7 @@
           </div>
           <div class="half-input-frame">
             <div class="half-input">
-              <label>Product Price</label>
+              <label>Book Price</label>
               <input
                 type="number"
                 placeholder="Price"
@@ -112,7 +112,7 @@
               />
             </div>
             <div class="half-input">
-              <label>Product Left Counts</label>
+              <label>Book Left Counts</label>
               <input
                 type="number"
                 placeholder="Counts"
@@ -123,7 +123,7 @@
           </div>
           <div class="half-input-frame">
             <div class="half-input">
-              <label>Product Type</label>
+              <label>Book Category</label>
               <select class="product-collection" name="productCollection">
                 <option value="DISH" selected>Dish</option>
                 <option value="SALAD">Salad</option>
@@ -142,25 +142,14 @@
                 <option value="SET">Set</option>
               </select>
             </div>
-
-            <div class="half-input" id="product-volume" style="display: none">
-              <label>Drink Volume</label>
-              <select class="product-volume" name="productVolume">
-                <option value="0.5">0,5 liters</option>
-                <option value="1" selected>1 liters</option>
-                <option value="1.2">1,2 liters</option>
-                <option value="1.5">1,5 liters</option>
-                <option value="2">2 liters</option>
-              </select>
-            </div>
           </div>
           <div class="long-input">
-            <label>Product Description</label>
+            <label>Book Description</label>
             <textarea name="productDesc" class="product-desc"></textarea>
           </div>
 
           <div class="img-frame">
-            <label>Product Images</label>
+            <label>Book Images</label>
             <div class="media-frame">
               <div class="upload-img-box">
                 <img src="/img/upload.svg" class="1" id="image-section-1" />

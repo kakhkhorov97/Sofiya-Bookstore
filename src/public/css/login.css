@@ -6,10 +6,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-  animation: gradient 15s ease infinite;
-  -webkit-animation: gradient 15s ease infinite;
-  background-size: 200% 200%;
+  background-color: #1C120B;
 }
 
 .login-container a {
@@ -24,7 +21,7 @@
   display: flex;
   flex-direction: column;
   border-radius: 10px;
-  background: #ffffff;
+  background: #F5E6C8;
   padding: 25px;
 }
 
@@ -106,7 +103,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #33a0ff;
+  background: #1C120B;
   border-radius: 10px;
   font-family: "Nunito";
   font-style: normal;
@@ -117,27 +114,3 @@
   color: #ffffff;
 }
 
-/* Background animation */
-@-webkit-keyframes gradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-@keyframes gradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}

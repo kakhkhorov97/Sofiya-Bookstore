@@ -1,12 +1,12 @@
 .home-container {
   position: relative;
-  width: auto;
-  height: auto;
-  min-height: 100%;
+  width: 100%;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: linear-gradient(-45deg, #110303f0, #dd6d04, #011c1afc, #7a6868);
+  background-color: #0A0600;
+  overflow: hidden;
 }
 
 .home-container a {
@@ -30,14 +30,31 @@
   font-family: monospace;
 }
 
-.home-container .animation-frame {
+.home-container  .anim, .anim svg {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 55px;
+  width: 100%;
+  height: 100%;
+}
+.home-container  .anim path {
+  stroke-width: 2;
 }
 
+ .home-container  .adminWellcome {
+  width: 100%;
+  text-align: center;
+  margin: 40px 0;
+}
+
+.home-container .adminWellcome p {
+  margin: 0;
+  font-size: 40px;
+  font-weight: 700;
+  color: #e3c08d;
+
+}
+
+
+/* 
 .home-container .animation-wrapper {
   position: relative;
   width: 775px;
@@ -46,7 +63,7 @@
   align-items: center;
   justify-content: center;
 }
-
+ 
 .home-container .sphere-animation {
   position: relative;
   width: 580px;
@@ -64,4 +81,4 @@
   .sphere path {
     stroke-width: 0.4px;
   }
-} 
+}   */
