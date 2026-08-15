@@ -28,9 +28,12 @@
   position: absolute;
   z-index: 10000;
   top: 1%;
-  color: #efefee;
-  font-size: 40px;
-  font-family: monospace;
+  color:  #D4AF6A;
+  font-size: 28px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 500;
+  font-style: normal;
+  letter-spacing: 1px;
 }
 
 .users-container .users-frame {

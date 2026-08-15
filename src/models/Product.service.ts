@@ -27,8 +27,7 @@ class ProductService {
   /* SPA */
   public async getProducts(inquiry: ProductInquiry): Promise<Product[]> {
     const match: T = { productStatus: ProductStatus.PROCESS };
-    if (inquiry.productCollection)
-      match.productCollection = inquiry.productCollection;
+
     if (inquiry.search) {
       match.productName = { $regex: new RegExp(inquiry.search, "i") };
     }
@@ -112,8 +111,9 @@ class ProductService {
     try {
       return await this.productModel.create(input);
     } catch (err) {
+      console.log("ERROR:", err);
       console.log("Error, model:createNewProduct:", err);
-      throw new Errors(HttpCode.BAD_REQUEST, Message.USED_NICK_PHONE);
+      throw new Errors(HttpCode.BAD_REQUEST, Message.CREATE_FAILED);
     }
   }
 

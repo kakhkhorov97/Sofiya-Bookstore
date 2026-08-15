@@ -19,9 +19,9 @@ class MemberService {
 
   /* SPA */
 
-  public async getRestaurant(): Promise<Member> {
+  public async getStore(): Promise<Member> {
     const result = await this.memberModel
-      .findOne({ memberType: MemberType.RESTUARANT })
+      .findOne({ memberType: MemberType.STORE })
       .exec();
 
     if (!result) throw new Errors(HttpCode.NOT_FOUND, Message.NO_DATA_FOUND);
@@ -135,7 +135,7 @@ class MemberService {
 
   public async processSignup(input: MemberInput): Promise<Member> {
     const exist = await this.memberModel
-      .findOne({ memberType: MemberType.RESTUARANT })
+      .findOne({ memberType: MemberType.STORE })
       .exec();
 
     if (exist) {

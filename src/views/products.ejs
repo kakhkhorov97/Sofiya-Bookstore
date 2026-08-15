@@ -35,24 +35,26 @@
             <thead class="thead-light">
               <tr class="thead-light">
                 <th scope="col">T/r</th>
-                <th scope="col">Product Name</th>
-                <th scope="col">Product Type</th>
-                <th scope="col">Product Volume</th>
-                <th scope="col">Product Price</th>
-                <th scope="col">Product Left Count</th>
+                <th scope="col">Book Title</th>
+                <th scope="col">Book Author</th>
+                <th scope="col">Book Format</th>
+                <th scope="col">Book Genre</th>
+                <th scope="col">Book Price</th>
+                <th scope="col">Book Left Count</th>
                 <th scope="col">Status</th>
               </tr>
             </thead>
 
             <% products.map(function(value, key) { %>
 
-               <tbody style="background: #F5E6C8">
+               <tbody style="background: #f0eeec">
               <td> <%= key + 1 %> </td>
-              <td> <%= value.productName %> </td>
-              <td> <%= value.productCollection %> </td>
-              <td> <%= value.productCollection === "DRINK" ? value.productVolume : value.productSize %> </td>
-              <td> <%= value.productPrice%> </td>
-              <td> <%= value.productLeftCount %> </td>
+              <td><%= value.productTitle %></td>
+              <td><%= value.productAuthor %></td>
+              <td><%= value.productFormat %></td>
+              <td><%= value.productGenre %></td>
+              <td><%= value.productPrice %></td>
+              <td><%= value.productLeftCount %></td>
               <td>
                 <select class="spec-select new-product-status" id="<%= value._id %>">
                 <option value="PAUSE" <%= value.productStatus === 'PAUSE' ? 'selected' : '' %>> PAUSE</option>
@@ -89,10 +91,19 @@
               <label>Book Title</label>
               <input
                 type="text"
-                placeholder="Name"
-                name="productName"
-                class="product-name"
+                placeholder="Title"
+                name="productTitle"
+                class="product-"
               />
+              <div class="form-group">
+               <label>Book Author</label>
+               <input
+                type="text"
+                name="productAuthor"
+                placeholder="Book Author"
+                required
+                 />
+              </div>
             </div>
             <input
               name="productStatus"
@@ -123,23 +134,30 @@
           </div>
           <div class="half-input-frame">
             <div class="half-input">
-              <label>Book Category</label>
-              <select class="product-collection" name="productCollection">
-                <option value="DISH" selected>Dish</option>
-                <option value="SALAD">Salad</option>
-                <option value="DESSERT">Dessert</option>
-                <option value="DRINK">Drink</option>
+              <label>Book Format</label>
+              <select class="product-collection" name="productFormat">
+                <option value="HARDCOVER" selected>Hard Cover</option>
+                <option value="PAPERBACK">Paper Back</option>
+                <option value="EBOOK">E-book</option>
+                <option value="AUDIOBOOK">Audiobook</option>
                 <option value="OTHER">Other</option>
               </select>
             </div>
 
             <div class="half-input" id="product-collection">
-              <label>Dish Volume</label>
-              <select class="product-size" name="productSize">
-                <option value="SMALL">Small</option>
-                <option value="NORMAL" selected>Normal</option>
-                <option value="LARGE">Large</option>
-                <option value="SET">Set</option>
+              <label>Book Genre</label>
+              <select class="product-size" name="productGenre">
+                <option value="FICTION"selected>FICTION</option>
+                <option value="ROMANCE" >ROMANCE</option>
+                <option value="FANTASY">FANTASY</option>
+                <option value="MYSTERY">MYSTERY</option>
+                <option value="SCIENCE_FICTION">SCIENCE_FICTION</option>
+                <option value="HORROR">HORROR</option>
+                <option value="HISTORY">HISTORY</option>
+                <option value="BIOGRAPHY">BIOGRAPHY</option>
+                <option value="SELF_HELP">SELF_HELP</option>
+                <option value="PROGRAMMING" >PROGRAMMING</option>
+
               </select>
             </div>
           </div>
@@ -169,7 +187,7 @@
                   id="file"
                   name="productImages"
                   class="image-two"
-                  onchange="previewFileHandler(this, 1)"
+                  onchange="previewFileHandler(this, 2)"
                 />
               </div>
               <div class="upload-img-box">
@@ -179,7 +197,7 @@
                   id="file"
                   name="productImages"
                   class="image-three"
-                  onchange="previewFileHandler(this, 2)"
+                  onchange="previewFileHandler(this, 3)"
                 />
               </div>
               <div class="upload-img-box">

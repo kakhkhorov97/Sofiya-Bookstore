@@ -18,10 +18,10 @@ const authService = new AuthService();
 //REACT
 const memberController: T = {};
 
-memberController.getRestaurant = async (req: Request, res: Response) => {
+memberController.getStore = async (req: Request, res: Response) => {
   try {
     console.log("getRestaurant");
-    const result = await memberService.getRestaurant();
+    const result = await memberService.getStore();
 
     res.status(HttpCode.OK).json(result);
   } catch (err) {
@@ -35,8 +35,9 @@ memberController.signup = async (req: Request, res: Response) => {
   try {
     console.log("signup");
 
-    const input: MemberInput = req.body,
-      result: Member = await memberService.signup(input);
+    const input: MemberInput = req.body;
+    console.log("SIGNUP INPUT:", input);
+    const result: Member = await memberService.signup(input);
     const token = await authService.createToken(result);
 
     res.cookie("accessToken", token, {

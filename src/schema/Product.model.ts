@@ -1,9 +1,8 @@
 import mongoose, { Schema } from "mongoose";
 import {
-  ProductCollection,
-  ProductSize,
+  ProductFormat,
+  ProductGenre,
   ProductStatus,
-  ProductVolume,
 } from "../libs/enums/product.enum";
 
 const productSchema = new Schema(
@@ -14,14 +13,25 @@ const productSchema = new Schema(
       default: ProductStatus.PAUSE,
     },
 
-    productCollection: {
+    productAuthor: {
       type: String,
-      enum: ProductCollection,
       required: true,
     },
 
-    productName: {
+    productTitle: {
       type: String,
+      required: true,
+    },
+
+    productFormat: {
+      type: String,
+      enum: ProductFormat,
+      required: true,
+    },
+
+    productGenre: {
+      type: String,
+      enum: ProductGenre,
       required: true,
     },
 
@@ -33,18 +43,6 @@ const productSchema = new Schema(
     productLeftCount: {
       type: Number,
       required: true,
-    },
-
-    productSize: {
-      type: String,
-      enum: ProductSize,
-      default: ProductSize.NORMAL,
-    },
-
-    productVolume: {
-      type: Number,
-      enum: ProductVolume,
-      default: ProductVolume.ONE,
     },
 
     productDecs: {
@@ -64,9 +62,6 @@ const productSchema = new Schema(
   { timestamps: true },
 );
 
-productSchema.index(
-  { productName: 1, productSize: 1, productVolume: 1 },
-  { unique: true },
-);
+productSchema.index({ productTitle: 1, productFormat: 1 }, { unique: true });
 
 export default mongoose.model("Product", productSchema);

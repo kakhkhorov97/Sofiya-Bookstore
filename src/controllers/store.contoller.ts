@@ -7,9 +7,9 @@ import Errors, { HttpCode, Message } from "../libs/Errrors";
 
 const memberService = new MemberService();
 
-const restaurantController: T = {};
+const storeController: T = {};
 
-restaurantController.goHome = (req: Request, res: Response) => {
+storeController.goHome = (req: Request, res: Response) => {
   try {
     console.log("goHome");
     res.render("home");
@@ -19,7 +19,7 @@ restaurantController.goHome = (req: Request, res: Response) => {
   }
 };
 
-restaurantController.getSignup = (req: Request, res: Response) => {
+storeController.getSignup = (req: Request, res: Response) => {
   try {
     console.log("getSignup");
     res.render("signup");
@@ -29,7 +29,7 @@ restaurantController.getSignup = (req: Request, res: Response) => {
   }
 };
 
-restaurantController.getLogin = (req: Request, res: Response) => {
+storeController.getLogin = (req: Request, res: Response) => {
   try {
     console.log("getLogin");
     res.render("login");
@@ -39,10 +39,7 @@ restaurantController.getLogin = (req: Request, res: Response) => {
   }
 };
 
-restaurantController.processSignup = async (
-  req: AdminRequest,
-  res: Response,
-) => {
+storeController.processSignup = async (req: AdminRequest, res: Response) => {
   try {
     console.log("processSignup");
     const file = req.file;
@@ -51,7 +48,7 @@ restaurantController.processSignup = async (
 
     const newMember: MemberInput = req.body;
     newMember.memberImage = file?.path;
-    newMember.memberType = MemberType.RESTUARANT;
+    newMember.memberType = MemberType.STORE;
 
     const memberService = new MemberService();
     const result = await memberService.processSignup(newMember);
@@ -71,10 +68,7 @@ restaurantController.processSignup = async (
   }
 };
 
-restaurantController.processLogin = async (
-  req: AdminRequest,
-  res: Response,
-) => {
+storeController.processLogin = async (req: AdminRequest, res: Response) => {
   try {
     console.log("processLogin");
     console.log("body:", req.body);
@@ -96,7 +90,7 @@ restaurantController.processLogin = async (
   }
 };
 
-restaurantController.logout = async (req: AdminRequest, res: Response) => {
+storeController.logout = async (req: AdminRequest, res: Response) => {
   try {
     console.log("logout ");
     req.session.destroy(function () {
@@ -108,7 +102,7 @@ restaurantController.logout = async (req: AdminRequest, res: Response) => {
   }
 };
 
-restaurantController.getUsers = async (req: Request, res: Response) => {
+storeController.getUsers = async (req: Request, res: Response) => {
   try {
     console.log("getUsers");
     const result = await memberService.getUsers();
@@ -120,7 +114,7 @@ restaurantController.getUsers = async (req: Request, res: Response) => {
   }
 };
 
-restaurantController.updataChosenUser = async (req: Request, res: Response) => {
+storeController.updataChosenUser = async (req: Request, res: Response) => {
   try {
     console.log("updataChosenUser");
     const result = await memberService.updateChosenUser(req.body);
@@ -133,10 +127,7 @@ restaurantController.updataChosenUser = async (req: Request, res: Response) => {
   }
 };
 
-restaurantController.checkAuthSession = async (
-  req: AdminRequest,
-  res: Response,
-) => {
+storeController.checkAuthSession = async (req: AdminRequest, res: Response) => {
   try {
     console.log("checkAuthSession");
     if (req.session?.member) res.send(`Hi, ${req.session?.member.memberNick}`);
@@ -147,12 +138,12 @@ restaurantController.checkAuthSession = async (
   }
 };
 
-restaurantController.verifyRestaurant = (
+storeController.verifyRestaurant = (
   req: AdminRequest,
   res: Response,
   next: NextFunction,
 ) => {
-  if (req.session?.member?.memberType === MemberType.RESTUARANT) {
+  if (req.session?.member?.memberType === MemberType.STORE) {
     req.member = req.session.member;
     next();
   } else {
@@ -163,4 +154,4 @@ restaurantController.verifyRestaurant = (
   }
 };
 
-export default restaurantController;
+export default storeController;
