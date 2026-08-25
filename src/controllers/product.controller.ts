@@ -4,6 +4,7 @@ import { T } from "../libs/types/common";
 import ProductService from "../models/Product.service";
 import { ProductInput, ProductInquiry } from "../libs/types/product";
 import { AdminRequest, ExtendedRequest } from "../libs/types/member";
+import { ProductFormat, ProductGenre } from "../libs/enums/product.enum";
 
 const productService = new ProductService();
 
@@ -15,13 +16,22 @@ productController.getProducts = async (req: Request, res: Response) => {
   try {
     console.log("getProducts");
 
-    const { page, limit, order, search } = req.query;
+    const { page, limit, order, search, productFormat, productGenre } =
+      req.query;
 
     const inquiry: ProductInquiry = {
       order: String(order),
       page: Number(page),
       limit: Number(limit),
     };
+
+    if (productFormat) {
+      inquiry.productFormat = String(productFormat) as ProductFormat;
+    }
+
+    if (productGenre) {
+      inquiry.productGenre = String(productGenre) as ProductGenre;
+    }
 
     if (search) {
       inquiry.search = String(search);
@@ -91,9 +101,6 @@ productController.createNewProduct = async (
     data.productImages = req.files?.map((ele) => {
       return ele.path;
     });
-
-    console.log("🔥 PRODUCT BODY:", req.body);
-    console.log("🔥 PRODUCT FILES:", req.files);
 
     await productService.createNewProduct(data);
 

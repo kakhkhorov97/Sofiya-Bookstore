@@ -1,6 +1,6 @@
 export enum OrderStatus {
   PAUSE = "PAUSE",
   PROCESS = "PROSCESS",
-  FINISH = "FINISH",
+  DELIVERED = "DELIVERED",
   DELETE = "DELETE",
 }

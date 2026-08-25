@@ -26,6 +26,8 @@ export interface ProductInquiry {
   page: number;
   limit: number;
   search?: string;
+  productFormat?: ProductFormat;
+  productGenre?: ProductGenre;
 }
 
 export interface ProductInput {

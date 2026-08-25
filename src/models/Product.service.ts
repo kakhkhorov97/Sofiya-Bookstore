@@ -25,19 +25,38 @@ class ProductService {
   }
 
   /* SPA */
-  public async getProducts(inquiry: ProductInquiry): Promise<Product[]> {
+  public async getProducts(inquiry: ProductInquiry): Promise<{
+    products: Product[];
+    total: number;
+  }> {
     const match: T = { productStatus: ProductStatus.PROCESS };
 
     if (inquiry.search) {
-      match.productName = { $regex: new RegExp(inquiry.search, "i") };
+      match.productName = {
+        $regex: new RegExp(inquiry.search, "i"),
+      };
+    }
+
+    if (inquiry.productFormat) {
+      match.productFormat = inquiry.productFormat;
+    }
+
+    if (inquiry.productGenre) {
+      match.productGenre = inquiry.productGenre;
     }
 
     const sort: T =
       inquiry.order === "productPrice"
-        ? { [inquiry.order]: 1 } //dynamic key
+        ? { [inquiry.order]: 1 }
         : { [inquiry.order]: -1 };
 
-    const result = await this.productModel
+    const totalResult = await this.productModel
+      .aggregate([{ $match: match }, { $count: "total" }])
+      .exec();
+
+    const total = totalResult.length > 0 ? totalResult[0].total : 0;
+
+    const products = await this.productModel
       .aggregate([
         { $match: match },
         { $sort: sort },
@@ -46,9 +65,10 @@ class ProductService {
       ])
       .exec();
 
-    if (!result.length)
-      throw new Errors(HttpCode.NOT_FOUND, Message.NO_DATA_FOUND);
-    return result;
+    return {
+      products,
+      total,
+    };
   }
 
   public async getProduct(
