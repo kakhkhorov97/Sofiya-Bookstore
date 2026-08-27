@@ -100,7 +100,7 @@ class OrderService {
         {
           $lookup: {
             from: "products",
-            localField: "orderItems.prodcutId",
+            localField: "orderItems.productId",
             foreignField: "_id",
             as: "productData",
           },

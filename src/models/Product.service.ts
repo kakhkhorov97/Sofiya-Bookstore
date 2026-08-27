@@ -32,7 +32,7 @@ class ProductService {
     const match: T = { productStatus: ProductStatus.PROCESS };
 
     if (inquiry.search) {
-      match.productName = {
+      match.productTitle = {
         $regex: new RegExp(inquiry.search, "i"),
       };
     }
