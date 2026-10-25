@@ -70,6 +70,8 @@ printf '%s' 'your-gemini-key'  | gcloud secrets create GEMINI_API_KEY --data-fil
 openssl rand -base64 48 | tr -d '\n' | gcloud secrets create AUTH_SECRET --data-file=-
 ```
 
+After the first deploy (and whenever books change), embed the catalogue once with the production `DATABASE_URL` and `GEMINI_API_KEY`: `npm run ai:index -w @sofiya/api`.
+
 Mount them on the api service later with `--set-secrets DATABASE_URL=DATABASE_URL:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest,AUTH_SECRET=AUTH_SECRET:latest`.
 
 ## 6. GitHub repository variables

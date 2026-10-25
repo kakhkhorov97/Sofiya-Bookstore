@@ -1,4 +1,6 @@
 import { sql } from 'drizzle-orm';
+import { indexBooks } from '../src/ai/indexer';
+import { FakeProvider } from '../src/ai/provider';
 import { createDb } from '../src/db/client';
 import { runMigrations } from '../src/db/migrate';
 import { seedCatalogue } from '../src/db/seed/seed';
@@ -10,10 +12,11 @@ export default async function globalSetup(): Promise<void> {
   try {
     // Start every run clean: drop what earlier test runs created.
     await db.execute(
-      sql`TRUNCATE order_items, orders, users RESTART IDENTITY CASCADE`,
+      sql`TRUNCATE order_items, orders, reviews, wishlist, newsletter_subscribers, users RESTART IDENTITY CASCADE`,
     );
     await db.execute(sql`DELETE FROM books WHERE slug LIKE 'test-book-%'`);
     await seedCatalogue(db);
+    await indexBooks(db, new FakeProvider());
   } finally {
     await close();
   }

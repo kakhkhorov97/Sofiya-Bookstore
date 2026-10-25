@@ -1263,3 +1263,18 @@ export const CATALOGUE: CatalogueEntry[] = [
     ],
   ]),
 ];
+
+// Shown in the homepage "Staff picks" row. Keyed by title.
+export const STAFF_PICKS: Record<string, string> = {
+  'The Count of Monte Cristo':
+    'The best revenge story ever written. Clear a weekend.',
+  Persuasion:
+    'Austen at her most grown-up. Start here if you think you know her.',
+  'The Hound of the Baskervilles': 'Fog, moors and Holmes at his sharpest.',
+  Frankenstein: 'Sadder and stranger than any film version.',
+  Meditations: 'Ten minutes a morning with an emperor who also had bad days.',
+  'Structure and Interpretation of Computer Programs':
+    'The book that changes how you think about code.',
+  'The Enchanted April': 'Pure sunshine in book form.',
+  Flatland: 'A 96-page geometry lesson that reads like satire.',
+};

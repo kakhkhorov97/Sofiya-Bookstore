@@ -14,6 +14,10 @@ export const BookListQuery = z.object({
     .enum(["true", "false"])
     .optional()
     .transform((v) => v === "true"),
+  staffPicks: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v === "true"),
   sort: BookSort.optional(),
   page: z.coerce.number().int().min(1).max(1000).default(1),
   limit: z.coerce.number().int().min(1).max(60).default(24),
@@ -34,12 +38,17 @@ export interface BookSummary {
   slug: string;
   title: string;
   author: string;
+  authorSlug: string;
   genre: Genre;
   publishedYear: number | null;
   pages: number | null;
   fromPriceCents: number;
   inStock: boolean;
   formats: BookFormat[];
+  // Average of reader reviews (1–5), null when there are none yet.
+  ratingAvg: number | null;
+  ratingCount: number;
+  staffPickNote: string | null;
 }
 
 export interface BookDetail extends Omit<BookSummary, "formats"> {

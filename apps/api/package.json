@@ -25,7 +25,8 @@
     "db:migrate": "tsx --env-file=.env src/db/migrate.ts",
     "db:seed": "tsx --env-file=.env src/db/seed/seed.ts",
     "db:studio": "drizzle-kit studio",
-    "db:create-admin": "tsx --env-file=.env src/db/create-admin.ts"
+    "db:create-admin": "tsx --env-file=.env src/db/create-admin.ts",
+    "ai:index": "tsx --env-file=.env src/ai/indexer.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -40,7 +41,8 @@
     "postgres": "^3.4.9",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "zod": "^3.25.0"
+    "zod": "^3.25.0",
+    "@google/genai": "^1.30.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

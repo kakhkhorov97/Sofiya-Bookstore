@@ -15,6 +15,13 @@
       "when": 1792947953923,
       "tag": "0001_order_request_hash",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792950365143,
+      "tag": "0002_store_features_and_ai",
+      "breakpoints": true
     }
   ]
 }

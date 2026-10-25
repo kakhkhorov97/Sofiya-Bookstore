@@ -8,6 +8,7 @@ import { MAX_PER_LINE } from "@/basket/basket";
 import { useBasket } from "@/basket/BasketProvider";
 import { FORMAT_LABELS, isDigital } from "@/lib/labels";
 import { buttonClass } from "./ui";
+import { WishlistButton } from "./WishlistButton";
 
 export function AddToBasket({ book }: { book: BookDetail }) {
   const { dispatch } = useBasket();
@@ -106,6 +107,7 @@ export function AddToBasket({ book }: { book: BookDetail }) {
         <button type="button" onClick={add} disabled={!selected.inStock} className={`${buttonClass.primary} flex-1`}>
           {selected.inStock ? "Add to basket" : "Out of stock"}
         </button>
+        <WishlistButton bookId={book.id} title={book.title} variant="button" />
       </div>
 
       <div className="mt-3 min-h-6 text-sm" aria-live="polite">

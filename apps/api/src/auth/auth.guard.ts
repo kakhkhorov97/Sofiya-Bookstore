@@ -36,6 +36,29 @@ export class AuthGuard implements CanActivate {
   }
 }
 
+// Like AuthGuard, but never blocks: attaches the user when signed in.
+@Injectable()
+export class OptionalAuthGuard implements CanActivate {
+  private readonly env = loadEnv();
+
+  constructor(private readonly usersService: UsersService) {}
+
+  async canActivate(ctx: ExecutionContext): Promise<boolean> {
+    const req = ctx.switchToHttp().getRequest<AuthedRequest>();
+    const cookies = req.cookies as Record<string, string> | undefined;
+    const token = cookies?.[SESSION_COOKIE];
+    const userId = token ? verifySession(this.env, token) : null;
+    const user = userId ? await this.usersService.findActive(userId) : null;
+    if (user) req.user = user;
+    return true;
+  }
+}
+
+export const OptionalUser = createParamDecorator(
+  (_: unknown, ctx: ExecutionContext): SessionUser | null =>
+    ctx.switchToHttp().getRequest<AuthedRequest>().user ?? null,
+);
+
 // Use after AuthGuard: @UseGuards(AuthGuard, AdminGuard)
 @Injectable()
 export class AdminGuard implements CanActivate {

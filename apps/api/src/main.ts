@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import type { NextFunction, Request, Response } from 'express';
 import { AppModule } from './app.module';
@@ -9,6 +10,11 @@ const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 export function configureApp(app: INestApplication, env: Env): void {
   const origins = allowedOrigins(env);
+  // Rate limits key on the visitor's IP, which arrives via the web proxy.
+  const trust = /^\d+$/.test(env.TRUST_PROXY)
+    ? Number(env.TRUST_PROXY)
+    : env.TRUST_PROXY;
+  (app as NestExpressApplication).set('trust proxy', trust);
   app.setGlobalPrefix('api');
   // Explicit allowlist with credentials (legacy defect: origin: true).
   app.enableCors({ origin: origins, credentials: true });

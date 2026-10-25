@@ -35,6 +35,20 @@ Health checks: `http://localhost:8080/api/health` and `http://localhost:3000/api
 
 The basket lives in the browser (localStorage) and is re-priced from the API on every view; checkout sends one idempotency key per basket so a double click cannot create two orders.
 
+## AI: Ask Sofiya (RAG with Gemini)
+
+1. Get a key at https://aistudio.google.com and add it to `apps/api/.env`: `GEMINI_API_KEY=...`
+2. Embed the catalogue (re-run after adding or editing books; unchanged books are skipped):
+
+   ```bash
+   npm run ai:index -w @sofiya/api
+   ```
+3. Start the site with `npm run dev` and open http://localhost:3000/ask.
+
+How it works: each book's title, author, genre and description is embedded (Gemini, 768 dimensions) into `book_embeddings` (pgvector, HNSW index). A question is matched by meaning (cosine similarity, above `AI_MIN_SIMILARITY`) and by keywords (Postgres full text, any word, plus partial title/author), and the two rankings are fused with Reciprocal Rank Fusion. The top 5 books are sent to Gemini with a prompt that allows recommending only those numbered books; the server keeps only citations that point at them. No candidates means no model call. If Gemini fails, the matching books are still shown. Limits: `AI_RATE_LIMIT` questions per minute per visitor and `AI_DAILY_CAP` per day.
+
+Without a key the site works normally: search is keyword-only, "If you like this" uses the same genre, and the Ask page says it is not switched on. Tests use an offline fake provider (`AI_PROVIDER=fake`), so they need no key.
+
 ## Database
 
 PostgreSQL via Drizzle ORM. Schema: `apps/api/src/db/schema.ts`; SQL migrations: `apps/api/drizzle/`.
@@ -52,6 +66,14 @@ PostgreSQL via Drizzle ORM. Schema: `apps/api/src/db/schema.ts`; SQL migrations:
 | GET | `/api/books/:slug` | Details with formats, prices and stock flags |
 | GET | `/api/genres` | Live book count per genre |
 | GET | `/api/formats?ids=a,b` | Current price, stock and availability for basket lines |
+| GET | `/api/books/:slug/similar` | "If you like this": nearest books by meaning (same-genre fallback) |
+| GET | `/api/authors/:slug` | Author page with all live books |
+| GET / PUT / DELETE | `/api/books/:slug/reviews` | Reviews; writing needs a confirmed order for the book |
+| GET | `/api/wishlist`, `/api/wishlist/ids` | Signed-in reader's saved books |
+| PUT / DELETE | `/api/wishlist/:bookId` | Save or remove a book |
+| POST | `/api/newsletter` | `{ email }`; 201 new, 200 already subscribed |
+| GET | `/api/ai/status` | Whether AI is on and how many books are indexed |
+| POST | `/api/ask` | Ask Sofiya; server-sent events: `sources`, `delta`…, `done` |
 | POST | `/api/auth/signup` | `{ email, password, displayName }`; sets the session cookie |
 | POST | `/api/auth/signin` | `{ email, password }`; rate limited per IP |
 | POST | `/api/auth/signout` | Clears the session cookie |

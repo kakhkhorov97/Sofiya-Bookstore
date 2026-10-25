@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type {
+  AuthorPage,
   BookDetail,
   BookFormat,
-  FormatInfo,
   BookListQuery,
   BookSummary,
+  FormatInfo,
   Genre,
   GenreCount,
   Page,
@@ -12,28 +13,19 @@ import type {
 import { sql, SQL } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import { InjectDb } from '../db/db.module';
+import {
+  SUMMARY_COLUMNS,
+  SUMMARY_JOINS,
+  SummaryRow,
+  summariesByIds,
+  toSummary,
+  uuidList,
+} from './summary';
 
 const LOW_STOCK_THRESHOLD = 5;
 
-// Escape LIKE wildcards so user input is matched literally
-// (the legacy API passed raw input into new RegExp()).
-export function escapeLike(input: string): string {
-  return input.replace(/[\\%_]/g, (c) => `\\${c}`);
-}
-
-interface SummaryRow {
-  id: string;
-  slug: string;
-  title: string;
-  author: string;
-  genre: Genre;
-  published_year: number | null;
-  pages: number | null;
-  from_price: number;
-  in_stock: boolean;
-  formats: BookFormat[];
-  [key: string]: unknown;
-}
+export { escapeLike } from '../common/like';
+import { escapeLike } from '../common/like';
 
 interface FormatRow {
   id: string;
@@ -43,24 +35,16 @@ interface FormatRow {
   [key: string]: unknown;
 }
 
-const toSummary = (r: SummaryRow): BookSummary => ({
-  id: r.id,
-  slug: r.slug,
-  title: r.title,
-  author: r.author,
-  genre: r.genre,
-  publishedYear: r.published_year,
-  pages: r.pages,
-  fromPriceCents: Number(r.from_price),
-  inStock: r.in_stock,
-  formats: r.formats,
-});
-
 @Injectable()
 export class BooksService {
   constructor(@InjectDb() private readonly db: Db) {}
 
-  async list(query: BookListQuery): Promise<Page<BookSummary>> {
+  // `rankedIds` comes from the hybrid (keyword + meaning) search when AI is
+  // on; without it, search falls back to Postgres full text only.
+  async list(
+    query: BookListQuery,
+    rankedIds?: string[],
+  ): Promise<Page<BookSummary>> {
     const tsq = query.q
       ? sql`websearch_to_tsquery('english', ${query.q})`
       : undefined;
@@ -75,7 +59,15 @@ export class BooksService {
       );
     }
     if (query.inStock) where.push(sql`f.in_stock`);
-    if (query.q && tsq) {
+    if (query.staffPicks) where.push(sql`b.staff_pick_note IS NOT NULL`);
+
+    const useRanked = !!query.q && rankedIds !== undefined;
+    if (useRanked) {
+      if (rankedIds.length === 0) {
+        return { items: [], total: 0, page: query.page, limit: query.limit };
+      }
+      where.push(sql`b.id IN (${uuidList(rankedIds)})`);
+    } else if (query.q && tsq) {
       const like = `%${escapeLike(query.q)}%`;
       where.push(
         sql`(b.search @@ ${tsq} OR b.title ILIKE ${like} ESCAPE '\\' OR b.author ILIKE ${like} ESCAPE '\\')`,
@@ -83,10 +75,13 @@ export class BooksService {
     }
 
     const sort = query.sort ?? (query.q ? 'relevance' : 'popular');
-    const orderBy: Record<typeof sort, SQL> = {
-      relevance: tsq
+    const relevance: SQL = useRanked
+      ? sql`array_position(ARRAY[${uuidList(rankedIds)}], b.id)`
+      : tsq
         ? sql`ts_rank(b.search, ${tsq}) DESC, b.views DESC, b.title`
-        : sql`b.views DESC, b.title`,
+        : sql`b.views DESC, b.title`;
+    const orderBy: Record<typeof sort, SQL> = {
+      relevance,
       newest: sql`b.created_at DESC, b.title`,
       title: sql`b.title ASC`,
       price_asc: sql`f.from_price ASC, b.title`,
@@ -94,22 +89,11 @@ export class BooksService {
       popular: sql`b.views DESC, b.title`,
     };
 
-    const from = sql`
-      FROM books b
-      JOIN LATERAL (
-        SELECT min(price_cents) AS from_price,
-               bool_or(stock IS NULL OR stock > 0) AS in_stock,
-               array_agg(format::text ORDER BY format) AS formats
-        FROM book_formats WHERE book_id = b.id
-      ) f ON true
-      WHERE ${sql.join(where, sql` AND `)}`;
-
+    const from = sql`FROM books b ${SUMMARY_JOINS} WHERE ${sql.join(where, sql` AND `)}`;
     const offset = (query.page - 1) * query.limit;
     const [rows, countRows] = await Promise.all([
       this.db.execute<SummaryRow>(sql`
-        SELECT b.id, b.slug, b.title, b.author, b.genre, b.published_year, b.pages,
-               f.from_price, f.in_stock, f.formats
-        ${from}
+        SELECT ${SUMMARY_COLUMNS} ${from}
         ORDER BY ${orderBy[sort]}
         LIMIT ${query.limit} OFFSET ${offset}`),
       this.db.execute<{ total: string }>(sql`SELECT count(*) AS total ${from}`),
@@ -127,16 +111,8 @@ export class BooksService {
     const rows = await this.db.execute<
       SummaryRow & { description: string; language: string }
     >(sql`
-      SELECT b.id, b.slug, b.title, b.author, b.genre, b.published_year, b.pages,
-             b.description, b.language,
-             f.from_price, f.in_stock, f.formats
-      FROM books b
-      JOIN LATERAL (
-        SELECT min(price_cents) AS from_price,
-               bool_or(stock IS NULL OR stock > 0) AS in_stock,
-               array_agg(format::text ORDER BY format) AS formats
-        FROM book_formats WHERE book_id = b.id
-      ) f ON true
+      SELECT ${SUMMARY_COLUMNS}, b.description, b.language
+      FROM books b ${SUMMARY_JOINS}
       WHERE b.slug = ${slug} AND b.status = 'LIVE'`);
     const book = rows[0];
     if (!book) throw new NotFoundException('Book not found');
@@ -162,6 +138,39 @@ export class BooksService {
     };
   }
 
+  async idBySlug(slug: string): Promise<{ id: string; genre: Genre }> {
+    const [row] = await this.db.execute<{ id: string; genre: Genre }>(
+      sql`SELECT id, genre FROM books WHERE slug = ${slug} AND status = 'LIVE'`,
+    );
+    if (!row) throw new NotFoundException('Book not found');
+    return row;
+  }
+
+  summaries(ids: string[]): Promise<BookSummary[]> {
+    return summariesByIds(this.db, ids);
+  }
+
+  async popularInGenre(
+    genre: Genre,
+    excludeId: string,
+    limit: number,
+  ): Promise<BookSummary[]> {
+    const rows = await this.db.execute<SummaryRow>(sql`
+      SELECT ${SUMMARY_COLUMNS} FROM books b ${SUMMARY_JOINS}
+      WHERE b.status = 'LIVE' AND b.genre = ${genre} AND b.id <> ${excludeId}
+      ORDER BY b.views DESC LIMIT ${limit}`);
+    return rows.map(toSummary);
+  }
+
+  async author(slug: string): Promise<AuthorPage> {
+    const rows = await this.db.execute<SummaryRow>(sql`
+      SELECT ${SUMMARY_COLUMNS} FROM books b ${SUMMARY_JOINS}
+      WHERE b.status = 'LIVE' AND b.author_slug = ${slug}
+      ORDER BY b.published_year NULLS LAST, b.title`);
+    if (rows.length === 0) throw new NotFoundException('Author not found');
+    return { name: rows[0].author, slug, books: rows.map(toSummary) };
+  }
+
   async formatsByIds(ids: string[]): Promise<FormatInfo[]> {
     const rows = await this.db.execute<{
       id: string;
@@ -177,10 +186,7 @@ export class BooksService {
       SELECT bf.id, bf.format, bf.price_cents, bf.stock,
              b.status, b.slug, b.title, b.author, b.genre
       FROM book_formats bf JOIN books b ON b.id = bf.book_id
-      WHERE bf.id IN (${sql.join(
-        ids.map((id) => sql`${id}`),
-        sql`, `,
-      )}) AND b.status <> 'DELETED'`);
+      WHERE bf.id IN (${uuidList(ids)}) AND b.status <> 'DELETED'`);
     return rows.map((r) => ({
       formatId: r.id,
       format: r.format,

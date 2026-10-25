@@ -1,8 +1,11 @@
 import { GENRES, type BookSummary, type GenreCount, type Page } from "@sofiya/shared";
-import { ArrowRight, BookOpen, Clock3, Headphones, Search, Smartphone, Star, Truck } from "lucide-react";
+import { ArrowRight, BookOpen, Clock3, Headphones, Search, Smartphone, Sparkles, Star, Truck } from "lucide-react";
 import Link from "next/link";
 import { BookGrid } from "@/components/BookCard";
 import { BookCover } from "@/components/BookCover";
+import { NewsletterForm } from "@/components/NewsletterForm";
+import { RecentlyViewed } from "@/components/RecentlyViewed";
+import { StaffPicks } from "@/components/StaffPicks";
 import { Chip, Container } from "@/components/ui";
 import { apiGet } from "@/lib/api";
 import { GENRE_LABELS } from "@/lib/labels";
@@ -12,11 +15,12 @@ export const dynamic = "force-dynamic";
 const TRY = ["Sherlock Holmes", "Jane Austen", "ghost stories", "Python"];
 
 export default async function HomePage() {
-  const [popular, mystery, programming, genres] = await Promise.all([
+  const [popular, mystery, programming, genres, picks] = await Promise.all([
     apiGet<Page<BookSummary>>("/books?sort=popular&limit=12", { revalidate: 60 }),
     apiGet<Page<BookSummary>>("/books?genre=MYSTERY&sort=popular&limit=6", { revalidate: 60 }),
     apiGet<Page<BookSummary>>("/books?genre=PROGRAMMING&sort=popular&limit=6", { revalidate: 60 }),
     apiGet<GenreCount[]>("/genres", { revalidate: 60 }),
+    apiGet<Page<BookSummary>>("/books?staffPicks=true&limit=12", { revalidate: 300 }),
   ]);
   const total = genres.reduce((n, g) => n + g.count, 0);
   const fan = popular.items.slice(0, 5);
@@ -90,7 +94,59 @@ export default async function HomePage() {
         </Container>
       </nav>
 
+      <RecentlyViewed />
+
       <Shelf title="Popular right now" href="/books?sort=popular" books={popular.items.slice(0, 6)} />
+
+      {picks.items.length > 0 && (
+        <section className="mt-16">
+          <Container>
+            <StaffPicks books={picks.items} />
+          </Container>
+        </section>
+      )}
+
+      <section className="mt-16">
+        <Container>
+          <div className="grid items-center gap-8 rounded-[20px] bg-accent-soft p-7 sm:p-10 lg:grid-cols-[1.1fr_1fr]">
+            <div>
+              <p className="inline-flex items-center gap-2 font-semibold text-accent-ink">
+                <Sparkles size={18} aria-hidden /> Ask Sofiya
+              </p>
+              <h2 className="mt-2 font-display text-3xl font-extrabold tracking-[-0.025em] sm:text-4xl">
+                Describe a mood. Get books we actually stock.
+              </h2>
+              <p className="mt-3 max-w-[48ch] text-ink-2">
+                Our AI concierge searches the catalogue by meaning and explains why each book fits, with every
+                recommendation linked to a real book on our shelves.
+              </p>
+              <Link
+                href="/ask"
+                className="mt-6 inline-flex h-[46px] items-center gap-2 rounded-[10px] bg-accent px-5 font-semibold text-white hover:bg-accent-ink"
+              >
+                Start a conversation <ArrowRight size={18} aria-hidden />
+              </Link>
+            </div>
+            <ul className="space-y-2.5">
+              {[
+                "Something quiet and strange, set by the sea",
+                "A classic mystery I can finish in one evening",
+                "Stoic books for a stressful week",
+                "Where should I start with programming?",
+              ].map((q) => (
+                <li key={q}>
+                  <Link
+                    href={`/ask?q=${encodeURIComponent(q)}`}
+                    className="flex items-center justify-between gap-3 rounded-[12px] bg-white px-4 py-3 font-medium shadow-[0_1px_2px_rgba(21,23,28,0.06)] hover:text-accent"
+                  >
+                    “{q}” <ArrowRight size={16} className="shrink-0 text-ink-3" aria-hidden />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Container>
+      </section>
       <Shelf title="Mysteries" href="/books?genre=MYSTERY" books={mystery.items} />
       <Shelf title="For programmers" href="/books?genre=PROGRAMMING" books={programming.items} />
 
@@ -123,6 +179,12 @@ export default async function HomePage() {
       </section>
 
       <section className="mt-20">
+        <Container>
+          <NewsletterForm />
+        </Container>
+      </section>
+
+      <section className="mt-16">
         <Container className="flex flex-col gap-3 border-y border-line py-5 font-medium text-ink-2 sm:flex-row sm:justify-center sm:gap-12">
           <span className="inline-flex items-center gap-2">
             <Truck size={18} aria-hidden /> Free delivery on orders over $100

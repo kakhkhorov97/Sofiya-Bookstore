@@ -1,11 +1,13 @@
 import "server-only";
 import type { PublicUser } from "@sofiya/shared";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { apiGetOrNull } from "./api";
 
-export function getCurrentUser(): Promise<PublicUser | null> {
-  return apiGetOrNull<PublicUser>("/me", { auth: true });
-}
+// Cached per request, so the layout and pages share one /me call.
+export const getCurrentUser = cache((): Promise<PublicUser | null> =>
+  apiGetOrNull<PublicUser>("/me", { auth: true }).catch(() => null),
+);
 
 export async function requireUser(returnTo: string): Promise<PublicUser> {
   const user = await getCurrentUser();

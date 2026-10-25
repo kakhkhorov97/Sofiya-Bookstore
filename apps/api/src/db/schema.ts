@@ -13,10 +13,13 @@ import {
   integer,
   pgEnum,
   pgTable,
+  primaryKey,
+  smallint,
   text,
   timestamp,
   uniqueIndex,
   uuid,
+  vector,
 } from 'drizzle-orm/pg-core';
 
 export const genreEnum = pgEnum('genre', GENRES);
@@ -68,6 +71,8 @@ export const books = pgTable(
     slug: text('slug').notNull(),
     title: text('title').notNull(),
     author: text('author').notNull(),
+    // URL name of the author page, e.g. "jane-austen".
+    authorSlug: text('author_slug').notNull().default(''),
     genre: genreEnum('genre').notNull(),
     description: text('description').notNull(),
     pages: integer('pages'),
@@ -76,6 +81,8 @@ export const books = pgTable(
     language: text('language').notNull().default('English'),
     status: bookStatusEnum('status').notNull().default('DRAFT'),
     views: integer('views').notNull().default(0),
+    // A short note shown in the homepage "Staff picks" row; NULL = not a pick.
+    staffPickNote: text('staff_pick_note'),
     search: tsvector('search').generatedAlwaysAs(
       sql`setweight(to_tsvector('english'::regconfig, coalesce(title, '')), 'A') || setweight(to_tsvector('english'::regconfig, coalesce(author, '')), 'A') || setweight(to_tsvector('english'::regconfig, coalesce(description, '')), 'B')`,
     ),
@@ -85,6 +92,7 @@ export const books = pgTable(
     uniqueIndex('books_slug_key').on(t.slug),
     index('books_genre_status_idx').on(t.genre, t.status),
     index('books_search_idx').using('gin', t.search),
+    index('books_author_slug_idx').on(t.authorSlug),
     check('books_pages_positive', sql`${t.pages} IS NULL OR ${t.pages} > 0`),
   ],
 );
@@ -158,5 +166,84 @@ export const orderItems = pgTable(
   (t) => [
     index('order_items_order_idx').on(t.orderId),
     check('order_items_quantity_positive', sql`${t.quantity} > 0`),
+  ],
+);
+
+export const wishlist = pgTable(
+  'wishlist',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    bookId: uuid('book_id')
+      .notNull()
+      .references(() => books.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.bookId] })],
+);
+
+export const reviews = pgTable(
+  'reviews',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    bookId: uuid('book_id')
+      .notNull()
+      .references(() => books.id, { onDelete: 'cascade' }),
+    rating: smallint('rating').notNull(),
+    title: text('title'),
+    body: text('body').notNull(),
+    ...timestamps,
+  },
+  (t) => [
+    // One review per reader per book; editing replaces it.
+    uniqueIndex('reviews_user_book_key').on(t.userId, t.bookId),
+    index('reviews_book_idx').on(t.bookId, t.createdAt),
+    check('reviews_rating_range', sql`${t.rating} BETWEEN 1 AND 5`),
+  ],
+);
+
+export const newsletterSubscribers = pgTable(
+  'newsletter_subscribers',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    email: text('email').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [uniqueIndex('newsletter_email_lower_key').on(sql`lower(${t.email})`)],
+);
+
+// One embedding per book (title, author, genre and description), used by
+// Ask Sofiya, meaning-based search and "If you like this".
+export const EMBEDDING_DIMENSIONS = 768;
+
+export const bookEmbeddings = pgTable(
+  'book_embeddings',
+  {
+    bookId: uuid('book_id')
+      .primaryKey()
+      .references(() => books.id, { onDelete: 'cascade' }),
+    embedding: vector('embedding', {
+      dimensions: EMBEDDING_DIMENSIONS,
+    }).notNull(),
+    // Hash of the text that was embedded; a changed book gets re-embedded.
+    contentHash: text('content_hash').notNull(),
+    model: text('model').notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index('book_embeddings_hnsw_idx').using(
+      'hnsw',
+      t.embedding.op('vector_cosine_ops'),
+    ),
   ],
 );

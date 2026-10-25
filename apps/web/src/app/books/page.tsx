@@ -60,7 +60,13 @@ export default async function BooksPage({ searchParams }: { searchParams: Search
   ]);
   const pages = Math.max(1, Math.ceil(result.total / result.limit));
   const sorts = BOOK_SORTS.filter((s) => s !== "relevance" || query.q);
-  const heading = query.q ? `Results for “${query.q}”` : query.genre ? GENRE_LABELS[query.genre] : "All books";
+  const heading = query.q
+    ? `Results for “${query.q}”`
+    : query.staffPicks
+      ? "Staff picks"
+      : query.genre
+        ? GENRE_LABELS[query.genre]
+        : "All books";
 
   return (
     <Container className="pb-8">

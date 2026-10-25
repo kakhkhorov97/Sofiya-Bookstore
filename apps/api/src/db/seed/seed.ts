@@ -3,7 +3,18 @@ import { and, eq, notInArray, sql } from 'drizzle-orm';
 import type { Db } from '../client';
 import { createDb } from '../client';
 import { bookFormats, books } from '../schema';
-import { CATALOGUE, CatalogueEntry } from './catalogue';
+import { CATALOGUE, CatalogueEntry, STAFF_PICKS } from './catalogue';
+
+export function slugifyName(name: string): string {
+  return name
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\(.*?\)/g, '')
+    .replace(/['’.]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
 
 export function slugify(title: string, author: string): string {
   const lastName =
@@ -104,12 +115,14 @@ export async function seedCatalogue(
         slug,
         title: entry.title,
         author: entry.author,
+        authorSlug: slugifyName(entry.author),
         genre: entry.genre,
         description: entry.description,
         pages: entry.pages,
         publishedYear: entry.year,
         status: statusFor(slug),
         views: hash(`${slug}:views`) % 2000,
+        staffPickNote: STAFF_PICKS[entry.title] ?? null,
       };
       const [book] = await tx
         .insert(books)
