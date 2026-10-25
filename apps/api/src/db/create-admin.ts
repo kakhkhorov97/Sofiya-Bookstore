@@ -1,5 +1,5 @@
 // There is no public way to become an admin. Create one from the command line:
-//   pnpm --filter @sofiya/api db:create-admin you@example.com "a long password" "Your Name"
+//   npm run db:create-admin -w @sofiya/api -- you@example.com "a long password" "Your Name"
 import bcrypt from 'bcryptjs';
 import { SignUpInput } from '@sofiya/shared';
 import { sql } from 'drizzle-orm';

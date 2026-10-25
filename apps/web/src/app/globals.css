@@ -52,3 +52,19 @@ body {
   outline: 3px solid var(--accent);
   outline-offset: 2px;
 }
+
+input[type="search"]::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+html {
+  scrollbar-color: var(--ink-3) var(--surface);
+}
+
+/* Sideways-scrolling chip rows: scrollable by touch and trackpad, no bar. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

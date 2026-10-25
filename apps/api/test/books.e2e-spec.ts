@@ -1,6 +1,12 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import type { BookDetail, BookSummary, GenreCount, Page } from '@sofiya/shared';
+import type {
+  BookDetail,
+  BookSummary,
+  FormatInfo,
+  GenreCount,
+  Page,
+} from '@sofiya/shared';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
@@ -117,6 +123,22 @@ describe('Books API (e2e)', () => {
   it('404s for unknown books and 400s for malformed slugs', async () => {
     await get('/api/books/no-such-book').expect(404);
     await get('/api/books/NOT_A_SLUG').expect(400);
+  });
+
+  it('looks up fresh prices for basket lines', async () => {
+    const detail = await get('/api/books/dracula-stoker').expect(200);
+    const ids = (detail.body as BookDetail).formats.map((f) => f.id);
+    const res = await get(`/api/formats?ids=${ids.join(',')},${ids[0]}`).expect(
+      200,
+    );
+    const infos = res.body as FormatInfo[];
+    expect(infos).toHaveLength(ids.length);
+    expect(infos[0]).toMatchObject({
+      available: true,
+      book: { slug: 'dracula-stoker', title: 'Dracula' },
+    });
+    await get('/api/formats?ids=not-a-uuid').expect(400);
+    await get('/api/formats').expect(400);
   });
 
   it('counts live books per genre', async () => {

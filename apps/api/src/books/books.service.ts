@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import type {
   BookDetail,
   BookFormat,
+  FormatInfo,
   BookListQuery,
   BookSummary,
   Genre,
@@ -159,6 +160,39 @@ export class BooksService {
             : null,
       })),
     };
+  }
+
+  async formatsByIds(ids: string[]): Promise<FormatInfo[]> {
+    const rows = await this.db.execute<{
+      id: string;
+      format: BookFormat;
+      price_cents: number;
+      stock: number | null;
+      status: string;
+      slug: string;
+      title: string;
+      author: string;
+      genre: Genre;
+    }>(sql`
+      SELECT bf.id, bf.format, bf.price_cents, bf.stock,
+             b.status, b.slug, b.title, b.author, b.genre
+      FROM book_formats bf JOIN books b ON b.id = bf.book_id
+      WHERE bf.id IN (${sql.join(
+        ids.map((id) => sql`${id}`),
+        sql`, `,
+      )}) AND b.status <> 'DELETED'`);
+    return rows.map((r) => ({
+      formatId: r.id,
+      format: r.format,
+      priceCents: r.price_cents,
+      inStock: r.stock === null || r.stock > 0,
+      lowStock:
+        r.stock !== null && r.stock > 0 && r.stock <= LOW_STOCK_THRESHOLD
+          ? r.stock
+          : null,
+      available: r.status === 'LIVE',
+      book: { slug: r.slug, title: r.title, author: r.author, genre: r.genre },
+    }));
   }
 
   async genres(): Promise<GenreCount[]> {

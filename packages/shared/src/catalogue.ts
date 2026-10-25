@@ -59,3 +59,23 @@ export interface GenreCount {
   genre: Genre;
   count: number;
 }
+
+// GET /api/formats?ids=a,b,c — fresh price and stock for basket lines.
+export const FormatLookupQuery = z.object({
+  ids: z
+    .string()
+    .transform((s) => [...new Set(s.split(",").map((x) => x.trim()).filter(Boolean))])
+    .pipe(z.array(z.string().uuid()).min(1).max(50)),
+});
+export type FormatLookupQuery = z.infer<typeof FormatLookupQuery>;
+
+export interface FormatInfo {
+  formatId: string;
+  format: BookFormat;
+  priceCents: number;
+  inStock: boolean;
+  lowStock: number | null;
+  // False when the book is paused or removed; the basket should say so.
+  available: boolean;
+  book: { slug: string; title: string; author: string; genre: Genre };
+}

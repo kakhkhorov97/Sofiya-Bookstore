@@ -2,6 +2,8 @@ import { Controller, Get, Param, Query } from '@nestjs/common';
 import {
   BookDetail,
   BookListQuery,
+  FormatInfo,
+  FormatLookupQuery,
   BookSummary,
   GenreCount,
   Page,
@@ -29,6 +31,13 @@ export class BooksController {
   @Get('books/:slug')
   detail(@Param('slug', new ZodPipe(Slug)) slug: string): Promise<BookDetail> {
     return this.books.getBySlug(slug);
+  }
+
+  @Get('formats')
+  formats(
+    @Query(new ZodPipe(FormatLookupQuery)) query: FormatLookupQuery,
+  ): Promise<FormatInfo[]> {
+    return this.books.formatsByIds(query.ids);
   }
 
   @Get('genres')

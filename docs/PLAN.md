@@ -90,7 +90,7 @@ Secret Manager · Artifact Registry · Cloud Logging/Monitoring
 - **AI:** Gemini (chat model and embedding model set by environment variables so they can be swapped without code changes).
 - **Infra:** Google Cloud Run (two services), Cloud Storage, Secret Manager, Artifact Registry, Cloud Tasks; CI/CD with GitHub Actions using Workload Identity Federation (no JSON keys).
 
-Monorepo suggestion: `apps/web`, `apps/api`, `packages/shared` (types and Zod schemas), managed with pnpm workspaces. Start a **new repository** (e.g. `Sofiya-AI`) so the old repos stay untouched as history.
+Monorepo suggestion: `apps/web`, `apps/api`, `packages/shared` (types and Zod schemas), managed with npm workspaces. It lives on the `v2` branch of Sofiya-Bookstore; `develop` keeps the original code.
 
 ### Data model (Postgres)
 `users` (role USER/ADMIN, status, points) · `books` (title, author, genre, description, pages, published, status) · `book_formats` (book_id, format, price_cents, stock) · `book_images` · `orders` (user_id, status, subtotal_cents, delivery_cents, total_cents, idempotency_key UNIQUE) · `order_items` (format_id, qty, unit_price_cents, copied from the database at checkout) · `book_chunks` (book_id, kind: description/sample/metadata, text, `tsv tsvector`, `embedding vector(768)`, content_hash) · `ai_queries` (query, retrieved ids, cited ids, latency, tokens, feedback) · `views`, `saved_books`.

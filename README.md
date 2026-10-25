@@ -14,27 +14,32 @@ An online bookstore where readers describe the book they want and get answers th
 
 ## Run locally
 
-Requires Node 20 and pnpm (`corepack enable`).
+Requires Node 20+ and npm 10+ (npm workspaces).
 
 ```bash
-pnpm install
+npm install
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env.local
 createdb sofiya_dev && createdb sofiya_test   # local PostgreSQL 15+
-pnpm --filter @sofiya/api db:migrate
-pnpm --filter @sofiya/api db:seed             # 172 demo books
-pnpm --filter @sofiya/api db:create-admin you@example.com "a long password" "Your Name"
-pnpm build:shared
-pnpm dev            # web on :3000, api on :8080
+npm run db:migrate
+npm run db:seed                               # 172 demo books
+npm run db:create-admin -w @sofiya/api -- you@example.com "a long password" "Your Name"
+npm run dev         # web on :3000, api on :8080
 ```
 
 Health checks: `http://localhost:8080/api/health` and `http://localhost:3000/api/health`.
+
+## Website pages
+
+`/` home · `/books` browse, search and filter · `/books/:slug` book page · `/basket` · `/checkout` · `/orders`, `/orders/:id` · `/account` · `/signin`, `/signup`.
+
+The basket lives in the browser (localStorage) and is re-priced from the API on every view; checkout sends one idempotency key per basket so a double click cannot create two orders.
 
 ## Database
 
 PostgreSQL via Drizzle ORM. Schema: `apps/api/src/db/schema.ts`; SQL migrations: `apps/api/drizzle/`.
 
-- Change the schema, then `pnpm --filter @sofiya/api db:generate` to write a new migration.
+- Change the schema, then `npm run db:generate -w @sofiya/api` to write a new migration.
 - API tests run against `sofiya_test` (override with `DATABASE_URL_TEST`; the name must end in `_test`).
 - The demo catalogue (`apps/api/src/db/seed/catalogue.ts`) is real public-domain books plus freely licensed programming books, with original descriptions. Prices and stock are demo values.
 
@@ -46,6 +51,7 @@ PostgreSQL via Drizzle ORM. Schema: `apps/api/src/db/schema.ts`; SQL migrations:
 | GET | `/api/books` | `q`, `genre`, `format`, `inStock`, `sort` (relevance, newest, title, price_asc, price_desc, popular), `page`, `limit` (max 60) |
 | GET | `/api/books/:slug` | Details with formats, prices and stock flags |
 | GET | `/api/genres` | Live book count per genre |
+| GET | `/api/formats?ids=a,b` | Current price, stock and availability for basket lines |
 | POST | `/api/auth/signup` | `{ email, password, displayName }`; sets the session cookie |
 | POST | `/api/auth/signin` | `{ email, password }`; rate limited per IP |
 | POST | `/api/auth/signout` | Clears the session cookie |
@@ -61,7 +67,7 @@ Sessions are a signed JWT in an `httpOnly`, `SameSite=Lax` cookie holding only t
 ## Checks
 
 ```bash
-pnpm check          # typecheck, lint, tests, build
+npm run check       # typecheck, lint, tests, build
 ```
 
 ## Deploy
