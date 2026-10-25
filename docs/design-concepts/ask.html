@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask Sofiya</title>
+<link rel="stylesheet" href="sofiya.css">
+<style>
+.page { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 40px; padding: 32px 0 0; align-items: start; }
+.chat { display: flex; flex-direction: column; gap: 18px; }
+.me { align-self: flex-end; max-width: 78%; background: var(--ink); color: #fff; padding: 12px 16px; border-radius: 16px 16px 4px 16px; font-weight: 500; }
+.bot { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; }
+.bot .who { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--accent); }
+.bot .who svg { width: 16px; height: 16px; }
+.bot p { margin-top: 8px; font-size: 16px; max-width: 68ch; }
+.bot .foot { margin-top: 12px; display: flex; align-items: center; gap: 14px; font-size: 13px; color: var(--ink-3); }
+.bot .foot button { border: 0; background: none; color: var(--ink-3); display: inline-flex; gap: 6px; align-items: center; font-weight: 500; }
+.bot .foot button:hover { color: var(--ink); }
+.bot .foot svg { width: 16px; height: 16px; }
+.typing { display: inline-block; width: 8px; height: 18px; background: var(--accent); border-radius: 2px; vertical-align: -3px; animation: b 1s steps(1) infinite; }
+@keyframes b { 50% { opacity: 0; } }
+.status { margin-top: 12px; display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px; background: var(--accent-soft); color: var(--accent-ink); font-size: 13px; font-weight: 600; }
+.refine { display: flex; flex-wrap: wrap; gap: 8px; }
+.composer { position: sticky; bottom: 16px; display: flex; gap: 8px; padding: 8px; background: #fff; border: 1.5px solid var(--ink); border-radius: 14px; box-shadow: var(--shadow); }
+.composer input { flex: 1; min-width: 0; border: 0; outline: none; padding: 0 10px; font-size: 16px; }
+.note { font-size: 13px; color: var(--ink-3); text-align: center; }
+
+.sources { position: sticky; top: 96px; }
+.sources h2 { font: 800 22px var(--display); letter-spacing: -.02em; }
+.sources .sub { margin-top: 4px; font-size: 14px; color: var(--ink-3); }
+.src { margin-top: 14px; display: grid; grid-template-columns: 76px 1fr; gap: 16px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; }
+.src.active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.src .cover { padding: 8px; font-size: 10px; }
+.src .cover small { font-size: 6px; }
+.src .top { display: flex; align-items: center; gap: 8px; }
+.src h3 { font-size: 16px; font-weight: 700; line-height: 1.25; }
+.src .au { font-size: 13.5px; color: var(--ink-3); }
+.src .match { margin-top: 8px; }
+.src blockquote { margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: var(--surface); font-size: 13.5px; color: var(--ink-2); }
+.src blockquote mark { background: #fff1a8; color: var(--ink); padding: 0 2px; border-radius: 2px; }
+.src .buy { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.src .buy b { font-size: 17px; }
+.src.loading .sk { height: 10px; border-radius: 5px; background: var(--surface); margin-top: 10px; }
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="container">
+    <a class="logo" href="home.html"><img src="../Sofiya-react/public/icons/sofiya.png" alt="">Sofiya</a>
+    <nav class="nav"><a href="home.html">Home</a><a href="#">Books</a><a href="#">New arrivals</a><a href="#" aria-current="page">Ask Sofiya</a></nav>
+    <label class="hsearch"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input placeholder="Search title or author" aria-label="Search title or author"></label>
+    <div class="hactions">
+      <a class="iconbtn" href="#"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span class="label">Sean</span></a>
+      <a class="iconbtn" href="#" aria-label="Basket, 2 items"><svg class="i" viewBox="0 0 24 24"><path d="M5 8h14l-1.5 12h-11z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="badge">2</span><span class="label">Basket</span></a>
+    </div>
+  </div>
+</header>
+
+<main class="container page">
+  <section class="chat" aria-label="Conversation">
+    <div class="me">Something quiet and strange, set by the sea, under 300 pages</div>
+    <div class="bot">
+      <div class="who"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg>Sofiya</div>
+      <p>Three books in stock fit. <b>The Salt Archive</b> is the closest: a lighthouse keeper's logbook that rewrites itself between visits <span class="cite">1</span>. <b>Orbit of Quiet Things</b> is stranger and more science fiction, set on an island station whose radio only plays at low tide <span class="cite">2</span>. <b>The Lantern Road</b> is the shortest at 176 pages, but it's out of stock until next week <span class="cite">3</span>.</p>
+      <div class="foot"><span>3 sources</span><button><svg class="i" viewBox="0 0 24 24"><path d="M7 11v9H4v-9zM7 11l4-7a2 2 0 0 1 3 2l-1 4h6a2 2 0 0 1 2 2.3l-1.2 6A2 2 0 0 1 17.8 20H7"/></svg>Helpful</button><button><svg class="i" viewBox="0 0 24 24"><path d="M4 4v16M4 4h11l-2 4 2 4H4"/></svg>Report</button></div>
+    </div>
+    <div class="me">Shorter, and I'd like an ebook</div>
+    <div class="bot">
+      <div class="who"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg>Sofiya</div>
+      <p>Only one book matches both: <b>Orbit of Quiet Things</b> is 212 pages and available as an ebook for $11 <span class="cite">2</span>. Nothing else we stock is under 200 pages and set by the sea, so I won't suggest a book we don't carry. I can look for short ebooks in Fantasy instead<span class="typing"></span></p>
+      <span class="status">Searching Fantasy · 2 of 3 matches found</span>
+    </div>
+    <div class="refine" aria-label="Refine the answer">
+      <button class="chip">In stock only</button><button class="chip">Under $20</button><button class="chip">Funnier</button><button class="chip">Darker</button><button class="chip">As audiobook</button>
+    </div>
+    <form class="composer">
+      <input aria-label="Ask a follow-up" placeholder="Ask a follow-up or describe something new">
+      <button class="btn" type="submit">Send</button>
+    </form>
+    <p class="note">Sofiya recommends only books in this store's catalogue. Check details on the book page before you buy.</p>
+  </section>
+
+  <aside class="sources" aria-label="Sources">
+    <h2>Sources</h2>
+    <p class="sub">The books this answer is based on.</p>
+    <article class="src active">
+      <div class="cover c2"><small>Okafor</small>Orbit of Quiet Things</div>
+      <div>
+        <div class="top"><span class="cite">2</span><span class="tag ok">In stock</span></div>
+        <h3 style="margin-top:6px">Orbit of Quiet Things</h3><p class="au">Daniel Okafor · 212 pages</p>
+        <div class="match">88% match <span class="bar"><i style="width:88%"></i></span></div>
+        <blockquote>“…an island station where <mark>the radio only plays at low tide</mark>.”</blockquote>
+        <div class="buy"><b>Ebook · $11</b><button class="btn sm">Add to basket</button></div>
+      </div>
+    </article>
+    <article class="src">
+      <div class="cover c1"><small>Lindqvist</small>The Salt Archive</div>
+      <div>
+        <div class="top"><span class="cite">1</span><span class="tag ok">In stock</span></div>
+        <h3 style="margin-top:6px">The Salt Archive</h3><p class="au">Mira Lindqvist · 248 pages</p>
+        <div class="match">92% match <span class="bar"><i style="width:92%"></i></span></div>
+        <blockquote>“…<mark>a lighthouse keeper's logbook</mark> that rewrites itself.”</blockquote>
+        <div class="buy"><b>Hardcover · $24</b><button class="btn sm line">Add to basket</button></div>
+      </div>
+    </article>
+    <article class="src">
+      <div class="cover c3"><small>Varga</small>The Lantern Road</div>
+      <div>
+        <div class="top"><span class="cite">3</span><span class="tag warn">Back next week</span></div>
+        <h3 style="margin-top:6px">The Lantern Road</h3><p class="au">Elena Varga · 176 pages</p>
+        <div class="match">74% match <span class="bar"><i style="width:74%"></i></span></div>
+        <div class="buy"><b>Hardcover · $27</b><button class="btn sm line">Notify me</button></div>
+      </div>
+    </article>
+  </aside>
+</main>
+</body>
+</html>

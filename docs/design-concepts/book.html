@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Salt Archive — Sofiya</title>
+<link rel="stylesheet" href="sofiya.css">
+<style>
+.crumbs { padding: 22px 0 0; font-size: 14px; color: var(--ink-3); }
+.crumbs a:hover { color: var(--ink); }
+.product { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 64px; padding-top: 24px; align-items: start; }
+.gallery .cover.big { font-size: 40px; padding: 34px 28px; border-radius: 6px 12px 12px 6px; }
+.gallery .cover.big small { font-size: 13px; }
+.thumbs { margin-top: 14px; display: flex; gap: 10px; }
+.thumbs .cover { width: 64px; padding: 6px; font-size: 7px; opacity: .55; }
+.thumbs .cover small { font-size: 5px; }
+.thumbs .cover.on { opacity: 1; outline: 2px solid var(--accent); outline-offset: 2px; }
+.info .genre { font-size: 14px; font-weight: 600; color: var(--accent); }
+.info h1 { margin-top: 6px; font: 800 52px/1.02 var(--display); letter-spacing: -.035em; }
+.info .by { margin-top: 8px; font-size: 18px; color: var(--ink-2); }
+.info .by a { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.facts { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; }
+.price { margin-top: 26px; font: 800 36px var(--display); letter-spacing: -.02em; }
+.price small { margin-left: 8px; font: 500 15px var(--body); color: var(--ink-3); }
+.formats { margin-top: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 520px; }
+.formats button { text-align: left; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); background: #fff; }
+.formats button b { display: block; font-size: 15px; }
+.formats button span { font-size: 13.5px; color: var(--ink-3); }
+.formats button[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.formats button:disabled { opacity: .5; cursor: not-allowed; }
+.buy { margin-top: 18px; display: flex; gap: 10px; max-width: 520px; }
+.qty { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 10px; }
+.qty button { width: 42px; height: 44px; border: 0; background: none; font-size: 18px; }
+.qty span { width: 28px; text-align: center; font-weight: 600; }
+.buy .btn { flex: 1; height: 46px; }
+.buy .btn.line { flex: none; width: 46px; padding: 0; }
+.delivery { margin-top: 14px; display: flex; gap: 18px; font-size: 14px; color: var(--ink-2); }
+.delivery span { display: inline-flex; align-items: center; gap: 6px; }
+.delivery svg { width: 17px; height: 17px; color: var(--ok); }
+
+.summary { margin-top: 30px; padding: 22px; border-radius: 16px; background: var(--accent-soft); max-width: 680px; }
+.summary .who { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--accent-ink); }
+.summary .who svg { width: 16px; height: 16px; }
+.summary p { margin-top: 8px; font-size: 16px; }
+.summary dl { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 26px; font-size: 14px; }
+.summary dt { color: var(--ink-3); } .summary dd { font-weight: 600; }
+.summary .srcs { margin-top: 12px; font-size: 13px; color: var(--ink-2); }
+
+.desc { margin-top: 30px; max-width: 680px; }
+.desc h2 { font: 800 22px var(--display); }
+.desc p { margin-top: 8px; color: var(--ink-2); }
+.details { margin-top: 18px; display: grid; grid-template-columns: 140px 1fr; row-gap: 8px; font-size: 15px; max-width: 680px; }
+.details dt { color: var(--ink-3); }
+
+section.more { margin-top: 72px; }
+section.more h2 { font: 800 30px var(--display); letter-spacing: -.025em; }
+section.more .sub { margin-top: 4px; color: var(--ink-3); }
+.row { margin-top: 22px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 24px; }
+.row h3 { margin-top: 10px; font-size: 15px; font-weight: 700; line-height: 1.25; }
+.row p { font-size: 13.5px; color: var(--ink-3); }
+.row .why { margin-top: 4px; color: var(--ink-2); }
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="container">
+    <a class="logo" href="home.html"><img src="../Sofiya-react/public/icons/sofiya.png" alt="">Sofiya</a>
+    <nav class="nav"><a href="home.html">Home</a><a href="#" aria-current="page">Books</a><a href="#">New arrivals</a><a href="ask.html">Ask Sofiya</a></nav>
+    <label class="hsearch"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input placeholder="Search title or author" aria-label="Search title or author"></label>
+    <div class="hactions">
+      <a class="iconbtn" href="#"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span class="label">Sign in</span></a>
+      <a class="iconbtn" href="#" aria-label="Basket, 2 items"><svg class="i" viewBox="0 0 24 24"><path d="M5 8h14l-1.5 12h-11z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="badge">2</span><span class="label">Basket</span></a>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <p class="crumbs"><a href="home.html">Home</a> / <a href="#">Fiction</a> / The Salt Archive</p>
+  <div class="product">
+    <div class="gallery">
+      <div class="cover c1 big"><small>Mira Lindqvist</small>The Salt Archive</div>
+      <div class="thumbs"><div class="cover c1 on"><small>Lindqvist</small>Salt</div><div class="cover c5"><small>Back</small>Back</div><div class="cover c8"><small>Spine</small>Spine</div></div>
+    </div>
+    <div class="info">
+      <p class="genre">Fiction</p>
+      <h1>The Salt Archive</h1>
+      <p class="by">by <a href="#">Mira Lindqvist</a></p>
+      <div class="facts"><span class="tag muted">248 pages</span><span class="tag muted">Published 2026</span><span class="tag muted">English</span><span class="tag ok">In stock · 40 left</span></div>
+      <p class="price">$24.00 <small>Hardcover</small></p>
+      <div class="formats" role="group" aria-label="Choose format">
+        <button aria-pressed="true"><b>Hardcover</b><span>$24.00</span></button>
+        <button><b>Paperback</b><span>$15.00</span></button>
+        <button disabled><b>Ebook</b><span>Not available</span></button>
+      </div>
+      <div class="buy">
+        <div class="qty"><button aria-label="Fewer">−</button><span>1</span><button aria-label="More">+</button></div>
+        <button class="btn">Add to basket</button>
+        <button class="btn line" aria-label="Save for later"><svg class="i" viewBox="0 0 24 24"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg></button>
+      </div>
+      <div class="delivery"><span><svg class="i" viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg>Ships in 2 days</span><span><svg class="i" viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg>Free delivery over $100</span></div>
+
+      <div class="summary">
+        <div class="who"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg>Quick take from Sofiya</div>
+        <p>A short, quiet novel about a lighthouse keeper whose logbook records storms before they arrive <span class="cite">1</span>. It reads slowly, with little action and a lot of weather <span class="cite">2</span>. No spoilers past chapter one.</p>
+        <dl><div><dt>Reading time</dt><dd>About 5 hours</dd></div><div><dt>Mood</dt><dd>Quiet, uncanny</dd></div><div><dt>Good for</dt><dd>Fans of slow, atmospheric fiction</dd></div></dl>
+        <p class="srcs">Based on <span class="cite">1</span> the publisher's description and <span class="cite">2</span> the first-chapter sample.</p>
+      </div>
+
+      <div class="desc">
+        <h2>Description</h2>
+        <p>On a small island at the edge of the map, Ines keeps the lighthouse and its logbook. When the entries begin to change between visits, describing storms that have not yet come, she has to decide whether to trust the book or the sky.</p>
+        <dl class="details"><dt>Format</dt><dd>Hardcover, 248 pages</dd><dt>Publisher</dt><dd>Sofiya Editions</dd><dt>Language</dt><dd>English</dd><dt>Genre</dt><dd>Fiction</dd></dl>
+      </div>
+    </div>
+  </div>
+
+  <section class="more">
+    <h2>If you like this, try</h2>
+    <p class="sub">Picked by meaning from our catalogue.</p>
+    <div class="row">
+      <a href="#"><div class="cover c2"><small>Okafor</small>Orbit of Quiet Things</div><h3>Orbit of Quiet Things</h3><p>$18 · Paperback</p><p class="why">Another isolated coastal station</p></a>
+      <a href="#"><div class="cover c3"><small>Varga</small>The Lantern Road</div><h3>The Lantern Road</h3><p>$27 · Hardcover</p><p class="why">Short, coastal and uncanny</p></a>
+      <a href="#"><div class="cover c5"><small>Nye</small>The Quiet House</div><h3>The Quiet House</h3><p>$19 · Paperback</p><p class="why">The same slow, close narration</p></a>
+      <a href="#"><div class="cover c4"><small>Seo</small>Letters from Hanok</div><h3>Letters from Hanok</h3><p>$16 · Paperback</p><p class="why">Told through letters and logs</p></a>
+      <a href="#"><div class="cover c7"><small>Fonseca</small>Seven Lisbon Keys</div><h3>Seven Lisbon Keys</h3><p>$17 · Audiobook</p><p class="why">A puzzle set by the water</p></a>
+    </div>
+  </section>
+</main>
+<footer class="footer"><div class="container">
+  <div><b>Sofiya Bookstore</b>Books for every kind of reader, with recommendations you can check.</div>
+  <div><b>Shop</b><a href="#">New arrivals</a><a href="#">Genres</a><a href="#">Formats</a></div>
+  <div><b>Account</b><a href="#">Orders</a><a href="#">Points</a><a href="#">Settings</a></div>
+  <div><b>Help</b><a href="#">Shipping</a><a href="#">Returns</a><a href="#">Contact</a></div>
+  <p class="demo">Concept design. Titles, authors, prices and stock are fictional demo data.</p>
+</div></footer>
+</body>
+</html>

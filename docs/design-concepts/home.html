@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sofiya Bookstore</title>
+<link rel="stylesheet" href="sofiya.css">
+<style>
+.hero { padding: 56px 0 40px; }
+.hero .container { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 56px; align-items: center; }
+h1 { font: 800 clamp(40px, 5vw, 66px)/1.02 var(--display); letter-spacing: -.035em; max-width: 13ch; text-wrap: balance; }
+.lede { margin-top: 18px; font-size: 19px; color: var(--ink-2); max-width: 46ch; }
+.ask { margin-top: 30px; display: flex; gap: 8px; padding: 8px; background: #fff; border: 1.5px solid var(--ink); border-radius: 14px; box-shadow: var(--shadow); }
+.ask label { flex: 1; display: flex; align-items: center; gap: 10px; padding-left: 10px; color: var(--accent); }
+.ask input { flex: 1; min-width: 0; border: 0; outline: none; font-size: 17px; color: var(--ink); }
+.ask input::placeholder { color: var(--ink-3); }
+.tries { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px; color: var(--ink-3); }
+
+.panel { background: var(--surface); border-radius: 18px; padding: 22px; }
+.panel .q { display: flex; justify-content: flex-end; }
+.panel .q span { background: var(--ink); color: #fff; padding: 10px 14px; border-radius: 14px 14px 4px 14px; font-weight: 500; max-width: 80%; }
+.answer { margin-top: 14px; background: #fff; border-radius: 14px; padding: 18px 18px 16px; box-shadow: var(--shadow); }
+.answer .who { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--accent); }
+.answer .who svg { width: 16px; height: 16px; }
+.answer p { margin-top: 8px; font-size: 15.5px; color: var(--ink); }
+.picks { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.pick { display: grid; grid-template-columns: 48px 1fr; gap: 10px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; align-items: start; }
+.pick .cover { padding: 6px; font-size: 7px; border-radius: 2px 4px 4px 2px; }
+.pick .cover small { font-size: 5px; }
+.pick b { display: block; font-size: 13.5px; line-height: 1.2; }
+.pick span { display: block; margin-top: 3px; font-size: 12.5px; color: var(--ink-3); }
+.pick .match { margin-top: 6px; font-size: 11.5px; }
+.grounded { margin-top: 12px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-3); }
+.grounded svg { width: 16px; height: 16px; color: var(--ok); }
+
+.genres { padding: 8px 0 0; }
+.genres .container { display: flex; flex-wrap: wrap; gap: 8px; }
+
+section.block { margin-top: 72px; }
+.sh { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
+h2 { font: 800 clamp(26px, 2.6vw, 34px)/1.1 var(--display); letter-spacing: -.025em; }
+.sh a { font-weight: 600; color: var(--accent); }
+.grid { margin-top: 24px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 24px; }
+.book { display: flex; flex-direction: column; }
+.book .row { margin-top: auto !important; padding-top: 8px; }
+.book .cover { transition: transform .2s; }
+.book:hover .cover { transform: translateY(-4px); }
+.book h3 { margin-top: 12px; font-size: 15.5px; font-weight: 700; line-height: 1.25; }
+.book .au { font-size: 14px; color: var(--ink-3); }
+.book .row { margin-top: 8px; display: flex; align-items: center; justify-content: space-between; }
+.book .price { font-weight: 700; }
+.add { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; border: 1px solid var(--line); background: #fff; }
+.add:hover { border-color: var(--accent); color: var(--accent); }
+.add svg { width: 18px; height: 18px; }
+
+.how { display: grid; grid-template-columns: 1fr 1.6fr; gap: 56px; align-items: start; padding: 44px; background: var(--accent-soft); border-radius: 20px; }
+.how p.sub { margin-top: 12px; color: var(--ink-2); font-size: 17px; }
+.steps { list-style: none; display: grid; gap: 18px; counter-reset: s; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 36px 1fr; gap: 14px; }
+.steps li:before { content: counter(s); width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; }
+.steps b { display: block; font-size: 17px; }
+.steps span { color: var(--ink-2); }
+
+.formats { margin-top: 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.fmt { display: flex; align-items: center; gap: 14px; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); }
+.fmt:hover { border-color: var(--ink-3); }
+.fmt .ic { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; background: var(--surface); }
+.fmt b { display: block; } .fmt span { font-size: 14px; color: var(--ink-3); }
+
+.ship { margin-top: 72px; }
+.ship .container { display: flex; justify-content: center; gap: 48px; padding: 18px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-weight: 500; color: var(--ink-2); }
+.ship span { display: inline-flex; align-items: center; gap: 8px; }
+
+@media (max-width: 760px) {
+  .hero { padding: 28px 0 24px; }
+  .hero .container { grid-template-columns: 1fr; gap: 28px; }
+  .lede { font-size: 17px; }
+  .ask { flex-direction: column; }
+  .ask label { padding: 8px 6px; }
+  .ask .btn { width: 100%; }
+  .panel { padding: 14px; }
+  .picks { grid-template-columns: 1fr; }
+  .genres .container { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .chip { flex: none; }
+  section.block { margin-top: 52px; }
+  .grid { grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .how { grid-template-columns: 1fr; gap: 24px; padding: 26px 20px; }
+  .formats { grid-template-columns: 1fr 1fr; }
+  .fmt { flex-direction: column; align-items: flex-start; padding: 16px; }
+  .ship .container { flex-direction: column; gap: 10px; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="container">
+    <a class="logo" href="#"><img src="../Sofiya-react/public/icons/sofiya.png" alt="">Sofiya</a>
+    <nav class="nav"><a href="#" aria-current="page">Home</a><a href="#">Books</a><a href="#">New arrivals</a><a href="ask.html">Ask Sofiya</a></nav>
+    <label class="hsearch"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input placeholder="Search title or author" aria-label="Search title or author"></label>
+    <div class="hactions">
+      <a class="iconbtn" href="#"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span class="label">Sign in</span></a>
+      <a class="iconbtn" href="#" aria-label="Basket, 2 items"><svg class="i" viewBox="0 0 24 24"><path d="M5 8h14l-1.5 12h-11z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="badge">2</span><span class="label">Basket</span></a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="container">
+      <div>
+        <h1>Find your next book by describing it.</h1>
+        <p class="lede">Tell Sofiya what you're in the mood for. It recommends books we actually have in stock and shows you why each one fits.</p>
+        <form class="ask" role="search">
+          <label><svg class="i" viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
+            <input aria-label="Describe the book you want" placeholder="e.g. a quiet, strange story set by the sea"></label>
+          <button class="btn" type="submit">Ask Sofiya</button>
+        </form>
+        <div class="tries">Try:
+          <button class="chip">A slow mystery in Lisbon</button>
+          <button class="chip">Like The Salt Archive, but funnier</button>
+          <button class="chip">TypeScript for backend devs</button>
+        </div>
+      </div>
+
+      <div class="panel" aria-label="Example answer">
+        <div class="q"><span>Something quiet and strange, set by the sea, under 300 pages</span></div>
+        <div class="answer">
+          <div class="who"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg>Sofiya</div>
+          <p>Three books in stock fit. <b>The Salt Archive</b> is the closest: a lighthouse keeper's logbook that rewrites itself <span class="cite">1</span>. <b>Orbit of Quiet Things</b> is stranger, set on an island station <span class="cite">2</span>, and <b>The Lantern Road</b> is the shortest at 176 pages <span class="cite">3</span>.</p>
+          <div class="picks">
+            <a class="pick" href="book.html"><div class="cover c1"><small>Lindqvist</small>The Salt Archive</div><div><b>The Salt Archive</b><span>Hardcover · $24</span><div class="match">92% <span class="bar"><i style="width:92%"></i></span></div></div></a>
+            <a class="pick" href="#"><div class="cover c2"><small>Okafor</small>Orbit of Quiet Things</div><div><b>Orbit of Quiet Things</b><span>Paperback · $18</span><div class="match">81% <span class="bar"><i style="width:81%"></i></span></div></div></a>
+            <a class="pick" href="#"><div class="cover c3"><small>Varga</small>The Lantern Road</div><div><b>The Lantern Road</b><span>Hardcover · $27</span><div class="match">74% <span class="bar"><i style="width:74%"></i></span></div></div></a>
+          </div>
+          <div class="grounded"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>Every pick is a book in our catalogue</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <nav class="genres" aria-label="Genres">
+    <div class="container">
+      <a class="chip on" href="#">All books</a><a class="chip" href="#">Fiction</a><a class="chip" href="#">Mystery</a><a class="chip" href="#">Fantasy</a><a class="chip" href="#">Science fiction</a><a class="chip" href="#">Romance</a><a class="chip" href="#">History</a><a class="chip" href="#">Horror</a><a class="chip" href="#">Self-help</a><a class="chip" href="#">Programming</a>
+    </div>
+  </nav>
+
+  <section class="block container">
+    <div class="sh"><h2>New arrivals</h2><a href="#">See all</a></div>
+    <div class="grid">
+      <article class="book"><a href="book.html"><div class="cover c1"><small>Mira Lindqvist</small>The Salt Archive</div><h3>The Salt Archive</h3></a><p class="au">Mira Lindqvist</p><div class="row"><span class="price">$24</span><button class="add" aria-label="Add The Salt Archive to basket"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div></article>
+      <article class="book"><a href="#"><div class="cover c4"><small>Yuna Seo</small>Letters from Hanok</div><h3>Letters from Hanok</h3></a><p class="au">Yuna Seo</p><div class="row"><span class="price">$16</span><button class="add" aria-label="Add to basket"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div></article>
+      <article class="book"><a href="#"><div class="cover c5"><small>Shokh Kakh</small>Clean Services in TypeScript</div><h3>Clean Services in TypeScript</h3></a><p class="au">Shokh Kakh</p><div class="row"><span class="price">$32</span><button class="add" aria-label="Add to basket"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div></article>
+      <article class="book"><a href="#"><div class="cover c6"><small>Jae Park</small>The Silk Ledger</div><h3>The Silk Ledger</h3></a><p class="au">Jae Park</p><div class="row"><span class="price">$29</span><button class="add" aria-label="Add to basket"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div></article>
+      <article class="book"><a href="#"><div class="cover c7"><small>Rui Fonseca</small>Seven Lisbon Keys</div><h3>Seven Lisbon Keys</h3></a><p class="au">Rui Fonseca</p><div class="row"><span class="price">$17</span><button class="add" aria-label="Add to basket"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div></article>
+      <article class="book"><a href="#"><div class="cover c2"><small>Daniel Okafor</small>Orbit of Quiet Things</div><h3>Orbit of Quiet Things</h3></a><p class="au">Daniel Okafor</p><div class="row"><span class="price">$18</span><button class="add" aria-label="Add to basket"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div></article>
+    </div>
+  </section>
+
+  <section class="block container">
+    <div class="how">
+      <div><h2>How Sofiya recommends</h2><p class="sub">No made-up titles. Sofiya only talks about books on our shelves.</p></div>
+      <ol class="steps">
+        <li><div><b>You describe it</b><span>A mood, a plot, a book you loved, or how long you have to read.</span></div></li>
+        <li><div><b>We search our catalogue by meaning</b><span>Your words are matched against every book description we stock.</span></div></li>
+        <li><div><b>You see why it fits</b><span>Each pick shows a match score and the part of the description that matched.</span></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="block container">
+    <div class="sh"><h2>Shop by format</h2></div>
+    <div class="formats">
+      <a class="fmt" href="#"><span class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg></span><div><b>Hardcover</b><span>Built to keep</span></div></a>
+      <a class="fmt" href="#"><span class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M4 5c3-1 6-1 8 1 2-2 5-2 8-1v14c-3-1-6-1-8 1-2-2-5-2-8-1z"/><path d="M12 6v14"/></svg></span><div><b>Paperback</b><span>Light and easy</span></div></a>
+      <a class="fmt" href="#"><span class="ic"><svg class="i" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M10 18h4"/></svg></span><div><b>Ebook</b><span>Read instantly</span></div></a>
+      <a class="fmt" href="#"><span class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/></svg></span><div><b>Audiobook</b><span>Listen anywhere</span></div></a>
+    </div>
+  </section>
+
+  <div class="ship"><div class="container">
+    <span><svg class="i" viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.5"/><circle cx="17" cy="17.5" r="1.5"/></svg>Free delivery on orders over $100</span>
+    <span><svg class="i" viewBox="0 0 24 24"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>Track every order from your account</span>
+    <span><svg class="i" viewBox="0 0 24 24"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg>Earn points on every order</span>
+  </div></div>
+</main>
+
+<footer class="footer"><div class="container">
+  <div><b>Sofiya Bookstore</b>Books for every kind of reader, with recommendations you can check.</div>
+  <div><b>Shop</b><a href="#">New arrivals</a><a href="#">Genres</a><a href="#">Formats</a></div>
+  <div><b>Account</b><a href="#">Orders</a><a href="#">Points</a><a href="#">Settings</a></div>
+  <div><b>Help</b><a href="#">Shipping</a><a href="#">Returns</a><a href="#">Contact</a></div>
+  <p class="demo">Concept design. Titles, authors, prices and stock are fictional demo data.</p>
+</div></footer>
+</body>
+</html>

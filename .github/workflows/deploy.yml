@@ -1,0 +1,75 @@
+name: Deploy to Cloud Run
+
+# Started by hand, like CreatorHub: pick the service and the commit.
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: Which service to deploy
+        type: choice
+        options: [api, web, both]
+        default: both
+
+permissions:
+  contents: read
+  id-token: write # Workload Identity Federation, no JSON keys
+
+env:
+  REGION: ${{ vars.GCP_REGION }}
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  REPO: ${{ vars.GCP_ARTIFACT_REPO }}
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+
+  deploy:
+    needs: checks
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [api, web]
+    steps:
+      - name: Skip services not selected
+        if: inputs.service != 'both' && inputs.service != matrix.service
+        run: echo "skipping ${{ matrix.service }}" && exit 0
+      - uses: actions/checkout@v4
+        if: inputs.service == 'both' || inputs.service == matrix.service
+      - uses: google-github-actions/auth@v2
+        if: inputs.service == 'both' || inputs.service == matrix.service
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+        if: inputs.service == 'both' || inputs.service == matrix.service
+      - name: Build and push image
+        if: inputs.service == 'both' || inputs.service == matrix.service
+        run: |
+          IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/sofiya-${{ matrix.service }}:${{ github.sha }}"
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+          docker build -f apps/${{ matrix.service }}/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+      - name: Deploy api
+        if: matrix.service == 'api' && (inputs.service == 'both' || inputs.service == 'api')
+        run: |
+          gcloud run deploy sofiya-api --image "$IMAGE" --region "$REGION" \
+            --service-account "${{ vars.GCP_API_RUNTIME_SA }}" \
+            --set-env-vars "APP_VERSION=${{ github.sha }},WEB_ORIGINS=${{ vars.WEB_ORIGINS }}" \
+            --allow-unauthenticated --min-instances 0 --max-instances 3
+      - name: Deploy web
+        if: matrix.service == 'web' && (inputs.service == 'both' || inputs.service == 'web')
+        run: |
+          gcloud run deploy sofiya-web --image "$IMAGE" --region "$REGION" \
+            --service-account "${{ vars.GCP_WEB_RUNTIME_SA }}" \
+            --set-env-vars "APP_VERSION=${{ github.sha }},API_URL=${{ vars.API_URL }}" \
+            --allow-unauthenticated --min-instances 0 --max-instances 3
