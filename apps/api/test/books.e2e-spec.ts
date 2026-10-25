@@ -1,0 +1,118 @@
+import { INestApplication } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import type { BookDetail, BookSummary, GenreCount, Page } from '@sofiya/shared';
+import request from 'supertest';
+import { App } from 'supertest/types';
+import { AppModule } from '../src/app.module';
+import { loadEnv } from '../src/config/env';
+import { configureApp } from '../src/main';
+import { CATALOGUE } from '../src/db/seed/catalogue';
+
+describe('Books API (e2e)', () => {
+  let app: INestApplication<App>;
+  const get = (path: string) => request(app.getHttpServer()).get(path);
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    app = moduleRef.createNestApplication();
+    configureApp(app, loadEnv());
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('lists live books with default pagination', async () => {
+    const res = await get('/api/books').expect(200);
+    const body = res.body as Page<BookSummary>;
+    expect(body.page).toBe(1);
+    expect(body.limit).toBe(24);
+    expect(body.items).toHaveLength(24);
+    // Paused books are hidden, so the total is a little under the catalogue size.
+    expect(body.total).toBeGreaterThan(150);
+    expect(body.total).toBeLessThan(CATALOGUE.length);
+    expect(body.items[0]).toMatchObject({
+      slug: expect.any(String),
+      fromPriceCents: expect.any(Number),
+      formats: expect.arrayContaining(['PAPERBACK']),
+    });
+  });
+
+  it('filters by genre and format', async () => {
+    const res = await get(
+      '/api/books?genre=PROGRAMMING&format=EBOOK&limit=60',
+    ).expect(200);
+    const body = res.body as Page<BookSummary>;
+    expect(body.items.length).toBeGreaterThan(10);
+    for (const b of body.items) {
+      expect(b.genre).toBe('PROGRAMMING');
+      expect(b.formats).toContain('EBOOK');
+    }
+  });
+
+  it('finds books by words in the description, ranked by relevance', async () => {
+    const res = await get('/api/books?q=sherlock%20holmes').expect(200);
+    const titles = (res.body as Page<BookSummary>).items.map((b) => b.title);
+    expect(titles).toContain('The Hound of the Baskervilles');
+    expect(titles.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('matches partial titles and authors', async () => {
+    const res = await get('/api/books?q=Baskerv').expect(200);
+    expect((res.body as Page<BookSummary>).items[0].title).toBe(
+      'The Hound of the Baskervilles',
+    );
+  });
+
+  it('treats regex and LIKE characters literally (legacy regex injection)', async () => {
+    await get('/api/books?q=(.*').expect(200);
+    const res = await get('/api/books?q=%25').expect(200);
+    // "%" must not act as a wildcard that matches every book.
+    expect((res.body as Page<BookSummary>).total).toBe(0);
+  });
+
+  it('sorts by price', async () => {
+    const res = await get('/api/books?sort=price_asc&limit=20').expect(200);
+    const prices = (res.body as Page<BookSummary>).items.map(
+      (b) => b.fromPriceCents,
+    );
+    expect(prices).toEqual([...prices].sort((a, b) => a - b));
+  });
+
+  it('rejects invalid query values', async () => {
+    await get('/api/books?limit=1000').expect(400);
+    await get('/api/books?genre=COOKING').expect(400);
+    await get('/api/books?sort=random').expect(400);
+  });
+
+  it('returns book details with formats and stock flags', async () => {
+    const res = await get('/api/books/pride-and-prejudice-austen').expect(200);
+    const book = res.body as BookDetail;
+    expect(book.title).toBe('Pride and Prejudice');
+    expect(book.description.length).toBeGreaterThan(40);
+    expect(book.formats.length).toBeGreaterThanOrEqual(2);
+    for (const f of book.formats) {
+      expect(f.priceCents).toBeGreaterThan(0);
+      expect(typeof f.inStock).toBe('boolean');
+      // Exact stock counts are never exposed unless low.
+      expect(f).not.toHaveProperty('stock');
+    }
+  });
+
+  it('404s for unknown books and 400s for malformed slugs', async () => {
+    await get('/api/books/no-such-book').expect(404);
+    await get('/api/books/NOT_A_SLUG').expect(400);
+  });
+
+  it('counts live books per genre', async () => {
+    const res = await get('/api/genres').expect(200);
+    const genres = res.body as GenreCount[];
+    expect(genres).toHaveLength(9);
+    expect(genres.reduce((s, g) => s + g.count, 0)).toBeLessThan(
+      CATALOGUE.length,
+    );
+  });
+});

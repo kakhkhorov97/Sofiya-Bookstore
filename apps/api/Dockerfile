@@ -22,6 +22,8 @@ WORKDIR /app
 COPY --from=build /out/package.json ./
 COPY --from=build /out/node_modules ./node_modules
 COPY --from=build /repo/apps/api/dist ./dist
+# SQL migrations, applied with: node dist/db/migrate.js
+COPY --from=build /repo/apps/api/drizzle ./drizzle
 USER node
 EXPOSE 8080
 CMD ["node", "dist/main.js"]
