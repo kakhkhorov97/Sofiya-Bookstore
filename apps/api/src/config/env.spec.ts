@@ -17,6 +17,13 @@ describe('loadEnv', () => {
     ]);
   });
 
+  it('treats blank values as unset (as in .env.example)', () => {
+    const env = loadEnv({ GEMINI_API_KEY: '', DATABASE_URL: '  ', PORT: '' });
+    expect(env.GEMINI_API_KEY).toBeUndefined();
+    expect(env.DATABASE_URL).toBeUndefined();
+    expect(env.PORT).toBe(8080);
+  });
+
   it('rejects a malformed DATABASE_URL', () => {
     expect(() => loadEnv({ DATABASE_URL: 'not a url' })).toThrow(
       /DATABASE_URL/,

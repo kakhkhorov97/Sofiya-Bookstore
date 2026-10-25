@@ -7,6 +7,7 @@ import { AppModule } from '../src/app.module';
 import { loadEnv } from '../src/config/env';
 import { configureApp } from '../src/main';
 import { CATALOGUE } from '../src/db/seed/catalogue';
+import { slugify, statusFor } from '../src/db/seed/seed';
 
 describe('Books API (e2e)', () => {
   let app: INestApplication<App>;
@@ -31,9 +32,7 @@ describe('Books API (e2e)', () => {
     expect(body.page).toBe(1);
     expect(body.limit).toBe(24);
     expect(body.items).toHaveLength(24);
-    // Paused books are hidden, so the total is a little under the catalogue size.
     expect(body.total).toBeGreaterThan(150);
-    expect(body.total).toBeLessThan(CATALOGUE.length);
     expect(body.items[0]).toMatchObject({
       slug: expect.any(String),
       fromPriceCents: expect.any(Number),
@@ -102,6 +101,19 @@ describe('Books API (e2e)', () => {
     }
   });
 
+  it('hides paused books from the list and the detail page', async () => {
+    const paused = CATALOGUE.map((b) => slugify(b.title, b.author)).filter(
+      (slug) => statusFor(slug) === 'PAUSED',
+    );
+    expect(paused.length).toBeGreaterThan(0);
+    for (const slug of paused) {
+      await get(`/api/books/${slug}`).expect(404);
+    }
+    const all = await get('/api/books?limit=60&page=1&sort=title').expect(200);
+    const slugs = (all.body as Page<BookSummary>).items.map((b) => b.slug);
+    for (const slug of paused) expect(slugs).not.toContain(slug);
+  });
+
   it('404s for unknown books and 400s for malformed slugs', async () => {
     await get('/api/books/no-such-book').expect(404);
     await get('/api/books/NOT_A_SLUG').expect(400);
@@ -111,8 +123,6 @@ describe('Books API (e2e)', () => {
     const res = await get('/api/genres').expect(200);
     const genres = res.body as GenreCount[];
     expect(genres).toHaveLength(9);
-    expect(genres.reduce((s, g) => s + g.count, 0)).toBeLessThan(
-      CATALOGUE.length,
-    );
+    for (const g of genres) expect(g.count).toBeGreaterThan(0);
   });
 });

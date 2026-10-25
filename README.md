@@ -23,6 +23,7 @@ cp apps/web/.env.example apps/web/.env.local
 createdb sofiya_dev && createdb sofiya_test   # local PostgreSQL 15+
 pnpm --filter @sofiya/api db:migrate
 pnpm --filter @sofiya/api db:seed             # 172 demo books
+pnpm --filter @sofiya/api db:create-admin you@example.com "a long password" "Your Name"
 pnpm build:shared
 pnpm dev            # web on :3000, api on :8080
 ```
@@ -45,6 +46,17 @@ PostgreSQL via Drizzle ORM. Schema: `apps/api/src/db/schema.ts`; SQL migrations:
 | GET | `/api/books` | `q`, `genre`, `format`, `inStock`, `sort` (relevance, newest, title, price_asc, price_desc, popular), `page`, `limit` (max 60) |
 | GET | `/api/books/:slug` | Details with formats, prices and stock flags |
 | GET | `/api/genres` | Live book count per genre |
+| POST | `/api/auth/signup` | `{ email, password, displayName }`; sets the session cookie |
+| POST | `/api/auth/signin` | `{ email, password }`; rate limited per IP |
+| POST | `/api/auth/signout` | Clears the session cookie |
+| GET / PATCH | `/api/me` | Profile; only `displayName` can be changed |
+| POST | `/api/orders` | `{ idempotencyKey, lines: [{ formatId, quantity }] }`. Prices come from the database. 201 new, 200 replay |
+| GET | `/api/orders`, `/api/orders/:id` | Your own orders only |
+| POST | `/api/orders/:id/cancel` | Only while the order is `PAUSED`; stock is put back |
+| GET | `/api/admin/orders` | Admin only |
+| PATCH | `/api/admin/orders/:id/status` | Admin only. `{ expectedStatus, status }`; PAUSED → IN_PROCESS → DELIVERED, or CANCELLED. Points are awarded once |
+
+Sessions are a signed JWT in an `httpOnly`, `SameSite=Lax` cookie holding only the user id; role and status are re-read from the database on every request. Requests that change data are refused from origins outside `WEB_ORIGINS`. The web app forwards `/api/*` to the API so the cookie stays first-party.
 
 ## Checks
 

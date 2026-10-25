@@ -37,6 +37,8 @@ export default tseslint.config(
     files: ['test/**/*.ts', '**/*.spec.ts'],
     rules: {
       '@typescript-eslint/no-unsafe-assignment': 'off',
+      // Supertest response bodies are untyped.
+      '@typescript-eslint/no-unsafe-member-access': 'off',
     },
   },
 );

@@ -62,14 +62,15 @@ gcloud iam service-accounts add-iam-policy-binding "$DEPLOY_SA" \
   --member "principalSet://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github/attribute.repository/$GITHUB_REPO"
 ```
 
-## 5. Secrets (filled in during milestones 1 and 5)
+## 5. Secrets
 
 ```bash
 printf '%s' 'postgresql://...' | gcloud secrets create DATABASE_URL --data-file=-
 printf '%s' 'your-gemini-key'  | gcloud secrets create GEMINI_API_KEY --data-file=-
+openssl rand -base64 48 | tr -d '\n' | gcloud secrets create AUTH_SECRET --data-file=-
 ```
 
-Mount them on the api service later with `--set-secrets DATABASE_URL=DATABASE_URL:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest`.
+Mount them on the api service later with `--set-secrets DATABASE_URL=DATABASE_URL:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest,AUTH_SECRET=AUTH_SECRET:latest`.
 
 ## 6. GitHub repository variables
 

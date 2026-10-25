@@ -37,3 +37,14 @@ describe("formatUsd", () => {
     expect(formatUsd(24_00)).toBe("$24.00");
   });
 });
+
+describe("order transitions", async () => {
+  const { canTransition } = await import("./orders");
+  it("only allows forward moves and cancellation", () => {
+    expect(canTransition("PAUSED", "IN_PROCESS")).toBe(true);
+    expect(canTransition("IN_PROCESS", "DELIVERED")).toBe(true);
+    expect(canTransition("DELIVERED", "IN_PROCESS")).toBe(false);
+    expect(canTransition("PAUSED", "DELIVERED")).toBe(false);
+    expect(canTransition("CANCELLED", "PAUSED")).toBe(false);
+  });
+});

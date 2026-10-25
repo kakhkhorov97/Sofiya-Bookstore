@@ -125,6 +125,9 @@ export const orders = pgTable(
     totalCents: integer('total_cents').notNull(),
     // One key per checkout form; a retried request returns the same order.
     idempotencyKey: uuid('idempotency_key').notNull(),
+    // Hash of the order lines sent with that key: same key + different
+    // lines is a client bug and gets a 409 instead of a silent reuse.
+    requestHash: text('request_hash').notNull(),
     pointsAwarded: integer('points_awarded').notNull().default(0),
     ...timestamps,
   },
