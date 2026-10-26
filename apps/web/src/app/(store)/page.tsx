@@ -37,7 +37,7 @@ export default async function HomePage() {
               {total} books across {genres.length} genres, from Austen and Dostoevsky to the classics of programming.
               In hardcover, paperback, ebook and audio.
             </p>
-            <form action="/books" role="search" className="mt-8 flex gap-2 rounded-[14px] border-[1.5px] border-ink bg-white p-2 shadow-[0_8px_24px_rgba(21,23,28,0.06)]">
+            <form action="/books" role="search" className="mt-8 flex gap-2 rounded-[14px] border-[1.5px] border-ink bg-white p-2 shadow-[0_8px_24px_rgba(21,23,28,0.06)] transition-shadow focus-within:shadow-[0_10px_30px_rgba(21,23,28,0.12)]">
               <label className="flex flex-1 items-center gap-2.5 pl-2.5 text-ink-3">
                 <Search size={20} aria-hidden />
                 <span className="sr-only">Search by title, author or topic</span>
@@ -48,10 +48,31 @@ export default async function HomePage() {
                   className="min-w-0 flex-1 text-[17px] text-ink outline-none placeholder:text-ink-3"
                 />
               </label>
-              <button type="submit" className="h-[46px] rounded-[10px] bg-accent px-5 font-semibold text-white hover:bg-accent-ink">
+              <button type="submit" className="h-[46px] rounded-[10px] bg-ink px-5 font-semibold text-white hover:bg-black">
                 Search
               </button>
+              {/* Same box, handed to the AI concierge instead of keyword search. */}
+              <button
+                type="submit"
+                formAction="/ask"
+                className="hidden h-[46px] items-center gap-1.5 rounded-[10px] bg-accent px-4 font-semibold text-white hover:bg-accent-ink sm:inline-flex"
+              >
+                <Sparkles size={17} aria-hidden /> Ask AI
+              </button>
             </form>
+            <Link
+              href="/ask"
+              className="group mt-3 flex items-center gap-3 rounded-[14px] bg-accent-soft px-4 py-3 text-accent-ink hover:bg-[#e2e0fa]"
+            >
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-white">
+                <Sparkles size={18} aria-hidden />
+              </span>
+              <span className="min-w-0 flex-1 text-[15px]">
+                <strong className="font-semibold">Not sure what to read?</strong>{" "}
+                <span className="text-ink-2">Describe a mood and Sofiya, our AI concierge, picks books we stock.</span>
+              </span>
+              <ArrowRight size={18} className="shrink-0 transition-transform group-hover:translate-x-0.5" aria-hidden />
+            </Link>
             <p className="mt-4 flex flex-wrap items-center gap-2 text-sm text-ink-3">
               Try:
               {TRY.map((q) => (

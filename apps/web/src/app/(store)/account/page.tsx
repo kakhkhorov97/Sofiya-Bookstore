@@ -1,3 +1,4 @@
+import { Heart, MessageSquareText, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AccountForm } from "@/components/AccountForm";
@@ -28,6 +29,24 @@ export default async function AccountPage() {
           <p className="mt-1 text-sm text-ink-2">See status, cancel unconfirmed orders.</p>
         </Link>
       </div>
+
+      <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+        {[
+          { href: "/wishlist", icon: <Heart size={19} aria-hidden />, title: "Wishlist", text: "Books you saved for later" },
+          { href: "/account/reviews", icon: <MessageSquareText size={19} aria-hidden />, title: "My reviews", text: "Write and edit reviews" },
+          { href: "/ask", icon: <Sparkles size={19} aria-hidden className="text-accent" />, title: "Ask Sofiya", text: "Get AI book suggestions" },
+        ].map((l) => (
+          <li key={l.href}>
+            <Link href={l.href} className="flex h-full items-start gap-3 rounded-[14px] border border-line p-4 hover:border-ink-3">
+              <span className="mt-0.5 text-ink-2">{l.icon}</span>
+              <span>
+                <span className="block font-semibold">{l.title}</span>
+                <span className="block text-sm text-ink-3">{l.text}</span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
 
       <section className="mt-10">
         <h2 className="font-display text-2xl font-extrabold">Profile</h2>

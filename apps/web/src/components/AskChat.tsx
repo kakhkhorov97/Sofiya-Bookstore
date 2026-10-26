@@ -236,7 +236,7 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
               e.preventDefault();
               void send(input);
             }}
-            className="sticky bottom-4 mt-6 rounded-[16px] border-[1.5px] border-ink bg-white p-2 shadow-[0_8px_24px_rgba(21,23,28,0.08)]"
+            className="sticky bottom-4 mt-6 rounded-[16px] border-[1.5px] border-ink bg-white p-2 shadow-[0_8px_24px_rgba(21,23,28,0.08)] focus-within:ring-[3px] focus-within:ring-accent-soft"
           >
             <div className="flex items-end gap-2">
               <label className="flex-1">

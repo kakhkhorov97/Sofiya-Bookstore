@@ -42,7 +42,7 @@ export function NewsletterForm() {
           </p>
         ) : (
           <form onSubmit={onSubmit} className="space-y-2">
-            <div className="flex flex-col gap-2 rounded-[14px] bg-white p-2 sm:flex-row">
+            <div className="flex flex-col gap-2 rounded-[14px] bg-white p-2 focus-within:ring-[3px] focus-within:ring-accent-soft sm:flex-row">
               <label className="flex flex-1 items-center gap-2.5 pl-2.5 text-ink-3">
                 <Mail size={18} aria-hidden />
                 <span className="sr-only">Email address</span>

@@ -49,6 +49,20 @@ export interface ReviewsResponse {
   };
 }
 
+// The signed-in reader's own reviews, plus books they bought (order
+// confirmed) and have not reviewed yet.
+export interface ReviewBook {
+  slug: string;
+  title: string;
+  author: string;
+  coverUrl: string | null;
+}
+
+export interface MyReviewsResponse {
+  reviews: { book: ReviewBook; review: ReviewView }[];
+  toReview: ReviewBook[];
+}
+
 // ---- Newsletter --------------------------------------------------------------
 
 export const NewsletterInput = z.object({ email: z.string().trim().toLowerCase().email().max(254) }).strict();

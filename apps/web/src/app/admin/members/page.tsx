@@ -51,7 +51,7 @@ export default async function AdminMembersPage({ searchParams }: { searchParams:
         </nav>
         <form action="/admin/members" className="flex flex-1 gap-2">
           {query.status && <input type="hidden" name="status" value={query.status} />}
-          <label className="flex h-10 min-w-[220px] flex-1 items-center gap-2 rounded-[9px] border border-line bg-white px-3 text-ink-3">
+          <label className="flex h-10 min-w-[220px] flex-1 items-center gap-2 rounded-[9px] border border-line bg-white px-3 text-ink-3 focus-within:border-accent focus-within:ring-[3px] focus-within:ring-accent-soft">
             <Search size={16} aria-hidden />
             <span className="sr-only">Search members</span>
             <input name="q" defaultValue={query.q} placeholder="Name or email" className="min-w-0 flex-1 text-[15px] text-ink outline-none" />

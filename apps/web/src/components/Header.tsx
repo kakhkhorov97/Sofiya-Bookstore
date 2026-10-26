@@ -1,7 +1,8 @@
 import type { GenreCount, PublicUser } from "@sofiya/shared";
-import { Heart, Search, Sparkles, UserRound } from "lucide-react";
+import { Heart, Search, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { CurrencySwitcher, FreeDeliveryNote } from "@/currency/CurrencySwitcher";
+import { AccountMenu } from "./AccountMenu";
 import { BasketLink } from "./BasketLink";
 import { MegaMenu } from "./MegaMenu";
 import { MobileMenu } from "./MobileMenu";
@@ -16,10 +17,15 @@ export function Header({ user, genres }: { user: PublicUser | null; genres: Genr
         </Link>
         <nav aria-label="Main" className="hidden shrink-0 items-center gap-6 whitespace-nowrap lg:flex">
           <MegaMenu genres={genres} />
-          <Link href="/ask" className="flex items-center gap-1.5 font-medium text-ink-2 hover:text-ink">
-            <Sparkles size={16} className="text-accent" aria-hidden /> Ask Sofiya
+          <Link
+            href="/ask"
+            className="flex items-center gap-1.5 rounded-full bg-accent py-1.5 pl-3 pr-2 font-semibold text-white shadow-[0_4px_14px_rgba(59,55,201,0.3)] hover:bg-accent-ink"
+          >
+            <Sparkles size={16} aria-hidden /> Ask Sofiya
+            <span className="rounded-full bg-white/20 px-1.5 text-[11px] font-bold tracking-wide">AI</span>
           </Link>
-          <Link href="/orders" className="font-medium text-ink-2 hover:text-ink">
+          {/* Also in the account menu, so it gives way first on narrower screens. */}
+          <Link href="/orders" className="hidden font-medium text-ink-2 hover:text-ink xl:block">
             Orders
           </Link>
           {user?.role === "ADMIN" && (
@@ -28,28 +34,30 @@ export function Header({ user, genres }: { user: PublicUser | null; genres: Genr
             </Link>
           )}
         </nav>
-        <form action="/books" role="search" className="ml-auto hidden min-w-0 max-w-[340px] flex-1 md:block">
+        <form action="/books" role="search" className="ml-auto hidden min-w-[170px] max-w-[340px] flex-1 md:block">
           <label className="flex items-center gap-2.5 rounded-full bg-surface px-4 py-2.5 text-ink-3 focus-within:ring-2 focus-within:ring-accent">
             <Search size={18} aria-hidden />
             <span className="sr-only">Search books</span>
             <input
               name="q"
               type="search"
-              placeholder="Search title, author or topic"
+              placeholder="Search books"
               className="min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-ink-3"
             />
           </label>
         </form>
         <div className="ml-auto flex items-center gap-0.5 md:ml-0">
-          <CurrencySwitcher className="mr-1 hidden sm:inline-flex" />
+          <div className="mr-1 hidden sm:block">
+            <CurrencySwitcher />
+          </div>
           <Link
-            href={user ? "/account" : "/signin"}
-            className="hidden items-center gap-2 rounded-[10px] px-3 py-2 font-semibold text-ink-2 hover:bg-surface hover:text-ink sm:flex"
+            href="/ask"
+            aria-label="Ask Sofiya, AI book concierge"
+            className="grid size-10 place-items-center rounded-full bg-accent-soft text-accent hover:bg-accent hover:text-white lg:hidden"
           >
-            <UserRound size={20} aria-hidden />
-            <span className="hidden xl:inline">{user ? user.displayName : "Sign in"}</span>
-            <span className="sr-only xl:hidden">{user ? "Your account" : "Sign in"}</span>
+            <Sparkles size={19} />
           </Link>
+          <AccountMenu user={user} />
           <Link
             href="/wishlist"
             aria-label="Wishlist"

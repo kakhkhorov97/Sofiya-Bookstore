@@ -1,4 +1,5 @@
 import type { GenreCount } from "@sofiya/shared";
+import { AskLauncher } from "@/components/AskLauncher";
 import { Footer } from "@/components/Footer";
 import { Header, PromoBar } from "@/components/Header";
 import { apiGet } from "@/lib/api";
@@ -17,6 +18,7 @@ export default async function StoreLayout({ children }: Readonly<{ children: Rea
         {children}
       </main>
       <Footer />
+      <AskLauncher />
     </>
   );
 }

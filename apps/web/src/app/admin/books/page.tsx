@@ -50,7 +50,7 @@ export default async function AdminBooksPage({ searchParams }: { searchParams: S
       </AdminTitle>
 
       <form className="flex flex-wrap gap-2" action="/admin/books">
-        <label className="flex h-10 min-w-[240px] flex-1 items-center gap-2 rounded-[9px] border border-line bg-white px-3 text-ink-3">
+        <label className="flex h-10 min-w-[240px] flex-1 items-center gap-2 rounded-[9px] border border-line bg-white px-3 text-ink-3 focus-within:border-accent focus-within:ring-[3px] focus-within:ring-accent-soft">
           <Search size={16} aria-hidden />
           <span className="sr-only">Search books</span>
           <input name="q" defaultValue={query.q} placeholder="Title, author or slug" className="min-w-0 flex-1 text-[15px] text-ink outline-none" />

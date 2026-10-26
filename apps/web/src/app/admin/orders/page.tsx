@@ -49,7 +49,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
         </nav>
         <form action="/admin/orders" className="flex flex-1 gap-2">
           {query.status && <input type="hidden" name="status" value={query.status} />}
-          <label className="flex h-10 min-w-[220px] flex-1 items-center gap-2 rounded-[9px] border border-line bg-white px-3 text-ink-3">
+          <label className="flex h-10 min-w-[220px] flex-1 items-center gap-2 rounded-[9px] border border-line bg-white px-3 text-ink-3 focus-within:border-accent focus-within:ring-[3px] focus-within:ring-accent-soft">
             <Search size={16} aria-hidden />
             <span className="sr-only">Search orders</span>
             <input name="q" defaultValue={query.q} placeholder="Customer email, name or order number" className="min-w-0 flex-1 text-[15px] text-ink outline-none" />

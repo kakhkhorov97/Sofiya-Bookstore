@@ -12,7 +12,12 @@ import {
 } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { NewsletterInput, ReviewInput } from '@sofiya/shared';
-import type { BookSummary, ReviewsResponse, ReviewView } from '@sofiya/shared';
+import type {
+  BookSummary,
+  MyReviewsResponse,
+  ReviewsResponse,
+  ReviewView,
+} from '@sofiya/shared';
 import type { Response } from 'express';
 import { z } from 'zod';
 import {
@@ -67,6 +72,12 @@ export class CommunityController {
     @Param('bookId', BookId) bookId: string,
   ): Promise<void> {
     await this.community.removeFromWishlist(user.id, bookId);
+  }
+
+  @Get('me/reviews')
+  @UseGuards(AuthGuard)
+  myReviews(@CurrentUser() user: SessionUser): Promise<MyReviewsResponse> {
+    return this.community.myReviews(user.id);
   }
 
   @Get('books/:slug/reviews')

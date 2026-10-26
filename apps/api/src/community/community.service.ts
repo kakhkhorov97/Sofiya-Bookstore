@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import type {
   BookSummary,
+  MyReviewsResponse,
   NewsletterInput,
   ReviewInput,
   ReviewsResponse,
@@ -15,6 +16,7 @@ import { summariesByIds } from '../books/summary';
 import { pgErrorCode, UNIQUE_VIOLATION } from '../common/pg-error';
 import type { Db } from '../db/client';
 import { InjectDb } from '../db/db.module';
+import { coverUrl } from '../storage/storage';
 
 const REVIEWS_SHOWN = 30;
 
@@ -151,6 +153,47 @@ export class CommunityService {
         reason: !viewerId ? 'SIGN_IN' : bought ? null : 'NOT_PURCHASED',
         myReview,
       },
+    };
+  }
+
+  async myReviews(userId: string): Promise<MyReviewsResponse> {
+    type BookCols = {
+      slug: string;
+      book_title: string;
+      author: string;
+      cover_key: string | null;
+    };
+    const toBook = (r: BookCols) => ({
+      slug: r.slug,
+      title: r.book_title,
+      author: r.author,
+      coverUrl: coverUrl(r.cover_key),
+    });
+    const [reviewed, pending] = await Promise.all([
+      this.db.execute<ReviewRow & BookCols>(sql`
+        SELECT r.*, u.display_name, b.slug, b.title AS book_title, b.author, b.cover_key
+        FROM reviews r
+        JOIN users u ON u.id = r.user_id
+        JOIN books b ON b.id = r.book_id
+        WHERE r.user_id = ${userId} AND b.status <> 'DELETED'
+        ORDER BY r.updated_at DESC`),
+      this.db.execute<BookCols>(sql`
+        SELECT b.slug, b.title AS book_title, b.author, b.cover_key
+        FROM books b
+        WHERE b.status = 'LIVE'
+          AND EXISTS (
+            SELECT 1 FROM orders o
+            JOIN order_items oi ON oi.order_id = o.id
+            JOIN book_formats bf ON bf.id = oi.format_id
+            WHERE o.user_id = ${userId} AND bf.book_id = b.id
+              AND o.status IN ('IN_PROCESS', 'DELIVERED'))
+          AND NOT EXISTS (
+            SELECT 1 FROM reviews r WHERE r.user_id = ${userId} AND r.book_id = b.id)
+        ORDER BY b.title`),
+    ]);
+    return {
+      reviews: reviewed.map((r) => ({ book: toBook(r), review: toReview(r) })),
+      toReview: pending.map(toBook),
     };
   }
 

@@ -48,9 +48,13 @@ body {
   color: #fff;
 }
 
-:focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 2px;
+/* In the base layer so `outline-none` on framed fields (search bars, chat
+   box) can win; those fields show focus on their frame instead. */
+@layer base {
+  :focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
 }
 
 input[type="search"]::-webkit-search-cancel-button {

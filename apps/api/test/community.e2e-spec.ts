@@ -5,6 +5,7 @@ import type {
   BookSummary,
   OrderView,
   Page,
+  MyReviewsResponse,
   ReviewsResponse,
 } from '@sofiya/shared';
 import { randomUUID } from 'node:crypto';
@@ -124,6 +125,19 @@ describe('Wishlist, reviews, authors and newsletter (e2e)', () => {
       expect(body.summary.distribution).toHaveLength(5);
     });
 
+    it('lists bought books that are waiting for a review', async () => {
+      const slug = 'the-war-of-the-worlds-wells';
+      const { agent } = await signedInAgent(app);
+      let mine = (await agent.get('/api/me/reviews').expect(200))
+        .body as MyReviewsResponse;
+      expect(mine).toEqual({ reviews: [], toReview: [] });
+      await buyAndConfirm(agent, slug);
+      mine = (await agent.get('/api/me/reviews').expect(200))
+        .body as MyReviewsResponse;
+      expect(mine.toReview.map((x) => x.slug)).toEqual([slug]);
+      await request(app.getHttpServer()).get('/api/me/reviews').expect(401);
+    });
+
     it('only lets readers review books they bought', async () => {
       const { agent } = await signedInAgent(app);
       const res = await agent.get('/api/books/walden-thoreau/reviews');
@@ -167,6 +181,14 @@ describe('Wishlist, reviews, authors and newsletter (e2e)', () => {
       // Ratings show up on book cards and pages.
       expect((await book(slug)).ratingAvg).toBe(3.5);
       expect((await book(slug)).ratingCount).toBe(2);
+
+      // The reader sees their own review, and nothing left to review.
+      const mine = (await a.agent.get('/api/me/reviews').expect(200))
+        .body as MyReviewsResponse;
+      expect(mine.reviews).toHaveLength(1);
+      expect(mine.reviews[0].book.slug).toBe(slug);
+      expect(mine.reviews[0].review.rating).toBe(5);
+      expect(mine.toReview.map((x) => x.slug)).not.toContain(slug);
 
       await a.agent
         .delete(`/api/books/${slug}/reviews`)
