@@ -7,6 +7,7 @@ import { NewsletterForm } from "@/components/NewsletterForm";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
 import { StaffPicks } from "@/components/StaffPicks";
 import { Chip, Container } from "@/components/ui";
+import { FreeDeliveryNote } from "@/currency/CurrencySwitcher";
 import { apiGet } from "@/lib/api";
 import { GENRE_LABELS } from "@/lib/labels";
 
@@ -208,7 +209,7 @@ export default async function HomePage() {
       <section className="mt-16">
         <Container className="flex flex-col gap-3 border-y border-line py-5 font-medium text-ink-2 sm:flex-row sm:justify-center sm:gap-12">
           <span className="inline-flex items-center gap-2">
-            <Truck size={18} aria-hidden /> Free delivery on orders over $100
+            <Truck size={18} aria-hidden /> <FreeDeliveryNote />
           </span>
           <span className="inline-flex items-center gap-2">
             <Clock3 size={18} aria-hidden /> Track every order from your account
