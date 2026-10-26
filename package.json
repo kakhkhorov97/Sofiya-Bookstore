@@ -24,6 +24,9 @@
     "concurrently": "^9.2.0"
   },
   "overrides": {
-    "multer": "2.5.0"
+    "multer": "2.5.0",
+    "next": {
+      "postcss": "8.5.31"
+    }
   }
 }
