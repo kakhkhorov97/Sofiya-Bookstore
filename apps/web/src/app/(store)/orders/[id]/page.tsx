@@ -1,4 +1,4 @@
-import { formatUsd, type OrderView } from "@sofiya/shared";
+import { formatMoney, type OrderView } from "@sofiya/shared";
 import { CheckCircle2 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -85,25 +85,25 @@ export default async function OrderPage({
                 </Link>
                 <span className="text-ink-3">
                   {" "}
-                  · {FORMAT_LABELS[i.format]} · {formatUsd(i.unitPriceCents)} × {i.quantity}
+                  · {FORMAT_LABELS[i.format]} · {formatMoney(i.unitPrice, order.currency)} × {i.quantity}
                 </span>
               </span>
-              <span className="font-semibold">{formatUsd(i.unitPriceCents * i.quantity)}</span>
+              <span className="font-semibold">{formatMoney(i.unitPrice * i.quantity, order.currency)}</span>
             </li>
           ))}
         </ul>
         <dl className="ml-auto mt-4 max-w-[300px] space-y-1.5 text-[15px]">
           <div className="flex justify-between">
             <dt className="text-ink-2">Subtotal</dt>
-            <dd>{formatUsd(order.subtotalCents)}</dd>
+            <dd>{formatMoney(order.subtotal, order.currency)}</dd>
           </div>
           <div className="flex justify-between">
             <dt className="text-ink-2">Delivery</dt>
-            <dd>{order.deliveryCents ? formatUsd(order.deliveryCents) : "Free"}</dd>
+            <dd>{order.delivery ? formatMoney(order.delivery, order.currency) : "Free"}</dd>
           </div>
           <div className="flex justify-between border-t border-line pt-2 text-lg font-bold">
             <dt>Total</dt>
-            <dd>{formatUsd(order.totalCents)}</dd>
+            <dd>{formatMoney(order.total, order.currency)}</dd>
           </div>
         </dl>
       </section>

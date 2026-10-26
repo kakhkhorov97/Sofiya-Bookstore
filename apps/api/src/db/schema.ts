@@ -108,7 +108,9 @@ export const bookFormats = pgTable(
       .notNull()
       .references(() => books.id, { onDelete: 'cascade' }),
     format: bookFormatEnum('format').notNull(),
+    // Two store-set prices: US cents and Korean won (no live conversion).
     priceCents: integer('price_cents').notNull(),
+    priceKrw: integer('price_krw').notNull(),
     // NULL = digital, never runs out.
     stock: integer('stock'),
     ...timestamps,
@@ -116,6 +118,7 @@ export const bookFormats = pgTable(
   (t) => [
     uniqueIndex('book_formats_book_format_key').on(t.bookId, t.format),
     check('book_formats_price_nonnegative', sql`${t.priceCents} >= 0`),
+    check('book_formats_price_krw_nonnegative', sql`${t.priceKrw} >= 0`),
     check(
       'book_formats_stock_nonnegative',
       sql`${t.stock} IS NULL OR ${t.stock} >= 0`,
@@ -131,6 +134,9 @@ export const orders = pgTable(
       .notNull()
       .references(() => users.id),
     status: orderStatusEnum('status').notNull().default('PAUSED'),
+    // Amounts below are in this currency's smallest unit (won or cents),
+    // whatever the column names say.
+    currency: text('currency').notNull().default('USD'),
     subtotalCents: integer('subtotal_cents').notNull(),
     deliveryCents: integer('delivery_cents').notNull(),
     totalCents: integer('total_cents').notNull(),
@@ -145,6 +151,7 @@ export const orders = pgTable(
   (t) => [
     uniqueIndex('orders_user_idempotency_key').on(t.userId, t.idempotencyKey),
     index('orders_user_status_idx').on(t.userId, t.status),
+    check('orders_currency_known', sql`${t.currency} IN ('USD', 'KRW')`),
     check(
       'orders_total_matches',
       sql`${t.totalCents} = ${t.subtotalCents} + ${t.deliveryCents}`,

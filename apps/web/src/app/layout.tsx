@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Figtree } from "next/font/google";
 import { BasketProvider } from "@/basket/BasketProvider";
+import { CurrencyProvider } from "@/currency/CurrencyProvider";
+import { getCurrency } from "@/currency/server";
 import { getCurrentUser } from "@/lib/session";
 import { WishlistProvider } from "@/wishlist/WishlistProvider";
 import "./globals.css";
@@ -27,10 +29,11 @@ export const metadata: Metadata = {
 // Shop pages live in app/(store) with the header and footer; the admin in
 // app/admin has its own layout.
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const user = await getCurrentUser();
+  const [user, currency] = await Promise.all([getCurrentUser(), getCurrency()]);
   return (
     <html lang="en">
       <body className={`${display.variable} ${body.variable} flex min-h-screen flex-col antialiased`}>
+        <CurrencyProvider initial={currency}>
         <BasketProvider>
           <WishlistProvider signedIn={!!user}>
             <a
@@ -42,6 +45,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             {children}
           </WishlistProvider>
         </BasketProvider>
+        </CurrencyProvider>
       </body>
     </html>
   );

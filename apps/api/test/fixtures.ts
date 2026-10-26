@@ -31,7 +31,12 @@ export const uniqueEmail = () => `reader-${randomUUID()}@example.test`;
 // stock in the shared seeded catalogue.
 export async function createBook(
   db: ReturnType<typeof testDb>['db'],
-  opts: { priceCents?: number; stock?: number | null; live?: boolean } = {},
+  opts: {
+    priceCents?: number;
+    priceKrw?: number;
+    stock?: number | null;
+    live?: boolean;
+  } = {},
 ) {
   const slug = `test-book-${randomUUID()}`;
   const [book] = await db
@@ -51,6 +56,7 @@ export async function createBook(
       bookId: book.id,
       format: 'PAPERBACK',
       priceCents: opts.priceCents ?? 1234,
+      priceKrw: opts.priceKrw ?? 17_300,
       stock: opts.stock === undefined ? 10 : opts.stock,
     })
     .returning({ id: bookFormats.id });

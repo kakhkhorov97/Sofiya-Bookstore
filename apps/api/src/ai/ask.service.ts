@@ -6,7 +6,7 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { formatUsd } from '@sofiya/shared';
+import { formatMoney, type Currency } from '@sofiya/shared';
 import type {
   AskEvent,
   AskInput,
@@ -49,12 +49,13 @@ export function buildContext(
   message: string,
   sources: AskSource[],
   descriptions: Map<string, string>,
+  currency: Currency,
 ): string {
   const lines = sources.map(
     (s) =>
       `[${s.n}] "${s.book.title}" by ${s.book.author} (${s.book.genre.toLowerCase().replace('_', ' ')}${year(s.book.publishedYear)}${
         s.book.pages ? `, ${s.book.pages} pages` : ''
-      }, from ${formatUsd(s.book.fromPriceCents)}${s.book.inStock ? '' : ', out of stock'})\n${descriptions.get(s.book.id) ?? ''}`,
+      }, from ${formatMoney(s.book.fromPrice[currency], currency)}${s.book.inStock ? '' : ', out of stock'})\n${descriptions.get(s.book.id) ?? ''}`,
   );
   return `Reader's request: ${message}\n\nBooks from our catalogue that may fit:\n${lines.join('\n\n')}`;
 }
@@ -97,7 +98,12 @@ export class AskService {
       [...input.history].reverse().find((t) => t.role === 'user')?.content ??
       '';
     const query = previous ? `${input.message}. ${previous}` : input.message;
-    const ranked = await this.retrieval.rank(query, input.filters, MAX_SOURCES);
+    const ranked = await this.retrieval.rank(
+      query,
+      input.filters,
+      MAX_SOURCES,
+      input.currency,
+    );
     const books = await summariesByIds(
       this.db,
       ranked.map((r) => r.bookId),
@@ -167,7 +173,12 @@ export class AskService {
       ...input.history.map((t) => ({ role: t.role, text: t.content })),
       {
         role: 'user',
-        text: buildContext(input.message, sources, descriptions),
+        text: buildContext(
+          input.message,
+          sources,
+          descriptions,
+          input.currency,
+        ),
       },
     ];
     const timeout = AbortSignal.timeout(ANSWER_TIMEOUT_MS);

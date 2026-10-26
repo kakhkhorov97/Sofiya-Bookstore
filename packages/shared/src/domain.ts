@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Currency, DEFAULT_CURRENCY } from "./pricing";
 
 // Carried over from the legacy Sofiya-Bookstore enums, with the
 // "PROSCESS" typo fixed.
@@ -41,5 +42,7 @@ export const OrderLineInput = z.object({
 export const CreateOrderInput = z.object({
   idempotencyKey: z.string().uuid(),
   lines: z.array(OrderLineInput).min(1).max(50),
+  // The order is priced and charged in this currency.
+  currency: Currency.default(DEFAULT_CURRENCY),
 });
 export type CreateOrderInput = z.infer<typeof CreateOrderInput>;

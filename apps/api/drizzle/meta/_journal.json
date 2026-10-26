@@ -29,6 +29,13 @@
       "when": 1792998274848,
       "tag": "0003_admin_covers_questions",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793000451179,
+      "tag": "0004_currencies",
+      "breakpoints": true
     }
   ]
 }

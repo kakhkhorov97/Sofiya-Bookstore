@@ -45,8 +45,8 @@ const bookInput = (overrides: Partial<BookInput> = {}): BookInput => ({
   status: 'LIVE',
   staffPickNote: null,
   formats: [
-    { format: 'PAPERBACK', priceCents: 1299, stock: 10 },
-    { format: 'EBOOK', priceCents: 499, stock: null },
+    { format: 'PAPERBACK', price: { USD: 1299, KRW: 18_000 }, stock: 10 },
+    { format: 'EBOOK', price: { USD: 499, KRW: 7_000 }, stock: null },
   ],
   ...overrides,
 });
@@ -132,11 +132,16 @@ describe('Admin (e2e)', () => {
       await post(
         bookInput({
           formats: [
-            { format: 'EBOOK', priceCents: 1, stock: null },
-            { format: 'EBOOK', priceCents: 2, stock: null },
+            { format: 'EBOOK', price: { USD: 1, KRW: 100 }, stock: null },
+            { format: 'EBOOK', price: { USD: 2, KRW: 100 }, stock: null },
           ],
         }),
       );
+      // Both prices are required.
+      await post({
+        ...bookInput(),
+        formats: [{ format: 'EBOOK', price: { USD: 499 }, stock: null }],
+      });
       await post(bookInput({ description: 'Too short' }));
       await post(bookInput({ formats: [] }));
       await post({ ...bookInput(), views: 999999 });
@@ -149,14 +154,20 @@ describe('Admin (e2e)', () => {
         .send(
           bookInput({
             title: book.title,
-            formats: [{ format: 'PAPERBACK', priceCents: 1599, stock: 3 }],
+            formats: [
+              {
+                format: 'PAPERBACK',
+                price: { USD: 1599, KRW: 22_000 },
+                stock: 3,
+              },
+            ],
           }),
         )
         .expect(200);
       expect((updated.body as AdminBook).formats).toEqual([
         expect.objectContaining({
           format: 'PAPERBACK',
-          priceCents: 1599,
+          price: { USD: 1599, KRW: 22_000 },
           stock: 3,
         }),
       ]);
@@ -178,7 +189,9 @@ describe('Admin (e2e)', () => {
         .send(
           bookInput({
             title: book.title,
-            formats: [{ format: 'EBOOK', priceCents: 499, stock: null }],
+            formats: [
+              { format: 'EBOOK', price: { USD: 499, KRW: 7_000 }, stock: null },
+            ],
           }),
         )
         .expect(409);

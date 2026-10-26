@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { BookFormat, OrderStatus } from "./domain";
+import type { Currency } from "./pricing";
 
 // Who may move an order where. Customers can only cancel a PAUSED order;
 // every other change is an admin action (legacy defect: customers could set
@@ -40,16 +41,18 @@ export interface OrderItemView {
   bookTitle: string;
   format: BookFormat;
   quantity: number;
-  unitPriceCents: number;
+  // In the order's currency (won or cents).
+  unitPrice: number;
 }
 
 export interface OrderView {
   id: string;
   userId: string;
   status: OrderStatus;
-  subtotalCents: number;
-  deliveryCents: number;
-  totalCents: number;
+  currency: Currency;
+  subtotal: number;
+  delivery: number;
+  total: number;
   pointsAwarded: number;
   items: OrderItemView[];
   createdAt: string;

@@ -3,6 +3,7 @@
 import { computeOrderTotals, type FormatInfo, type OrderTotals } from "@sofiya/shared";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { clientApi } from "@/lib/client-api";
+import { useCurrency } from "@/currency/CurrencyProvider";
 import type { BasketLine } from "./basket";
 
 export type LineProblem = "unavailable" | "out_of_stock" | null;
@@ -15,6 +16,7 @@ export interface CheckedLine extends BasketLine {
 
 // Fetches today's price and stock for every basket line.
 export function useBasketInfo(lines: BasketLine[]) {
+  const { currency } = useCurrency();
   const ids = useMemo(() => [...new Set(lines.map((l) => l.formatId))].sort().join(","), [lines]);
   const [infos, setInfos] = useState<Map<string, FormatInfo>>(new Map());
   const [loading, setLoading] = useState(false);
@@ -45,16 +47,20 @@ export function useBasketInfo(lines: BasketLine[]) {
     const info = infos.get(l.formatId);
     const problem: LineProblem =
       infos.size === 0 ? null : !info || !info.available ? "unavailable" : !info.inStock ? "out_of_stock" : null;
-    return { ...l, info, problem, priceChanged: !!info && info.priceCents !== l.priceCents };
+    return { ...l, info, problem, priceChanged: !!info && info.price[currency] !== l.price[currency] };
   });
 
   const payable = checked.filter((l) => !l.problem);
   const totals: OrderTotals | null =
     payable.length > 0
-      ? computeOrderTotals(payable.map((l) => ({ unitPriceCents: l.info?.priceCents ?? l.priceCents, quantity: l.quantity })))
+      ? computeOrderTotals(
+          payable.map((l) => ({ unitPrice: (l.info?.price ?? l.price)[currency], quantity: l.quantity })),
+          currency,
+        )
       : null;
 
   return {
+    currency,
     checked,
     totals,
     loading,

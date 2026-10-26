@@ -1,3 +1,5 @@
+import type { Prices } from "@sofiya/shared";
+
 // "Recently viewed" lives only in this browser.
 const KEY = "sofiya.recent.v1";
 const MAX = 12;
@@ -6,7 +8,8 @@ export interface RecentBook {
   slug: string;
   title: string;
   author: string;
-  fromPriceCents: number;
+  // Missing on entries saved before prices came in two currencies.
+  fromPrice?: Prices;
   coverUrl?: string | null;
 }
 

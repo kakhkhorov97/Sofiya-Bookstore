@@ -41,7 +41,7 @@ describe('Books API (e2e)', () => {
     expect(body.total).toBeGreaterThan(150);
     expect(body.items[0]).toMatchObject({
       slug: expect.any(String),
-      fromPriceCents: expect.any(Number),
+      fromPrice: { USD: expect.any(Number), KRW: expect.any(Number) },
       formats: expect.arrayContaining(['PAPERBACK']),
     });
   });
@@ -79,12 +79,17 @@ describe('Books API (e2e)', () => {
     expect((res.body as Page<BookSummary>).total).toBe(0);
   });
 
-  it('sorts by price', async () => {
-    const res = await get('/api/books?sort=price_asc&limit=20').expect(200);
-    const prices = (res.body as Page<BookSummary>).items.map(
-      (b) => b.fromPriceCents,
-    );
-    expect(prices).toEqual([...prices].sort((a, b) => a - b));
+  it('sorts by price in the chosen currency', async () => {
+    for (const currency of ['KRW', 'USD'] as const) {
+      const res = await get(
+        `/api/books?sort=price_desc&limit=20&currency=${currency}`,
+      ).expect(200);
+      const prices = (res.body as Page<BookSummary>).items.map(
+        (b) => b.fromPrice[currency],
+      );
+      expect(prices).toEqual([...prices].sort((a, b) => b - a));
+    }
+    await get('/api/books?currency=EUR').expect(400);
   });
 
   it('rejects invalid query values', async () => {
@@ -100,7 +105,8 @@ describe('Books API (e2e)', () => {
     expect(book.description.length).toBeGreaterThan(40);
     expect(book.formats.length).toBeGreaterThanOrEqual(2);
     for (const f of book.formats) {
-      expect(f.priceCents).toBeGreaterThan(0);
+      expect(f.price.USD).toBeGreaterThan(0);
+      expect(f.price.KRW).toBeGreaterThan(0);
       expect(typeof f.inStock).toBe('boolean');
       // Exact stock counts are never exposed unless low.
       expect(f).not.toHaveProperty('stock');

@@ -31,6 +31,7 @@ interface FormatRow {
   id: string;
   format: BookFormat;
   price_cents: number;
+  price_krw: number;
   stock: number | null;
   [key: string]: unknown;
 }
@@ -84,8 +85,14 @@ export class BooksService {
       relevance,
       newest: sql`b.created_at DESC, b.title`,
       title: sql`b.title ASC`,
-      price_asc: sql`f.from_price ASC, b.title`,
-      price_desc: sql`f.from_price DESC, b.title`,
+      price_asc:
+        query.currency === 'KRW'
+          ? sql`f.from_price_krw ASC, b.title`
+          : sql`f.from_price ASC, b.title`,
+      price_desc:
+        query.currency === 'KRW'
+          ? sql`f.from_price_krw DESC, b.title`
+          : sql`f.from_price DESC, b.title`,
       popular: sql`b.views DESC, b.title`,
     };
 
@@ -118,7 +125,7 @@ export class BooksService {
     if (!book) throw new NotFoundException('Book not found');
 
     const formats = await this.db.execute<FormatRow>(sql`
-      SELECT id, format, price_cents, stock FROM book_formats
+      SELECT id, format, price_cents, price_krw, stock FROM book_formats
       WHERE book_id = ${book.id} ORDER BY format`);
 
     return {
@@ -128,7 +135,7 @@ export class BooksService {
       formats: formats.map((f) => ({
         id: f.id,
         format: f.format,
-        priceCents: f.price_cents,
+        price: { USD: f.price_cents, KRW: f.price_krw },
         inStock: f.stock === null || f.stock > 0,
         lowStock:
           f.stock !== null && f.stock > 0 && f.stock <= LOW_STOCK_THRESHOLD
@@ -176,6 +183,7 @@ export class BooksService {
       id: string;
       format: BookFormat;
       price_cents: number;
+      price_krw: number;
       stock: number | null;
       status: string;
       slug: string;
@@ -183,14 +191,14 @@ export class BooksService {
       author: string;
       genre: Genre;
     }>(sql`
-      SELECT bf.id, bf.format, bf.price_cents, bf.stock,
+      SELECT bf.id, bf.format, bf.price_cents, bf.price_krw, bf.stock,
              b.status, b.slug, b.title, b.author, b.genre
       FROM book_formats bf JOIN books b ON b.id = bf.book_id
       WHERE bf.id IN (${uuidList(ids)}) AND b.status <> 'DELETED'`);
     return rows.map((r) => ({
       formatId: r.id,
       format: r.format,
-      priceCents: r.price_cents,
+      price: { USD: r.price_cents, KRW: r.price_krw },
       inStock: r.stock === null || r.stock > 0,
       lowStock:
         r.stock !== null && r.stock > 0 && r.stock <= LOW_STOCK_THRESHOLD

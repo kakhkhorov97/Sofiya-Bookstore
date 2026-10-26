@@ -1,4 +1,4 @@
-import type { BookFormat } from "@sofiya/shared";
+import { suggestKrw, type BookFormat, type Prices } from "@sofiya/shared";
 
 export const MAX_PER_LINE = 20;
 
@@ -11,7 +11,7 @@ export interface BasketLine {
   title: string;
   author: string;
   format: BookFormat;
-  priceCents: number;
+  price: Prices;
 }
 
 export type BasketAction =
@@ -54,11 +54,14 @@ export const itemCount = (lines: BasketLine[]) => lines.reduce((n, l) => n + l.q
 
 // Stable fingerprint of the basket contents; a new fingerprint means a new
 // checkout attempt and therefore a new idempotency key.
-export function basketFingerprint(lines: BasketLine[]): string {
-  return [...lines]
-    .sort((a, b) => a.formatId.localeCompare(b.formatId))
-    .map((l) => `${l.formatId}:${l.quantity}`)
-    .join(",");
+export function basketFingerprint(lines: BasketLine[], currency: string): string {
+  return (
+    `${currency}|` +
+    [...lines]
+      .sort((a, b) => a.formatId.localeCompare(b.formatId))
+      .map((l) => `${l.formatId}:${l.quantity}`)
+      .join(",")
+  );
 }
 
 // Tolerates anything a user or an older version left in localStorage.
@@ -67,16 +70,28 @@ export function parseStoredBasket(raw: string | null): BasketLine[] {
   try {
     const data: unknown = JSON.parse(raw);
     if (!Array.isArray(data)) return [];
-    return data.filter(
-      (l): l is BasketLine =>
-        typeof l === "object" &&
-        l !== null &&
-        typeof (l as BasketLine).formatId === "string" &&
-        Number.isInteger((l as BasketLine).quantity) &&
-        (l as BasketLine).quantity > 0 &&
-        typeof (l as BasketLine).title === "string",
-    );
+    return data
+      .filter(
+        (l): l is BasketLine & { priceCents?: number } =>
+          typeof l === "object" &&
+          l !== null &&
+          typeof (l as BasketLine).formatId === "string" &&
+          Number.isInteger((l as BasketLine).quantity) &&
+          (l as BasketLine).quantity > 0 &&
+          typeof (l as BasketLine).title === "string",
+      )
+      .map(({ priceCents, ...l }) => ({
+        ...l,
+        // Baskets saved before won prices only had a dollar snapshot.
+        price: isPrices(l.price) ? l.price : { USD: priceCents ?? 0, KRW: suggestKrw(priceCents ?? 0) },
+      }));
   } catch {
     return [];
   }
 }
+
+const isPrices = (p: unknown): p is Prices =>
+  typeof p === "object" &&
+  p !== null &&
+  Number.isInteger((p as Prices).KRW) &&
+  Number.isInteger((p as Prices).USD);

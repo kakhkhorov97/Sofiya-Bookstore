@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { BookFormat, BookStatus, Genre, OrderStatus, UserRole } from "./domain";
 import type { OrderView } from "./orders";
+import type { Prices } from "./pricing";
 
 const optionalText = (max: number) =>
   z
@@ -14,7 +15,8 @@ const optionalText = (max: number) =>
 export const BookFormatInput = z
   .object({
     format: BookFormat,
-    priceCents: z.number().int().min(0).max(100_000),
+    // Both prices are set by the store: cents and won.
+    price: z.object({ USD: z.number().int().min(0).max(100_000), KRW: z.number().int().min(0).max(10_000_000) }).strict(),
     // null = digital, never runs out.
     stock: z.number().int().min(0).max(100_000).nullable(),
   })
@@ -58,7 +60,7 @@ export type AdminBookListQuery = z.infer<typeof AdminBookListQuery>;
 export interface AdminFormat {
   id: string;
   format: BookFormat;
-  priceCents: number;
+  price: Prices;
   stock: number | null;
 }
 
@@ -135,7 +137,7 @@ export interface AdminMember {
   status: "ACTIVE" | "BLOCKED" | "DELETED";
   points: number;
   orderCount: number;
-  spentCents: number;
+  spent: Prices;
   createdAt: string;
 }
 
@@ -156,7 +158,7 @@ export interface IndexJobState {
 
 export interface AdminOverview {
   orders: Record<OrderStatus, number>;
-  revenueCents: number;
+  revenue: Prices;
   books: Record<BookStatus, number>;
   lowStock: { bookId: string; slug: string; title: string; format: BookFormat; stock: number }[];
   members: number;

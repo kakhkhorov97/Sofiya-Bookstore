@@ -47,6 +47,15 @@ Sign in with an admin account (create one with `npm run db:create-admin -w @sofi
 
 The basket lives in the browser (localStorage) and is re-priced from the API on every view; checkout sends one idempotency key per basket so a double click cannot create two orders.
 
+### Currencies
+
+Prices are in **Korean won (₩, the default)** or **US dollars ($)**. Readers pick one with the ₩ KRW / $ USD switch in the header (or the mobile menu); the choice is kept in the `sofiya_currency` cookie so server pages render in it straight away.
+
+- Every format has its own won price and dollar price, set by the store (no live exchange rate). The admin editor has a "₩ from $" button that suggests a round won price (`suggestKrw`, about ₩1,400 per $1).
+- Money is always an integer in the smallest unit: won for KRW, cents for USD.
+- Delivery: ₩3,000, free from ₩30,000; or $5, free from $100.
+- An order is charged and stored in the currency it was placed in, and always shown in that currency. Admin revenue and member spend are totalled per currency.
+
 ## AI: Ask Sofiya (RAG with Gemini)
 
 1. Get a key at https://aistudio.google.com and add it to `apps/api/.env`: `GEMINI_API_KEY=...`
@@ -74,8 +83,8 @@ PostgreSQL via Drizzle ORM. Schema: `apps/api/src/db/schema.ts`; SQL migrations:
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/api/health` | Liveness |
-| GET | `/api/books` | `q`, `genre`, `format`, `inStock`, `sort` (relevance, newest, title, price_asc, price_desc, popular), `page`, `limit` (max 60) |
-| GET | `/api/books/:slug` | Details with formats, prices and stock flags |
+| GET | `/api/books` | `q`, `genre`, `format`, `inStock`, `sort` (relevance, newest, title, price_asc, price_desc, popular), `currency` (KRW default, USD; used for price sorting), `page`, `limit` (max 60) |
+| GET | `/api/books/:slug` | Details with formats, prices (`{ KRW, USD }`) and stock flags |
 | GET | `/api/genres` | Live book count per genre |
 | GET | `/api/formats?ids=a,b` | Current price, stock and availability for basket lines |
 | GET | `/api/books/:slug/similar` | "If you like this": nearest books by meaning (same-genre fallback) |
@@ -85,7 +94,7 @@ PostgreSQL via Drizzle ORM. Schema: `apps/api/src/db/schema.ts`; SQL migrations:
 | PUT / DELETE | `/api/wishlist/:bookId` | Save or remove a book |
 | POST | `/api/newsletter` | `{ email }`; 201 new, 200 already subscribed |
 | GET | `/api/ai/status` | Whether AI is on and how many books are indexed |
-| POST | `/api/ask` | Ask Sofiya; server-sent events: `sources`, `delta`…, `done` |
+| POST | `/api/ask` | Ask Sofiya (`message`, `history`, `filters`, `currency`; `filters.maxPrice` is in that currency); server-sent events: `sources`, `delta`…, `done` |
 | GET | `/api/covers/:file` | Uploaded cover images (WebP, cached for a year) |
 | GET | `/api/admin/overview` | Admin dashboard data |
 | GET / POST | `/api/admin/books` | List (search, status, index filters) / create |
@@ -100,7 +109,7 @@ PostgreSQL via Drizzle ORM. Schema: `apps/api/src/db/schema.ts`; SQL migrations:
 | POST | `/api/auth/signin` | `{ email, password }`; rate limited per IP |
 | POST | `/api/auth/signout` | Clears the session cookie |
 | GET / PATCH | `/api/me` | Profile; only `displayName` can be changed |
-| POST | `/api/orders` | `{ idempotencyKey, lines: [{ formatId, quantity }] }`. Prices come from the database. 201 new, 200 replay |
+| POST | `/api/orders` | `{ idempotencyKey, currency, lines: [{ formatId, quantity }] }`; `currency` is KRW (default) or USD. Prices come from the database. 201 new, 200 replay |
 | GET | `/api/orders`, `/api/orders/:id` | Your own orders only |
 | POST | `/api/orders/:id/cancel` | Only while the order is `PAUSED`; stock is put back |
 | GET | `/api/admin/orders` | Admin only |

@@ -1,4 +1,4 @@
-import { formatUsd, type AdminOverview } from "@sofiya/shared";
+import type { AdminOverview } from "@sofiya/shared";
 import { AlertTriangle, MessageCircleQuestion } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -6,6 +6,7 @@ import { AdminTitle, Panel } from "@/components/admin/bits";
 import { ReindexButton } from "@/components/admin/ReindexButton";
 import { apiGet } from "@/lib/api";
 import { dateLabel, FORMAT_LABELS, ORDER_STATUS_LABELS } from "@/lib/labels";
+import { formatPrices } from "@/currency/currency";
 
 export const metadata: Metadata = { title: { absolute: "Overview · Sofiya admin" } };
 
@@ -15,7 +16,7 @@ export default async function AdminOverviewPage() {
 
   const stats = [
     { label: "Waiting for confirmation", value: o.orders.PAUSED, href: "/admin/orders?status=PAUSED", tone: o.orders.PAUSED ? "text-warn" : "" },
-    { label: "Revenue (confirmed orders)", value: formatUsd(o.revenueCents), href: "/admin/orders" },
+    { label: "Revenue (confirmed orders)", value: formatPrices(o.revenue, { skipZero: true }), href: "/admin/orders" },
     { label: "Live books", value: o.books.LIVE, href: "/admin/books?status=LIVE" },
     { label: "Members", value: o.members, href: "/admin/members" },
   ];

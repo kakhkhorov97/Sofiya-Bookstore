@@ -48,7 +48,7 @@ export default async function BookPage({ params }: { params: Params }) {
           slug: book.slug,
           title: book.title,
           author: book.author,
-          fromPriceCents: book.fromPriceCents,
+          fromPrice: book.fromPrice,
           coverUrl: book.coverUrl,
         }}
       />

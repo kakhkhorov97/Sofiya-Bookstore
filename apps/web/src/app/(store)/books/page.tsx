@@ -13,6 +13,7 @@ import Link from "next/link";
 import { BookGrid } from "@/components/BookCard";
 import { SortSelect } from "@/components/SortSelect";
 import { ButtonLink, Container } from "@/components/ui";
+import { getCurrency } from "@/currency/server";
 import { apiGet } from "@/lib/api";
 import { FORMAT_LABELS, GENRE_LABELS, SORT_LABELS } from "@/lib/labels";
 
@@ -37,12 +38,13 @@ export async function generateMetadata({ searchParams }: { searchParams: SearchP
 }
 
 export default async function BooksPage({ searchParams }: { searchParams: SearchParams }) {
-  const query = readParams(await searchParams);
+  // Price sorting follows the reader's currency cookie, not the URL.
+  const query = { ...readParams(await searchParams), currency: await getCurrency() };
   const qs = (overrides: Record<string, string | number | boolean | undefined>) => {
     const merged: Record<string, string> = {};
     const all = { ...query, page: undefined, ...overrides } as Record<string, unknown>;
     for (const [k, v] of Object.entries(all)) {
-      if (v === undefined || v === false || v === "" || (k === "limit" && v === 24)) continue;
+      if (v === undefined || v === false || v === "" || k === "currency" || (k === "limit" && v === 24)) continue;
       merged[k] = String(v);
     }
     const s = new URLSearchParams(merged).toString();

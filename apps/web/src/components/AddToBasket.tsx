@@ -1,11 +1,13 @@
 "use client";
 
-import { formatUsd, type BookDetail } from "@sofiya/shared";
+import type { BookDetail } from "@sofiya/shared";
 import { Check, Minus, Plus, Truck } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { MAX_PER_LINE } from "@/basket/basket";
 import { useBasket } from "@/basket/BasketProvider";
+import { Price } from "@/currency/CurrencyProvider";
+import { FreeDeliveryNote } from "@/currency/CurrencySwitcher";
 import { FORMAT_LABELS, isDigital } from "@/lib/labels";
 import { buttonClass } from "./ui";
 import { WishlistButton } from "./WishlistButton";
@@ -32,7 +34,7 @@ export function AddToBasket({ book }: { book: BookDetail }) {
         title: book.title,
         author: book.author,
         format: selected.format,
-        priceCents: selected.priceCents,
+        price: selected.price,
       },
     });
     setAdded(true);
@@ -41,7 +43,7 @@ export function AddToBasket({ book }: { book: BookDetail }) {
   return (
     <div className="mt-7 max-w-[540px]">
       <p className="font-display text-4xl font-extrabold tracking-[-0.02em]">
-        {formatUsd(selected.priceCents)}
+        <Price prices={selected.price} />
         <span className="ml-2 font-sans text-base font-medium text-ink-3">{FORMAT_LABELS[selected.format]}</span>
       </p>
 
@@ -70,7 +72,7 @@ export function AddToBasket({ book }: { book: BookDetail }) {
                 />
                 <span className="block text-[15px] font-bold">{FORMAT_LABELS[f.format]}</span>
                 <span className="text-sm text-ink-3">
-                  {f.inStock ? formatUsd(f.priceCents) : "Out of stock"}
+                  {f.inStock ? <Price prices={f.price} /> : "Out of stock"}
                 </span>
               </label>
             );
@@ -123,7 +125,7 @@ export function AddToBasket({ book }: { book: BookDetail }) {
         ) : (
           <p className="flex items-center gap-2 text-ink-2">
             <Truck size={17} className="text-ok" aria-hidden />
-            {digital ? "Available instantly after the order is confirmed" : "Free delivery on orders over $100"}
+            {digital ? "Available instantly after the order is confirmed" : <FreeDeliveryNote />}
           </p>
         )}
       </div>

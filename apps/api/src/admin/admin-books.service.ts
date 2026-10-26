@@ -47,7 +47,7 @@ interface BookRow {
   formats: {
     id: string;
     format: BookFormat;
-    priceCents: number;
+    price: { USD: number; KRW: number };
     stock: number | null;
   }[];
   [key: string]: unknown;
@@ -57,7 +57,7 @@ const BOOK_SELECT = sql`
   SELECT b.*, e.content_hash,
     coalesce((
       SELECT json_agg(json_build_object(
-        'id', bf.id, 'format', bf.format, 'priceCents', bf.price_cents, 'stock', bf.stock
+        'id', bf.id, 'format', bf.format, 'price', json_build_object('USD', bf.price_cents, 'KRW', bf.price_krw), 'stock', bf.stock
       ) ORDER BY bf.format)
       FROM book_formats bf WHERE bf.book_id = b.id
     ), '[]'::json) AS formats
@@ -149,8 +149,8 @@ export class AdminBooksService {
         RETURNING id`);
       for (const f of input.formats) {
         await tx.execute(sql`
-          INSERT INTO book_formats (book_id, format, price_cents, stock)
-          VALUES (${book.id}, ${f.format}, ${f.priceCents}, ${f.stock})`);
+          INSERT INTO book_formats (book_id, format, price_cents, price_krw, stock)
+          VALUES (${book.id}, ${f.format}, ${f.price.USD}, ${f.price.KRW}, ${f.stock})`);
       }
       return book.id;
     });
@@ -172,10 +172,10 @@ export class AdminBooksService {
 
       for (const f of input.formats) {
         await tx.execute(sql`
-          INSERT INTO book_formats (book_id, format, price_cents, stock)
-          VALUES (${id}, ${f.format}, ${f.priceCents}, ${f.stock})
+          INSERT INTO book_formats (book_id, format, price_cents, price_krw, stock)
+          VALUES (${id}, ${f.format}, ${f.price.USD}, ${f.price.KRW}, ${f.stock})
           ON CONFLICT (book_id, format) DO UPDATE
-          SET price_cents = EXCLUDED.price_cents, stock = EXCLUDED.stock, updated_at = now()`);
+          SET price_cents = EXCLUDED.price_cents, price_krw = EXCLUDED.price_krw, stock = EXCLUDED.stock, updated_at = now()`);
       }
 
       const keep = input.formats.map((f) => sql`${f.format}`);

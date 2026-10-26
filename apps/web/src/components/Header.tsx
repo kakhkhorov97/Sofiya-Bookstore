@@ -1,6 +1,7 @@
 import type { GenreCount, PublicUser } from "@sofiya/shared";
 import { Heart, Search, Sparkles, UserRound } from "lucide-react";
 import Link from "next/link";
+import { CurrencySwitcher, FreeDeliveryNote } from "@/currency/CurrencySwitcher";
 import { BasketLink } from "./BasketLink";
 import { MegaMenu } from "./MegaMenu";
 import { MobileMenu } from "./MobileMenu";
@@ -13,7 +14,7 @@ export function Header({ user, genres }: { user: PublicUser | null; genres: Genr
         <Link href="/" className="font-display text-[26px] font-extrabold tracking-[-0.03em]">
           Sofiya<span className="text-accent">.</span>
         </Link>
-        <nav aria-label="Main" className="hidden items-center gap-6 lg:flex">
+        <nav aria-label="Main" className="hidden shrink-0 items-center gap-6 whitespace-nowrap lg:flex">
           <MegaMenu genres={genres} />
           <Link href="/ask" className="flex items-center gap-1.5 font-medium text-ink-2 hover:text-ink">
             <Sparkles size={16} className="text-accent" aria-hidden /> Ask Sofiya
@@ -27,7 +28,7 @@ export function Header({ user, genres }: { user: PublicUser | null; genres: Genr
             </Link>
           )}
         </nav>
-        <form action="/books" role="search" className="ml-auto hidden max-w-[340px] flex-1 md:block">
+        <form action="/books" role="search" className="ml-auto hidden min-w-0 max-w-[340px] flex-1 md:block">
           <label className="flex items-center gap-2.5 rounded-full bg-surface px-4 py-2.5 text-ink-3 focus-within:ring-2 focus-within:ring-accent">
             <Search size={18} aria-hidden />
             <span className="sr-only">Search books</span>
@@ -40,6 +41,7 @@ export function Header({ user, genres }: { user: PublicUser | null; genres: Genr
           </label>
         </form>
         <div className="ml-auto flex items-center gap-0.5 md:ml-0">
+          <CurrencySwitcher className="mr-1 hidden sm:inline-flex" />
           <Link
             href={user ? "/account" : "/signin"}
             className="hidden items-center gap-2 rounded-[10px] px-3 py-2 font-semibold text-ink-2 hover:bg-surface hover:text-ink sm:flex"
@@ -66,7 +68,9 @@ export function PromoBar() {
   return (
     <div className="bg-ink text-white">
       <p className="mx-auto flex w-[min(1240px,calc(100%-32px))] items-center justify-center gap-2 py-2 text-center text-[13px] sm:text-sm">
-        <span className="hidden sm:inline">Free delivery on orders over $100 ·</span>
+        <span className="hidden sm:inline">
+          <FreeDeliveryNote /> ·
+        </span>
         <Link href="/ask" className="inline-flex items-center gap-1.5 font-semibold underline-offset-2 hover:underline">
           <Sparkles size={14} aria-hidden /> New: ask our AI book concierge
         </Link>

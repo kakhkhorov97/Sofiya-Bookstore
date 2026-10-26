@@ -91,10 +91,10 @@ describe('AI: Ask Sofiya, hybrid search, similar books (e2e, fake provider)', ()
   });
 
   it('says so, without calling the model, when nothing matches', async () => {
-    // No book costs 1 cent, so retrieval has nothing to offer.
+    // No book costs ₩100, so retrieval has nothing to offer.
     const res = await ask({
       message: 'any good mystery',
-      filters: { maxPriceCents: 1 },
+      filters: { maxPrice: 100 },
     }).expect(200);
     const events = parseEvents(res.body as string);
     expect(events[0]).toEqual({ type: 'sources', sources: [] });

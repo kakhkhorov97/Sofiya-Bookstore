@@ -1,6 +1,6 @@
 "use client";
 
-import { formatUsd, type OrderView } from "@sofiya/shared";
+import { formatMoney, type Currency, type OrderView } from "@sofiya/shared";
 import { Info } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -17,8 +17,9 @@ const KEY_STORAGE = "sofiya.checkout.v1";
 
 // One idempotency key per basket. Retrying (double click, flaky network)
 // sends the same key, so the API returns the same order instead of a second one.
-function idempotencyKeyFor(lines: BasketLine[]): string {
-  const fingerprint = basketFingerprint(lines);
+// Switching currency is a different order, so it gets a new key.
+function idempotencyKeyFor(lines: BasketLine[], currency: Currency): string {
+  const fingerprint = basketFingerprint(lines, currency);
   try {
     const saved = JSON.parse(sessionStorage.getItem(KEY_STORAGE) ?? "null") as { fingerprint: string; key: string } | null;
     if (saved?.fingerprint === fingerprint) return saved.key;
@@ -33,7 +34,7 @@ function idempotencyKeyFor(lines: BasketLine[]): string {
 export function CheckoutView() {
   const router = useRouter();
   const { lines, ready, dispatch } = useBasket();
-  const { checked, totals, hasProblems, refresh } = useBasketInfo(lines);
+  const { currency, checked, totals, hasProblems, refresh } = useBasketInfo(lines);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [placedId, setPlacedId] = useState<string | null>(null);
@@ -66,7 +67,8 @@ export function CheckoutView() {
       const order = await clientApi<OrderView>("/orders", {
         method: "POST",
         body: {
-          idempotencyKey: idempotencyKeyFor(lines),
+          idempotencyKey: idempotencyKeyFor(lines, currency),
+          currency,
           lines: lines.map((l) => ({ formatId: l.formatId, quantity: l.quantity })),
         },
       });
@@ -116,7 +118,7 @@ export function CheckoutView() {
                     · {FORMAT_LABELS[l.format]} × {l.quantity}
                   </span>
                 </span>
-                <span className="font-semibold">{formatUsd((l.info?.priceCents ?? l.priceCents) * l.quantity)}</span>
+                <span className="font-semibold">{formatMoney((l.info?.price ?? l.price)[currency] * l.quantity, currency)}</span>
               </li>
             ))}
           </ul>
@@ -141,7 +143,7 @@ export function CheckoutView() {
           disabled={busy || hasProblems || !totals}
           className={`${buttonClass.primary} mt-5 w-full`}
         >
-          {busy ? "Placing order…" : totals ? `Place order · ${formatUsd(totals.totalCents)}` : "Place order"}
+          {busy ? "Placing order…" : totals ? `Place order · ${formatMoney(totals.total, currency)}` : "Place order"}
         </button>
         <p className="mt-3 text-xs text-ink-3">The final price is confirmed by the store when the order is placed.</p>
       </OrderSummary>

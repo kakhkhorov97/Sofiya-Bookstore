@@ -14,9 +14,11 @@ import {
   type AdminOverview,
   type BookFormat,
   type BookStatus,
+  type Currency,
   type MemberStatusInput,
   type OrderStatus,
   type Page,
+  type Prices,
 } from '@sofiya/shared';
 import { sql, SQL } from 'drizzle-orm';
 import { IndexJobService } from '../ai/index-job.service';
@@ -48,6 +50,7 @@ export class AdminPeopleService {
         id: string;
         user_id: string;
         status: OrderStatus;
+        currency: Currency;
         subtotal_cents: number;
         delivery_cents: number;
         total_cents: number;
@@ -62,7 +65,7 @@ export class AdminPeopleService {
           coalesce((
             SELECT json_agg(json_build_object(
               'formatId', oi.format_id, 'bookSlug', b.slug, 'bookTitle', b.title,
-              'format', bf.format, 'quantity', oi.quantity, 'unitPriceCents', oi.unit_price_cents
+              'format', bf.format, 'quantity', oi.quantity, 'unitPrice', oi.unit_price_cents
             ) ORDER BY b.title)
             FROM order_items oi
             JOIN book_formats bf ON bf.id = oi.format_id
@@ -82,9 +85,10 @@ export class AdminPeopleService {
         id: r.id,
         userId: r.user_id,
         status: r.status,
-        subtotalCents: r.subtotal_cents,
-        deliveryCents: r.delivery_cents,
-        totalCents: r.total_cents,
+        currency: r.currency,
+        subtotal: r.subtotal_cents,
+        delivery: r.delivery_cents,
+        total: r.total_cents,
         pointsAwarded: r.points_awarded,
         items: r.items,
         createdAt: new Date(r.created_at).toISOString(),
@@ -117,11 +121,13 @@ export class AdminPeopleService {
         points: number;
         created_at: Date;
         order_count: number;
-        spent: number;
+        spent_usd: number;
+        spent_krw: number;
       }>(sql`
         SELECT u.id, u.email, u.display_name, u.role, u.status, u.points, u.created_at,
           count(o.id)::int AS order_count,
-          coalesce(sum(o.total_cents) FILTER (WHERE o.status IN ('IN_PROCESS', 'DELIVERED')), 0)::int AS spent
+          coalesce(sum(o.total_cents) FILTER (WHERE o.currency = 'USD' AND o.status IN ('IN_PROCESS', 'DELIVERED')), 0)::int AS spent_usd,
+          coalesce(sum(o.total_cents) FILTER (WHERE o.currency = 'KRW' AND o.status IN ('IN_PROCESS', 'DELIVERED')), 0)::int AS spent_krw
         FROM users u LEFT JOIN orders o ON o.user_id = u.id
         WHERE ${cond}
         GROUP BY u.id
@@ -140,7 +146,7 @@ export class AdminPeopleService {
         status: r.status,
         points: r.points,
         orderCount: r.order_count,
-        spentCents: r.spent,
+        spent: { USD: r.spent_usd, KRW: r.spent_krw },
         createdAt: new Date(r.created_at).toISOString(),
       })),
       total: Number(count[0]?.total ?? 0),
@@ -181,9 +187,14 @@ export class AdminPeopleService {
       recent,
       unanswered,
     ] = await Promise.all([
-      this.db.execute<{ status: OrderStatus; n: number; revenue: number }>(sql`
-          SELECT status, count(*)::int AS n, coalesce(sum(total_cents), 0)::int AS revenue
-          FROM orders GROUP BY status`),
+      this.db.execute<{
+        status: OrderStatus;
+        currency: Currency;
+        n: number;
+        revenue: number;
+      }>(sql`
+          SELECT status, currency, count(*)::int AS n, coalesce(sum(total_cents), 0)::int AS revenue
+          FROM orders GROUP BY status, currency`),
       this.db.execute<{ status: BookStatus; n: number }>(
         sql`SELECT status, count(*)::int AS n FROM books GROUP BY status`,
       ),
@@ -229,11 +240,11 @@ export class AdminPeopleService {
     const orders = Object.fromEntries(
       ORDER_STATUSES.map((s) => [s, 0]),
     ) as Record<OrderStatus, number>;
-    let revenueCents = 0;
+    const revenue: Prices = { KRW: 0, USD: 0 };
     for (const r of orderRows) {
-      orders[r.status] = r.n;
+      orders[r.status] += r.n;
       if (r.status === 'IN_PROCESS' || r.status === 'DELIVERED')
-        revenueCents += r.revenue;
+        revenue[r.currency] += r.revenue;
     }
     const books = Object.fromEntries(
       BOOK_STATUSES.map((s) => [s, 0]),
@@ -250,7 +261,7 @@ export class AdminPeopleService {
 
     return {
       orders,
-      revenueCents,
+      revenue,
       books,
       lowStock: lowStock.map((r) => ({
         bookId: r.book_id,

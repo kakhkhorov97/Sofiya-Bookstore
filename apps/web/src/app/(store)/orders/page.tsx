@@ -1,4 +1,4 @@
-import { formatUsd, OrderStatus, type OrderView, type Page } from "@sofiya/shared";
+import { formatMoney, OrderStatus, type OrderView, type Page } from "@sofiya/shared";
 import { Package } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -58,7 +58,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                   </p>
                 </div>
                 <OrderStatusTag status={o.status} />
-                <p className="ml-auto font-bold sm:w-24 sm:text-right">{formatUsd(o.totalCents)}</p>
+                <p className="ml-auto font-bold sm:w-28 sm:text-right">{formatMoney(o.total, o.currency)}</p>
               </Link>
             </li>
           ))}

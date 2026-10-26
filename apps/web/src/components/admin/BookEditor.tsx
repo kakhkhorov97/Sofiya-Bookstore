@@ -7,6 +7,7 @@ import {
   type AdminBook,
   type AiDraft,
   type BookFormat,
+  suggestKrw,
 } from "@sofiya/shared";
 import { ImagePlus, Sparkles, Trash2, Undo2 } from "lucide-react";
 import Link from "next/link";
@@ -20,6 +21,7 @@ import { BookStatusTag, IndexBadge, Panel } from "./bits";
 
 interface FormatRow {
   enabled: boolean;
+  priceKrw: string; // won, as typed
   price: string; // dollars, as typed
   stock: string;
 }
@@ -35,8 +37,13 @@ function initialFormats(book?: AdminBook): Record<BookFormat, FormatRow> {
       return [
         f,
         existing
-          ? { enabled: true, price: (existing.priceCents / 100).toFixed(2), stock: existing.stock === null ? "" : String(existing.stock) }
-          : { enabled: !book && (f === "PAPERBACK" || f === "EBOOK"), price: "", stock: isDigital(f) ? "" : "0" },
+          ? {
+              enabled: true,
+              priceKrw: String(existing.price.KRW),
+              price: (existing.price.USD / 100).toFixed(2),
+              stock: existing.stock === null ? "" : String(existing.stock),
+            }
+          : { enabled: !book && (f === "PAPERBACK" || f === "EBOOK"), priceKrw: "", price: "", stock: isDigital(f) ? "" : "0" },
       ];
     }),
   ) as Record<BookFormat, FormatRow>;
@@ -80,7 +87,10 @@ export function BookEditor({ book, aiEnabled }: { book?: AdminBook; aiEnabled: b
       staffPickNote: staffPick || null,
       formats: BOOK_FORMATS.filter((f) => formats[f].enabled).map((f) => ({
         format: f,
-        priceCents: Math.round(Number(formats[f].price) * 100),
+        price: {
+          KRW: formats[f].priceKrw.trim() === "" ? NaN : Number(formats[f].priceKrw),
+          USD: formats[f].price.trim() === "" ? NaN : Math.round(Number(formats[f].price) * 100),
+        },
         stock: isDigital(f) ? null : Number(formats[f].stock || 0),
       })),
     };
@@ -89,9 +99,14 @@ export function BookEditor({ book, aiEnabled }: { book?: AdminBook; aiEnabled: b
   async function save(e: React.FormEvent) {
     e.preventDefault();
     const body = buildInput();
-    const invalidPrice = body.formats.find((f) => !Number.isFinite(f.priceCents) || f.priceCents < 0);
+    const invalidPrice = body.formats.find(
+      (f) => !Number.isInteger(f.price.KRW) || f.price.KRW < 0 || !Number.isFinite(f.price.USD) || f.price.USD < 0,
+    );
     if (invalidPrice) {
-      setMessage({ tone: "bad", text: `Enter a price for the ${FORMAT_LABELS[invalidPrice.format].toLowerCase()} edition.` });
+      setMessage({
+        tone: "bad",
+        text: `Enter both prices (whole won and dollars) for the ${FORMAT_LABELS[invalidPrice.format].toLowerCase()} edition.`,
+      });
       return;
     }
     const parsed = BookInput.safeParse(body);
@@ -262,7 +277,20 @@ export function BookEditor({ book, aiEnabled }: { book?: AdminBook; aiEnabled: b
                     {FORMAT_LABELS[f]}
                   </label>
                   <label className="flex items-center gap-2 text-sm text-ink-2">
-                    Price $
+                    ₩
+                    <input
+                      type="number"
+                      step="100"
+                      min="0"
+                      disabled={!row.enabled}
+                      value={row.priceKrw}
+                      onChange={(e) => setFormat(f, { priceKrw: e.target.value })}
+                      className="h-10 w-28 rounded-[9px] border border-line px-2.5 text-[15px] disabled:bg-surface"
+                      aria-label={`${FORMAT_LABELS[f]} price in won`}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-ink-2">
+                    $
                     <input
                       type="number"
                       step="0.01"
@@ -274,6 +302,15 @@ export function BookEditor({ book, aiEnabled }: { book?: AdminBook; aiEnabled: b
                       aria-label={`${FORMAT_LABELS[f]} price in dollars`}
                     />
                   </label>
+                  <button
+                    type="button"
+                    disabled={!row.enabled || !(Number(row.price) > 0)}
+                    onClick={() => setFormat(f, { priceKrw: String(suggestKrw(Math.round(Number(row.price) * 100))) })}
+                    className="text-sm font-semibold text-accent hover:text-accent-ink disabled:text-ink-3 disabled:opacity-60"
+                    title="Suggest a round won price from the dollar price"
+                  >
+                    ₩ from $
+                  </button>
                   {isDigital(f) ? (
                     <span className="text-sm text-ink-3">Digital: never runs out</span>
                   ) : (

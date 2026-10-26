@@ -1,5 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import type { AskFilters } from '@sofiya/shared';
+import {
+  DEFAULT_CURRENCY,
+  type AskFilters,
+  type Currency,
+} from '@sofiya/shared';
 import { sql, SQL } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import { escapeLike } from '../common/like';
@@ -76,7 +80,7 @@ export class RetrievalService {
     return row?.n ?? 0;
   }
 
-  private filterSql(filters: AskFilters): SQL {
+  private filterSql(filters: AskFilters, currency: Currency): SQL {
     const where: SQL[] = [sql`b.status = 'LIVE'`];
     if (filters.genre) where.push(sql`b.genre = ${filters.genre}`);
     if (filters.format) {
@@ -84,9 +88,11 @@ export class RetrievalService {
         sql`EXISTS (SELECT 1 FROM book_formats x WHERE x.book_id = b.id AND x.format = ${filters.format})`,
       );
     }
-    if (filters.maxPriceCents) {
+    if (filters.maxPrice) {
+      // The limit is in the reader's currency, so compare that currency's price.
+      const price = currency === 'KRW' ? sql`x.price_krw` : sql`x.price_cents`;
       where.push(
-        sql`EXISTS (SELECT 1 FROM book_formats x WHERE x.book_id = b.id AND x.price_cents <= ${filters.maxPriceCents})`,
+        sql`EXISTS (SELECT 1 FROM book_formats x WHERE x.book_id = b.id AND ${price} <= ${filters.maxPrice})`,
       );
     }
     if (filters.maxPages) where.push(sql`b.pages <= ${filters.maxPages}`);
@@ -133,8 +139,9 @@ export class RetrievalService {
     query: string,
     filters: AskFilters = {},
     limit = 10,
+    currency: Currency = DEFAULT_CURRENCY,
   ): Promise<Ranked[]> {
-    const where = this.filterSql(filters);
+    const where = this.filterSql(filters, currency);
     // OR of the question's meaningful words, so a sentence still finds
     // keyword hits; generic words ("book", "read", "something") are dropped
     // so they cannot match titles like "The Book of Wonder".

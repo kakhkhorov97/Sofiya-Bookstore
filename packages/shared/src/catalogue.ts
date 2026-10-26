@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { BookFormat, Genre } from "./domain";
+import { Currency, DEFAULT_CURRENCY, type Prices } from "./pricing";
 
 export const BOOK_SORTS = ["relevance", "newest", "title", "price_asc", "price_desc", "popular"] as const;
 export const BookSort = z.enum(BOOK_SORTS);
@@ -19,6 +20,8 @@ export const BookListQuery = z.object({
     .optional()
     .transform((v) => v === "true"),
   sort: BookSort.optional(),
+  // Which price "price_asc" / "price_desc" sort by.
+  currency: Currency.default(DEFAULT_CURRENCY),
   page: z.coerce.number().int().min(1).max(1000).default(1),
   limit: z.coerce.number().int().min(1).max(60).default(24),
 });
@@ -27,7 +30,7 @@ export type BookListQuery = z.infer<typeof BookListQuery>;
 export interface BookFormatView {
   id: string;
   format: BookFormat;
-  priceCents: number;
+  price: Prices;
   inStock: boolean;
   // Only exposed when low, so the UI can say "Only 3 left".
   lowStock: number | null;
@@ -42,7 +45,8 @@ export interface BookSummary {
   genre: Genre;
   publishedYear: number | null;
   pages: number | null;
-  fromPriceCents: number;
+  // Cheapest format, in each currency.
+  fromPrice: Prices;
   inStock: boolean;
   formats: BookFormat[];
   // Average of reader reviews (1–5), null when there are none yet.
@@ -83,7 +87,7 @@ export type FormatLookupQuery = z.infer<typeof FormatLookupQuery>;
 export interface FormatInfo {
   formatId: string;
   format: BookFormat;
-  priceCents: number;
+  price: Prices;
   inStock: boolean;
   lowStock: number | null;
   // False when the book is paused or removed; the basket should say so.

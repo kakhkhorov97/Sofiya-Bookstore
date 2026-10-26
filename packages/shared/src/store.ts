@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { BookFormat, Genre } from "./domain";
 import type { BookSummary } from "./catalogue";
+import { Currency, DEFAULT_CURRENCY } from "./pricing";
 
 export interface AuthorPage {
   name: string;
@@ -59,7 +60,8 @@ export const AskFilters = z
   .object({
     genre: Genre.optional(),
     format: BookFormat.optional(),
-    maxPriceCents: z.number().int().positive().max(100_000).optional(),
+    // In the request's currency (won or cents).
+    maxPrice: z.number().int().positive().max(10_000_000).optional(),
     maxPages: z.number().int().positive().max(5000).optional(),
     inStock: z.boolean().optional(),
   })
@@ -74,6 +76,8 @@ export const AskInput = z
       .max(6)
       .default([]),
     filters: AskFilters.default({}),
+    // Prices in the answer and the max-price filter use this currency.
+    currency: Currency.default(DEFAULT_CURRENCY),
   })
   .strict();
 export type AskInput = z.infer<typeof AskInput>;

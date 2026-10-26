@@ -1,6 +1,6 @@
 "use client";
 
-import { formatUsd } from "@sofiya/shared";
+import { formatMoney, type Currency } from "@sofiya/shared";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { MAX_PER_LINE } from "@/basket/basket";
@@ -13,7 +13,7 @@ import { ButtonLink, Notice } from "./ui";
 
 export function BasketView() {
   const { lines, ready, dispatch } = useBasket();
-  const { checked, totals, error, hasProblems } = useBasketInfo(lines);
+  const { currency, checked, totals, error, hasProblems } = useBasketInfo(lines);
 
   if (!ready) return <div className="mt-8 h-40 animate-pulse rounded-[16px] bg-surface" aria-busy />;
 
@@ -40,7 +40,7 @@ export function BasketView() {
         {hasProblems && <Notice>Some items can’t be ordered right now. Remove them to continue.</Notice>}
         <ul className="divide-y divide-line border-y border-line">
           {checked.map((l) => (
-            <BasketRow key={l.formatId} line={l} dispatch={dispatch} />
+            <BasketRow currency={currency} key={l.formatId} line={l} dispatch={dispatch} />
           ))}
         </ul>
         <Link href="/books" className="inline-block font-semibold text-accent hover:text-accent-ink">
@@ -63,8 +63,16 @@ export function BasketView() {
   );
 }
 
-function BasketRow({ line, dispatch }: { line: CheckedLine; dispatch: ReturnType<typeof useBasket>["dispatch"] }) {
-  const price = line.info?.priceCents ?? line.priceCents;
+function BasketRow({
+  line,
+  currency,
+  dispatch,
+}: {
+  line: CheckedLine;
+  currency: Currency;
+  dispatch: ReturnType<typeof useBasket>["dispatch"];
+}) {
+  const price = (line.info?.price ?? line.price)[currency];
   const digital = isDigital(line.format);
   return (
     <li className="flex gap-4 py-5">
@@ -81,7 +89,7 @@ function BasketRow({ line, dispatch }: { line: CheckedLine; dispatch: ReturnType
               {line.author} · {FORMAT_LABELS[line.format]}
             </p>
           </div>
-          <p className="shrink-0 font-bold">{formatUsd(price * line.quantity)}</p>
+          <p className="shrink-0 font-bold">{formatMoney(price * line.quantity, currency)}</p>
         </div>
         {line.problem === "unavailable" && <p className="mt-1 text-sm font-semibold text-bad">No longer available</p>}
         {line.problem === "out_of_stock" && <p className="mt-1 text-sm font-semibold text-warn">Out of stock</p>}
@@ -90,7 +98,7 @@ function BasketRow({ line, dispatch }: { line: CheckedLine; dispatch: ReturnType
         )}
         <div className="mt-auto flex items-center justify-between pt-3">
           {digital ? (
-            <span className="text-sm text-ink-3">{formatUsd(price)} · digital</span>
+            <span className="text-sm text-ink-3">{formatMoney(price, currency)} · digital</span>
           ) : (
             <div className="flex items-center rounded-[9px] border border-line" role="group" aria-label={`Quantity of ${line.title}`}>
               <button

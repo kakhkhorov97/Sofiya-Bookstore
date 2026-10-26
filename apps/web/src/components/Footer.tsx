@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FreeDeliveryNote } from "@/currency/CurrencySwitcher";
 import { GENRE_LABELS } from "@/lib/labels";
 
 export function Footer() {
@@ -7,7 +8,7 @@ export function Footer() {
       <div className="mx-auto grid w-[min(1240px,calc(100%-32px))] grid-cols-2 gap-8 py-12 text-[15px] text-ink-2 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
         <div className="col-span-2 md:col-span-1">
           <p className="font-bold text-ink">Sofiya Bookstore</p>
-          <p className="mt-2 max-w-[36ch]">Classics, stories and programming books, delivered. Free delivery on orders over $100.</p>
+          <p className="mt-2 max-w-[36ch]">Classics, stories and programming books, delivered. <FreeDeliveryNote />.</p>
         </div>
         <FooterList
           title="Shop"

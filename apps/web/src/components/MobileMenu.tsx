@@ -15,6 +15,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { CurrencySwitcher } from "@/currency/CurrencySwitcher";
 import { GENRE_LABELS } from "@/lib/labels";
 import { FEATURED_AUTHORS } from "@/lib/nav";
 
@@ -98,6 +99,11 @@ export function MobileMenu({
                   />
                 </label>
               </form>
+
+              <div className="flex items-center justify-between px-5 pb-3 text-[15px]">
+                <span className="text-ink-2">Currency</span>
+                <CurrencySwitcher />
+              </div>
 
               <nav aria-label="Mobile" className="px-2 pb-6 text-[15px]">
                 <MobileLink

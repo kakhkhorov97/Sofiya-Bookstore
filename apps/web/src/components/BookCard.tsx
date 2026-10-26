@@ -1,4 +1,5 @@
-import { formatUsd, type BookSummary } from "@sofiya/shared";
+import type { BookSummary } from "@sofiya/shared";
+import { Price } from "@/currency/CurrencyProvider";
 import Link from "next/link";
 import { BookCover } from "./BookCover";
 import { RatingLine } from "./Stars";
@@ -32,7 +33,7 @@ export function BookCard({ book }: { book: BookSummary }) {
       </div>
       <p className="mt-auto pt-1.5 text-sm">
         <span className="text-ink-3">from </span>
-        <span className="font-bold">{formatUsd(book.fromPriceCents)}</span>
+        <span className="font-bold"><Price prices={book.fromPrice} /></span>
         {!book.inStock && <span className="ml-2 text-xs font-semibold text-warn">Out of stock</span>}
       </p>
     </article>

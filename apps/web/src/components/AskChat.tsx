@@ -1,10 +1,11 @@
 "use client";
 
-import { BOOK_FORMATS, GENRES, formatUsd, type AskFilters, type AskSource } from "@sofiya/shared";
+import { BOOK_FORMATS, GENRES, formatMoney, type AskFilters, type AskSource, type Currency } from "@sofiya/shared";
 import { ArrowUp, BookOpen, RotateCcw, SlidersHorizontal, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { Price, useCurrency } from "@/currency/CurrencyProvider";
 import { FORMAT_LABELS, GENRE_LABELS } from "@/lib/labels";
 import { readEvents, splitCitations } from "@/lib/sse";
 import { BookCover } from "./BookCover";
@@ -44,7 +45,14 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const { currency } = useCurrency();
   const [filters, setFilters] = useState<AskFilters>({});
+  // A price limit only means something in the currency it was picked in.
+  const [filterCurrency, setFilterCurrency] = useState(currency);
+  if (filterCurrency !== currency) {
+    setFilterCurrency(currency);
+    setFilters((f) => ({ ...f, maxPrice: undefined }));
+  }
   const [showFilters, setShowFilters] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
   const started = useRef(false);
@@ -82,7 +90,7 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
       const res = await fetch("/api/ask", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ message: text, history, filters: filterOverride ?? filters }),
+        body: JSON.stringify({ message: text, history, filters: filterOverride ?? filters, currency }),
         signal: controller.signal,
       });
       if (!res.ok || !res.body) {
@@ -272,7 +280,7 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
                 <ArrowUp size={20} />
               </button>
             </div>
-            {showFilters && <FilterBar filters={filters} onChange={setFilters} />}
+            {showFilters && <FilterBar filters={filters} currency={currency} onChange={setFilters} />}
           </form>
           <p className="mt-3 text-center text-xs text-ink-3">
             Answers are written by AI (Google Gemini) from our catalogue and can be imperfect. Check the book page before
@@ -382,7 +390,9 @@ function SourceCard({ source, cited }: { source: AskSource; cited: boolean }) {
           </div>
           <blockquote className="mt-2 rounded-[8px] bg-surface px-3 py-2 text-[13.5px] text-ink-2">“{source.passage}”</blockquote>
           <div className="mt-2.5 flex items-center justify-between">
-            <span className="text-sm font-bold">from {formatUsd(b.fromPriceCents)}</span>
+            <span className="text-sm font-bold">
+              <Price prices={b.fromPrice} prefix="from " />
+            </span>
             <Link href={`/books/${b.slug}`} className="text-sm font-semibold text-accent hover:text-accent-ink">
               View book →
             </Link>
@@ -393,7 +403,21 @@ function SourceCard({ source, cited }: { source: AskSource; cited: boolean }) {
   );
 }
 
-function FilterBar({ filters, onChange }: { filters: AskFilters; onChange: (f: AskFilters) => void }) {
+// Price limits per currency: round amounts a reader would actually pick.
+const PRICE_LIMITS: Record<Currency, number[]> = {
+  KRW: [7_000, 14_000, 20_000, 35_000],
+  USD: [500, 1000, 1500, 2500],
+};
+
+function FilterBar({
+  filters,
+  currency,
+  onChange,
+}: {
+  filters: AskFilters;
+  currency: Currency;
+  onChange: (f: AskFilters) => void;
+}) {
   const select = "h-9 rounded-[9px] border border-line bg-white px-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-accent";
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-line px-1 pt-3">
@@ -426,13 +450,13 @@ function FilterBar({ filters, onChange }: { filters: AskFilters; onChange: (f: A
       <select
         aria-label="Maximum price"
         className={select}
-        value={filters.maxPriceCents ?? ""}
-        onChange={(e) => onChange({ ...filters, maxPriceCents: e.target.value ? Number(e.target.value) : undefined })}
+        value={filters.maxPrice ?? ""}
+        onChange={(e) => onChange({ ...filters, maxPrice: e.target.value ? Number(e.target.value) : undefined })}
       >
         <option value="">Any price</option>
-        {[500, 1000, 1500, 2500].map((c) => (
+        {PRICE_LIMITS[currency].map((c) => (
           <option key={c} value={c}>
-            Under {formatUsd(c)}
+            Under {formatMoney(c, currency)}
           </option>
         ))}
       </select>

@@ -10,6 +10,7 @@ import {
   canTransition,
   computeOrderTotals,
   CreateOrderInput,
+  Currency,
   OrderListQuery,
   OrderStatus,
   OrderView,
@@ -30,6 +31,7 @@ interface OrderRow {
   id: string;
   user_id: string;
   status: OrderStatus;
+  currency: Currency;
   subtotal_cents: number;
   delivery_cents: number;
   total_cents: number;
@@ -43,7 +45,7 @@ interface OrderRow {
     bookTitle: string;
     format: OrderView['items'][number]['format'];
     quantity: number;
-    unitPriceCents: number;
+    unitPrice: number;
   }[];
   [key: string]: unknown;
 }
@@ -53,12 +55,18 @@ export interface CreateResult {
   created: boolean;
 }
 
-// Same order lines in any order give the same hash.
-export function hashLines(lines: Map<string, number>): string {
-  const canonical = [...lines.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([id, qty]) => `${id}:${qty}`)
-    .join(',');
+// Same order lines in any order give the same hash. The currency is part of
+// the request, so reusing a key with the other currency is a conflict.
+export function hashLines(
+  lines: Map<string, number>,
+  currency: Currency,
+): string {
+  const canonical =
+    `${currency}|` +
+    [...lines.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([id, qty]) => `${id}:${qty}`)
+      .join(',');
   return createHash('sha256').update(canonical).digest('hex');
 }
 
@@ -66,9 +74,10 @@ const toView = (r: OrderRow): OrderView => ({
   id: r.id,
   userId: r.user_id,
   status: r.status,
-  subtotalCents: r.subtotal_cents,
-  deliveryCents: r.delivery_cents,
-  totalCents: r.total_cents,
+  currency: r.currency,
+  subtotal: r.subtotal_cents,
+  delivery: r.delivery_cents,
+  total: r.total_cents,
   pointsAwarded: r.points_awarded,
   items: r.items ?? [],
   createdAt: new Date(r.created_at).toISOString(),
@@ -80,7 +89,7 @@ const ORDER_SELECT = sql`
     coalesce((
       SELECT json_agg(json_build_object(
         'formatId', oi.format_id, 'bookSlug', b.slug, 'bookTitle', b.title,
-        'format', bf.format, 'quantity', oi.quantity, 'unitPriceCents', oi.unit_price_cents
+        'format', bf.format, 'quantity', oi.quantity, 'unitPrice', oi.unit_price_cents
       ) ORDER BY b.title, bf.format)
       FROM order_items oi
       JOIN book_formats bf ON bf.id = oi.format_id
@@ -105,14 +114,21 @@ export class OrdersService {
         );
       }
     }
-    const requestHash = hashLines(lines);
+    const requestHash = hashLines(lines, input.currency);
 
     const replay = await this.findByKey(userId, input.idempotencyKey);
     if (replay) return this.replayResult(replay, requestHash);
 
     try {
       const orderId = await this.db.transaction((tx) =>
-        this.insertOrder(tx, userId, input.idempotencyKey, requestHash, lines),
+        this.insertOrder(
+          tx,
+          userId,
+          input.idempotencyKey,
+          requestHash,
+          lines,
+          input.currency,
+        ),
       );
       return { order: await this.getView(orderId), created: true };
     } catch (err) {
@@ -140,16 +156,18 @@ export class OrdersService {
     idempotencyKey: string,
     requestHash: string,
     lines: Map<string, number>,
+    currency: Currency,
   ): Promise<string> {
     const ids = [...lines.keys()].sort();
     // Lock the rows in a fixed order so concurrent checkouts cannot deadlock.
     const formats = await tx.execute<{
       id: string;
       price_cents: number;
+      price_krw: number;
       stock: number | null;
       book_status: string;
     }>(sql`
-      SELECT bf.id, bf.price_cents, bf.stock, b.status AS book_status
+      SELECT bf.id, bf.price_cents, bf.price_krw, bf.stock, b.status AS book_status
       FROM book_formats bf JOIN books b ON b.id = bf.book_id
       WHERE bf.id IN (${sql.join(
         ids.map((id) => sql`${id}`),
@@ -189,16 +207,16 @@ export class OrdersService {
 
     // Prices come from the database, never from the request
     // (legacy defect: the client sent itemPrice and the server trusted it).
+    const unitPrice = (id: string) =>
+      currency === 'KRW' ? byId.get(id)!.price_krw : byId.get(id)!.price_cents;
     const totals = computeOrderTotals(
-      ids.map((id) => ({
-        unitPriceCents: byId.get(id)!.price_cents,
-        quantity: lines.get(id)!,
-      })),
+      ids.map((id) => ({ unitPrice: unitPrice(id), quantity: lines.get(id)! })),
+      currency,
     );
 
     const [order] = await tx.execute<{ id: string }>(sql`
-      INSERT INTO orders (user_id, subtotal_cents, delivery_cents, total_cents, idempotency_key, request_hash)
-      VALUES (${userId}, ${totals.subtotalCents}, ${totals.deliveryCents}, ${totals.totalCents}, ${idempotencyKey}, ${requestHash})
+      INSERT INTO orders (user_id, currency, subtotal_cents, delivery_cents, total_cents, idempotency_key, request_hash)
+      VALUES (${userId}, ${currency}, ${totals.subtotal}, ${totals.delivery}, ${totals.total}, ${idempotencyKey}, ${requestHash})
       RETURNING id`);
 
     await tx.execute(sql`
@@ -206,7 +224,7 @@ export class OrdersService {
       VALUES ${sql.join(
         ids.map(
           (id) =>
-            sql`(${order.id}, ${id}, ${lines.get(id)!}, ${byId.get(id)!.price_cents})`,
+            sql`(${order.id}, ${id}, ${lines.get(id)!}, ${unitPrice(id)})`,
         ),
         sql`, `,
       )}`);

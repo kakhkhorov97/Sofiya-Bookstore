@@ -1,6 +1,7 @@
 "use client";
 
-import { formatUsd, type BookSummary } from "@sofiya/shared";
+import type { BookSummary } from "@sofiya/shared";
+import { Price } from "@/currency/CurrencyProvider";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import Link from "next/link";
 import { useRef } from "react";
@@ -56,7 +57,7 @@ export function StaffPicks({ books }: { books: BookSummary[] }) {
                 <p className="line-clamp-2 font-bold leading-snug">{b.title}</p>
                 <p className="text-sm text-ink-3">{b.author}</p>
                 <p className="mt-2 line-clamp-4 text-sm italic text-ink-2">“{b.staffPickNote}”</p>
-                <p className="mt-auto pt-2 text-sm font-bold">from {formatUsd(b.fromPriceCents)}</p>
+                <p className="mt-auto pt-2 text-sm font-bold"><Price prices={b.fromPrice} prefix="from " /></p>
               </div>
             </Link>
           </li>

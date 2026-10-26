@@ -1,4 +1,4 @@
-import { AdminBookListQuery, BOOK_STATUSES, formatUsd, type AdminBook, type Page } from "@sofiya/shared";
+import { AdminBookListQuery, BOOK_STATUSES, type AdminBook, type Page } from "@sofiya/shared";
 import { Plus, Search } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -7,6 +7,7 @@ import { BookCover } from "@/components/BookCover";
 import { buttonClass } from "@/components/ui";
 import { apiGet } from "@/lib/api";
 import { FORMAT_LABELS, GENRE_LABELS } from "@/lib/labels";
+import { formatPrices } from "@/currency/currency";
 
 export const metadata: Metadata = { title: "Books" };
 
@@ -108,7 +109,7 @@ export default async function AdminBooksPage({ searchParams }: { searchParams: S
                   <td className={`${td} tabular-nums`}>
                     {b.formats.map((f) => (
                       <span key={f.id} className="mr-3 inline-block whitespace-nowrap">
-                        {FORMAT_LABELS[f.format]} {formatUsd(f.priceCents)}
+                        {FORMAT_LABELS[f.format]} {formatPrices(f.price)}
                         {f.stock !== null && (
                           <span className={f.stock === 0 ? "text-bad" : f.stock <= 5 ? "text-warn" : "text-ink-3"}> ({f.stock})</span>
                         )}

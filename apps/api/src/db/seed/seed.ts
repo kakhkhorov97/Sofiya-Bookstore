@@ -1,3 +1,4 @@
+import { suggestKrw } from '@sofiya/shared';
 import type { BookFormat, BookStatus } from '@sofiya/shared';
 import { and, eq, notInArray, sql } from 'drizzle-orm';
 import type { Db } from '../client';
@@ -47,16 +48,27 @@ const price = (dollars: number) => dollars * 100 + 99;
 export interface SeedFormat {
   format: BookFormat;
   priceCents: number;
+  priceKrw: number;
   stock: number | null;
 }
 
 export function formatsFor(entry: CatalogueEntry, slug: string): SeedFormat[] {
+  return dollarFormats(entry, slug).map((f) => ({
+    ...f,
+    priceKrw: suggestKrw(f.priceCents),
+  }));
+}
+
+function dollarFormats(
+  entry: CatalogueEntry,
+  slug: string,
+): Omit<SeedFormat, 'priceKrw'>[] {
   const h = hash(slug);
   const physicalStock = (format: BookFormat) => {
     const s = hash(`${slug}:${format}`);
     return s % 13 === 0 ? 0 : (s % 60) + 1;
   };
-  const out: SeedFormat[] = [];
+  const out: Omit<SeedFormat, 'priceKrw'>[] = [];
 
   if (entry.genre === 'PROGRAMMING') {
     const paper = 29 + Math.floor(entry.pages / 100) + (h % 6);
@@ -143,6 +155,7 @@ export async function seedCatalogue(
             target: [bookFormats.bookId, bookFormats.format],
             set: {
               priceCents: f.priceCents,
+              priceKrw: f.priceKrw,
               stock: f.stock,
               updatedAt: sql`now()`,
             },

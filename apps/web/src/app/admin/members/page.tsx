@@ -1,4 +1,4 @@
-import { AdminMemberListQuery, formatUsd, type AdminMember, type Page } from "@sofiya/shared";
+import { AdminMemberListQuery, type AdminMember, type Page } from "@sofiya/shared";
 import { Search } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -8,6 +8,7 @@ import { buttonClass, Tag } from "@/components/ui";
 import { apiGet } from "@/lib/api";
 import { dateLabel } from "@/lib/labels";
 import { getCurrentUser } from "@/lib/session";
+import { formatPrices } from "@/currency/currency";
 
 export const metadata: Metadata = { title: "Members" };
 
@@ -93,7 +94,7 @@ export default async function AdminMembersPage({ searchParams }: { searchParams:
                       0
                     )}
                   </td>
-                  <td className={`${td} text-right tabular-nums`}>{formatUsd(m.spentCents)}</td>
+                  <td className={`${td} text-right tabular-nums`}>{formatPrices(m.spent, { skipZero: true })}</td>
                   <td className={`${td} text-right tabular-nums`}>{m.points}</td>
                   <td className={td}>
                     <Tag tone={m.status === "ACTIVE" ? "ok" : "bad"}>{m.status === "ACTIVE" ? "Active" : "Blocked"}</Tag>

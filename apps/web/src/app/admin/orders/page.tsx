@@ -1,4 +1,4 @@
-import { AdminOrderListQuery, ORDER_STATUSES, formatUsd, type AdminOrder, type Page } from "@sofiya/shared";
+import { AdminOrderListQuery, ORDER_STATUSES, formatMoney, type AdminOrder, type Page } from "@sofiya/shared";
 import { Search } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -91,7 +91,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
                       </span>
                     ))}
                   </td>
-                  <td className={`${td} text-right font-semibold tabular-nums`}>{formatUsd(o.totalCents)}</td>
+                  <td className={`${td} text-right font-semibold tabular-nums`}>{formatMoney(o.total, o.currency)}</td>
                   <td className={td}>
                     <OrderStatusTag status={o.status} />
                   </td>

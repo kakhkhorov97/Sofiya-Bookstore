@@ -26,11 +26,12 @@ describe('Orders (e2e)', () => {
     agent: Agent,
     lines: { formatId: string; quantity: number; [k: string]: unknown }[],
     idempotencyKey: string = randomUUID(),
+    currency?: 'KRW' | 'USD',
   ) =>
     agent
       .post('/api/orders')
       .set('Origin', WEB_ORIGIN)
-      .send({ idempotencyKey, lines });
+      .send({ idempotencyKey, lines, currency });
 
   const adminSet = (
     agent: Agent,
@@ -69,24 +70,73 @@ describe('Orders (e2e)', () => {
     it('LEGACY: ignores a client-sent price and charges the database price', async () => {
       const { formatId } = await createBook(db, { priceCents: 1234 });
       const { agent } = await signedInAgent(app);
-      const res = await placeOrder(agent, [
-        { formatId, quantity: 2, unitPriceCents: 1, itemPrice: 1 },
-      ]).expect(201);
+      const res = await placeOrder(
+        agent,
+        [{ formatId, quantity: 2, unitPriceCents: 1, itemPrice: 1 }],
+        randomUUID(),
+        'USD',
+      ).expect(201);
       const order = res.body as OrderView;
-      expect(order.subtotalCents).toBe(2468);
-      expect(order.deliveryCents).toBe(500);
-      expect(order.totalCents).toBe(2968);
-      expect(order.items[0].unitPriceCents).toBe(1234);
+      expect(order.currency).toBe('USD');
+      expect(order.subtotal).toBe(2468);
+      expect(order.delivery).toBe(500);
+      expect(order.total).toBe(2968);
+      expect(order.items[0].unitPrice).toBe(1234);
       expect(order.status).toBe('PAUSED');
     });
 
     it('makes delivery free from $100', async () => {
       const { formatId } = await createBook(db, { priceCents: 2500 });
       const { agent } = await signedInAgent(app);
-      const res = await placeOrder(agent, [{ formatId, quantity: 4 }]).expect(
+      const res = await placeOrder(
+        agent,
+        [{ formatId, quantity: 4 }],
+        randomUUID(),
+        'USD',
+      ).expect(201);
+      expect((res.body as OrderView).delivery).toBe(0);
+    });
+
+    it('charges the won price by default, with ₩3,000 delivery', async () => {
+      const { formatId } = await createBook(db, { priceKrw: 12_000 });
+      const { agent } = await signedInAgent(app);
+      const res = await placeOrder(agent, [{ formatId, quantity: 2 }]).expect(
         201,
       );
-      expect((res.body as OrderView).deliveryCents).toBe(0);
+      const order = res.body as OrderView;
+      expect(order.currency).toBe('KRW');
+      expect(order.subtotal).toBe(24_000);
+      expect(order.delivery).toBe(3_000);
+      expect(order.total).toBe(27_000);
+      expect(order.items[0].unitPrice).toBe(12_000);
+      const [row] = await db
+        .select({ currency: orders.currency })
+        .from(orders)
+        .where(eq(orders.id, order.id));
+      expect(row.currency).toBe('KRW');
+    });
+
+    it('makes delivery free from ₩30,000', async () => {
+      const { formatId } = await createBook(db, { priceKrw: 15_000 });
+      const { agent } = await signedInAgent(app);
+      const res = await placeOrder(agent, [{ formatId, quantity: 2 }]).expect(
+        201,
+      );
+      expect((res.body as OrderView).delivery).toBe(0);
+    });
+
+    it('rejects currencies the store does not sell in', async () => {
+      const { formatId } = await createBook(db);
+      const { agent } = await signedInAgent(app);
+      await agent
+        .post('/api/orders')
+        .set('Origin', WEB_ORIGIN)
+        .send({
+          idempotencyKey: randomUUID(),
+          lines: [{ formatId, quantity: 1 }],
+          currency: 'EUR',
+        })
+        .expect(400);
     });
 
     it('LEGACY: takes copies out of stock, and refuses to oversell', async () => {
@@ -179,6 +229,18 @@ describe('Orders (e2e)', () => {
       const key = randomUUID();
       await placeOrder(agent, [{ formatId, quantity: 1 }], key).expect(201);
       await placeOrder(agent, [{ formatId, quantity: 2 }], key).expect(409);
+    });
+
+    it('rejects a reused key with a different currency', async () => {
+      const { formatId } = await createBook(db);
+      const { agent } = await signedInAgent(app);
+      const key = randomUUID();
+      await placeOrder(agent, [{ formatId, quantity: 1 }], key, 'KRW').expect(
+        201,
+      );
+      await placeOrder(agent, [{ formatId, quantity: 1 }], key, 'USD').expect(
+        409,
+      );
     });
   });
 
