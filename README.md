@@ -126,3 +126,11 @@ npm run check       # typecheck, lint, tests, build
 ## Deploy
 
 Both apps ship as containers to Google Cloud Run (`apps/*/Dockerfile`, built from the repo root). Do the one-time setup in `docs/gcp-setup.md`, then run the **Deploy to Cloud Run** workflow from GitHub Actions.
+
+How production differs from local development:
+
+- **Covers** go to a private Cloud Storage bucket (`STORAGE_DRIVER=gcs`, `GCS_BUCKET`), because Cloud Run's disk is temporary. The API still serves them at `/api/covers/…`.
+- **Secrets** (`DATABASE_URL`, `AUTH_SECRET`, `PROXY_SECRET`, `GEMINI_API_KEY`) come from Secret Manager. The API refuses to start in production if one is missing or covers would be stored on local disk.
+- **Migrations** run as a Cloud Run job (`node dist/db/migrate.js`) before each new API version takes traffic. The demo catalogue is loaded only when you tick that option.
+- **API address**: the web image is built with `--build-arg API_URL=…`, because Next.js fixes `/api` forwarding at build time.
+- **Visitor IPs**: every browser request reaches the API through the website, so the website's middleware names the visitor's IP (from `X-Forwarded-For`, counted `CLIENT_IP_HOPS` from the right) and signs it with `PROXY_SECRET`. The API only believes that header with the right secret, so rate limits apply per visitor.

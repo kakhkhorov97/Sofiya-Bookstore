@@ -24,6 +24,28 @@ describe('loadEnv', () => {
     expect(env.PORT).toBe(8080);
   });
 
+  it('refuses to start production without secrets and cloud storage', () => {
+    const prod = {
+      NODE_ENV: 'production',
+      DATABASE_URL: 'postgresql://u:p@db.example/sofiya',
+      AUTH_SECRET: 's'.repeat(40),
+      PROXY_SECRET: 'p'.repeat(40),
+      STORAGE_DRIVER: 'gcs',
+      GCS_BUCKET: 'sofiya-covers',
+    };
+    expect(loadEnv(prod).STORAGE_DRIVER).toBe('gcs');
+    expect(() => loadEnv({ ...prod, STORAGE_DRIVER: 'local' })).toThrow(
+      /STORAGE_DRIVER/,
+    );
+    expect(() => loadEnv({ ...prod, GCS_BUCKET: '' })).toThrow(/GCS_BUCKET/);
+    expect(() => loadEnv({ ...prod, AUTH_SECRET: '' })).toThrow(/AUTH_SECRET/);
+    expect(() => loadEnv({ ...prod, PROXY_SECRET: '' })).toThrow(
+      /PROXY_SECRET/,
+    );
+    // Development keeps working with local covers and no proxy secret.
+    expect(loadEnv({}).STORAGE_DRIVER).toBe('local');
+  });
+
   it('rejects a malformed DATABASE_URL', () => {
     expect(() => loadEnv({ DATABASE_URL: 'not a url' })).toThrow(
       /DATABASE_URL/,

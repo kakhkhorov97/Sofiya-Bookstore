@@ -9,13 +9,19 @@ const EnvSchema = z.object({
   // Comma-separated list of browser origins allowed to call the API.
   WEB_ORIGINS: z.string().default('http://localhost:3000'),
   APP_VERSION: z.string().default('dev'),
-  // Where uploaded covers are stored locally. Cloud Storage replaces this
-  // on Cloud Run (milestone 4), whose disk does not survive restarts.
+  // Where uploaded covers live: "local" (UPLOADS_DIR, for development) or
+  // "gcs" (the GCS_BUCKET Cloud Storage bucket, required on Cloud Run,
+  // whose disk does not survive restarts).
+  STORAGE_DRIVER: z.enum(['local', 'gcs']).default('local'),
   UPLOADS_DIR: z.string().default('uploads'),
-  // Which proxies may set X-Forwarded-For (Express "trust proxy"). The web
-  // app forwards /api from the same machine locally; on Cloud Run set this
-  // to the number of proxy hops in front of the API.
+  GCS_BUCKET: z.string().min(3).optional(),
+  // Which proxies may set X-Forwarded-For (Express "trust proxy"). Locally
+  // the web app forwards /api from the same machine.
   TRUST_PROXY: z.string().default('loopback'),
+  // Shared with the web app. Requests carrying it may name the visitor's IP
+  // in X-Sofiya-Client-Ip (see clientIp.ts); on Cloud Run every request
+  // arrives through the web app, so this is how rate limits see visitors.
+  PROXY_SECRET: z.string().min(32).optional(),
   // Required from milestone 1 onwards; optional while only /health exists.
   DATABASE_URL: z.string().url().optional(),
   GEMINI_API_KEY: z.string().min(1).optional(),
@@ -44,6 +50,30 @@ const EnvSchema = z.object({
   BCRYPT_ROUNDS: z.coerce.number().int().min(4).max(15).default(12),
 });
 
+// Production must not start half-configured: a missing secret or local
+// cover storage would only show up later as lost uploads or 500s.
+const ProductionEnv = EnvSchema.superRefine((env, ctx) => {
+  if (env.NODE_ENV !== 'production') return;
+  const need = (ok: boolean, path: string, message: string) => {
+    if (!ok) ctx.addIssue({ code: 'custom', path: [path], message });
+  };
+  need(!!env.DATABASE_URL, 'DATABASE_URL', 'required in production');
+  need(!!env.AUTH_SECRET, 'AUTH_SECRET', 'required in production');
+  need(!!env.PROXY_SECRET, 'PROXY_SECRET', 'required in production');
+  need(
+    env.STORAGE_DRIVER === 'gcs',
+    'STORAGE_DRIVER',
+    'must be "gcs" in production',
+  );
+  if (env.STORAGE_DRIVER === 'gcs') {
+    need(
+      !!env.GCS_BUCKET,
+      'GCS_BUCKET',
+      'required when STORAGE_DRIVER is "gcs"',
+    );
+  }
+});
+
 export type Env = z.infer<typeof EnvSchema>;
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
@@ -53,7 +83,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
       ([, v]) => v !== undefined && v.trim() !== '',
     ),
   );
-  const parsed = EnvSchema.safeParse(cleaned);
+  const parsed = ProductionEnv.safeParse(cleaned);
   if (!parsed.success) {
     const issues = parsed.error.issues
       .map((i) => `${i.path.join('.')}: ${i.message}`)

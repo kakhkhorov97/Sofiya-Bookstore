@@ -9,11 +9,18 @@ COPY packages/shared/package.json packages/shared/
 RUN npm ci
 COPY packages/shared packages/shared
 COPY apps/web apps/web
-ENV NEXT_TELEMETRY_DISABLED=1
+# The browser's /api/* requests are forwarded to this address. Next.js fixes
+# rewrites when it builds, so the API's URL must be known now, not at start:
+#   docker build --build-arg API_URL=https://sofiya-api-xyz.a.run.app/api ...
+ARG API_URL
+RUN test -n "$API_URL" || (echo "Pass --build-arg API_URL=https://<api-service>/api" && exit 1)
+ENV API_URL=$API_URL NEXT_TELEMETRY_DISABLED=1
 RUN npm run build -w @sofiya/shared && npm run build -w @sofiya/web
 
 FROM node:20-alpine AS run
-ENV NODE_ENV=production PORT=8080 HOSTNAME=0.0.0.0 NEXT_TELEMETRY_DISABLED=1
+ARG API_URL
+# Server components call the API directly at the same address.
+ENV NODE_ENV=production PORT=8080 HOSTNAME=0.0.0.0 NEXT_TELEMETRY_DISABLED=1 API_URL=$API_URL
 WORKDIR /app
 # Standalone output keeps the monorepo layout under apps/web.
 COPY --from=build /repo/apps/web/.next/standalone ./

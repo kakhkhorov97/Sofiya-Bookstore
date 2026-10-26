@@ -11,7 +11,13 @@ import {
 import type { Response } from 'express';
 import path from 'node:path';
 import { loadEnv } from '../config/env';
-import { COVER_KEY, FILE_STORAGE, LocalDiskStorage } from './storage';
+import { Storage } from '@google-cloud/storage';
+import {
+  COVER_KEY,
+  FILE_STORAGE,
+  GcsStorage,
+  LocalDiskStorage,
+} from './storage';
 import type { FileStorage } from './storage';
 
 @Controller('covers')
@@ -38,10 +44,15 @@ export class CoversController {
   providers: [
     {
       provide: FILE_STORAGE,
-      useFactory: () =>
-        new LocalDiskStorage(
-          path.resolve(process.cwd(), loadEnv().UPLOADS_DIR),
-        ),
+      useFactory: (): FileStorage => {
+        const env = loadEnv();
+        if (env.STORAGE_DRIVER === 'gcs') {
+          return new GcsStorage(new Storage().bucket(env.GCS_BUCKET!));
+        }
+        return new LocalDiskStorage(
+          path.resolve(process.cwd(), env.UPLOADS_DIR),
+        );
+      },
     },
   ],
   exports: [FILE_STORAGE],
