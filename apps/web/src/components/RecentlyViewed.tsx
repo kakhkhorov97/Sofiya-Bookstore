@@ -29,7 +29,7 @@ export function RecentlyViewed() {
           {books.map((b) => (
             <li key={b.slug}>
               <Link href={`/books/${b.slug}`} className="group block">
-                <BookCover slug={b.slug} title={b.title} author={b.author} size="sm" className="transition-transform group-hover:-translate-y-1" />
+                <BookCover slug={b.slug} title={b.title} author={b.author} coverUrl={b.coverUrl} size="sm" className="transition-transform group-hover:-translate-y-1" />
                 <p className="mt-2 line-clamp-1 text-sm font-semibold">{b.title}</p>
                 <p className="text-xs text-ink-3">from {formatUsd(b.fromPriceCents)}</p>
               </Link>

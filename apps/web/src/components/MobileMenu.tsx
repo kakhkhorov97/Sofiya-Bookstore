@@ -118,6 +118,11 @@ export function MobileMenu({
                 <MobileLink href="/orders" icon={<Package size={18} />}>
                   Orders
                 </MobileLink>
+                {user?.role === "ADMIN" && (
+                  <MobileLink href="/admin" icon={<Sparkles size={18} className="text-accent" />}>
+                    Admin
+                  </MobileLink>
+                )}
                 <MobileLink
                   href={user ? "/account" : "/signin"}
                   icon={<UserRound size={18} />}

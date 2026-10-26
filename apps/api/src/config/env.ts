@@ -9,6 +9,9 @@ const EnvSchema = z.object({
   // Comma-separated list of browser origins allowed to call the API.
   WEB_ORIGINS: z.string().default('http://localhost:3000'),
   APP_VERSION: z.string().default('dev'),
+  // Where uploaded covers are stored locally. Cloud Storage replaces this
+  // on Cloud Run (milestone 4), whose disk does not survive restarts.
+  UPLOADS_DIR: z.string().default('uploads'),
   // Which proxies may set X-Forwarded-For (Express "trust proxy"). The web
   // app forwards /api from the same machine locally; on Cloud Run set this
   // to the number of proxy hops in front of the API.

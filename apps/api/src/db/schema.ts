@@ -7,6 +7,7 @@ import {
 } from '@sofiya/shared';
 import { sql } from 'drizzle-orm';
 import {
+  boolean,
   check,
   customType,
   index,
@@ -83,6 +84,8 @@ export const books = pgTable(
     views: integer('views').notNull().default(0),
     // A short note shown in the homepage "Staff picks" row; NULL = not a pick.
     staffPickNote: text('staff_pick_note'),
+    // Storage key of the uploaded cover (e.g. "covers/3f…a1.webp"); NULL = typographic cover.
+    coverKey: text('cover_key'),
     search: tsvector('search').generatedAlwaysAs(
       sql`setweight(to_tsvector('english'::regconfig, coalesce(title, '')), 'A') || setweight(to_tsvector('english'::regconfig, coalesce(author, '')), 'A') || setweight(to_tsvector('english'::regconfig, coalesce(description, '')), 'B')`,
     ),
@@ -246,4 +249,21 @@ export const bookEmbeddings = pgTable(
       t.embedding.op('vector_cosine_ops'),
     ),
   ],
+);
+
+// What readers ask Sofiya, without who asked: powers the admin's
+// "What readers asked" list and shows demand the catalogue cannot meet.
+export const aiQuestions = pgTable(
+  'ai_questions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    question: text('question').notNull(),
+    sourceCount: integer('source_count').notNull(),
+    fallback: boolean('fallback').notNull().default(false),
+    latencyMs: integer('latency_ms').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index('ai_questions_created_idx').on(t.createdAt)],
 );

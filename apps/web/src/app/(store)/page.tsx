@@ -73,7 +73,7 @@ export default async function HomePage() {
                   zIndex: 5 - Math.abs(i - 2),
                 }}
               >
-                <BookCover slug={b.slug} title={b.title} author={b.author} />
+                <BookCover slug={b.slug} title={b.title} author={b.author} coverUrl={b.coverUrl} />
               </div>
             ))}
             <p className="absolute bottom-5 left-6 text-sm font-medium text-ink-3">Most viewed this week</p>

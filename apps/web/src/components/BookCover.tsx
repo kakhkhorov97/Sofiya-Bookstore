@@ -26,6 +26,8 @@ interface Props {
   slug: string;
   title: string;
   author: string;
+  // Uploaded cover; without one the typographic jacket is drawn.
+  coverUrl?: string | null;
   size?: "sm" | "md" | "lg";
   className?: string;
 }
@@ -36,7 +38,19 @@ const SIZES = {
   lg: { title: "text-3xl sm:text-4xl", author: "text-xs", pad: "p-[9%]", radius: "rounded-[4px_12px_12px_4px]" },
 };
 
-export function BookCover({ slug, title, author, size = "md", className = "" }: Props) {
+export function BookCover({ slug, title, author, coverUrl, size = "md", className = "" }: Props) {
+  const s0 = SIZES[size];
+  if (coverUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- covers come from the API, already resized
+      <img
+        src={coverUrl}
+        alt={`Cover of ${title}`}
+        loading="lazy"
+        className={`aspect-[2/3] w-full bg-surface object-cover ${s0.radius} shadow-[0_2px_4px_rgba(0,0,0,0.08),0_10px_22px_rgba(21,23,28,0.14)] ${className}`}
+      />
+    );
+  }
   const h = hash(slug);
   const c = PALETTE[h % PALETTE.length];
   const motif = (h >> 3) % 3;

@@ -7,6 +7,7 @@ export interface RecentBook {
   title: string;
   author: string;
   fromPriceCents: number;
+  coverUrl?: string | null;
 }
 
 export function readRecent(): RecentBook[] {

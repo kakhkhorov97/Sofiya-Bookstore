@@ -1,12 +1,13 @@
 import type { BookFormat, BookSummary, Genre } from '@sofiya/shared';
 import { sql, SQL } from 'drizzle-orm';
 import type { Db } from '../db/client';
+import { coverUrl } from '../storage/storage';
 
 // One definition of "a book card" for every list in the API: browse,
 // authors, staff picks, wishlist, similar books and Ask Sofiya sources.
 export const SUMMARY_COLUMNS = sql`
   b.id, b.slug, b.title, b.author, b.author_slug, b.genre, b.published_year, b.pages,
-  b.staff_pick_note, f.from_price, f.in_stock, f.formats, r.rating_avg, r.rating_count`;
+  b.staff_pick_note, b.cover_key, f.from_price, f.in_stock, f.formats, r.rating_avg, r.rating_count`;
 
 export const SUMMARY_JOINS = sql`
   JOIN LATERAL (
@@ -30,6 +31,7 @@ export interface SummaryRow {
   published_year: number | null;
   pages: number | null;
   staff_pick_note: string | null;
+  cover_key: string | null;
   from_price: number;
   in_stock: boolean;
   formats: BookFormat[];
@@ -53,6 +55,7 @@ export const toSummary = (r: SummaryRow): BookSummary => ({
   ratingAvg: r.rating_avg === null ? null : Number(r.rating_avg),
   ratingCount: Number(r.rating_count ?? 0),
   staffPickNote: r.staff_pick_note,
+  coverUrl: coverUrl(r.cover_key),
 });
 
 export const uuidList = (ids: string[]): SQL =>

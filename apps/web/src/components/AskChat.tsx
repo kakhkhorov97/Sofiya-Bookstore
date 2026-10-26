@@ -357,7 +357,7 @@ function SourceCard({ source, cited }: { source: AskSource; cited: boolean }) {
     >
       <div className="flex gap-4">
         <Link href={`/books/${b.slug}`} className="w-[64px] shrink-0">
-          <BookCover slug={b.slug} title={b.title} author={b.author} size="sm" />
+          <BookCover slug={b.slug} title={b.title} author={b.author} coverUrl={b.coverUrl} size="sm" />
         </Link>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">

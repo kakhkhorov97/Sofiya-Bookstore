@@ -13,6 +13,7 @@ export function BookCard({ book }: { book: BookSummary }) {
             slug={book.slug}
             title={book.title}
             author={book.author}
+            coverUrl={book.coverUrl}
             className="transition-transform duration-200 group-hover:-translate-y-1"
           />
         </Link>

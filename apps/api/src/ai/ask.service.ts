@@ -119,7 +119,34 @@ export class AskService {
     return { sources, descriptions };
   }
 
+  // Streams the answer and records the question (never who asked) for the
+  // admin's "What readers asked" list.
   async *answer(
+    input: AskInput,
+    signal: AbortSignal,
+  ): AsyncGenerator<AskEvent> {
+    const started = Date.now();
+    let sourceCount = 0;
+    let fallback = true;
+    try {
+      for await (const event of this.generate(input, signal)) {
+        if (event.type === 'sources') sourceCount = event.sources.length;
+        if (event.type === 'done') fallback = event.fallback;
+        yield event;
+      }
+    } finally {
+      this.db
+        .execute(
+          sql`INSERT INTO ai_questions (question, source_count, fallback, latency_ms)
+              VALUES (${input.message}, ${sourceCount}, ${fallback}, ${Date.now() - started})`,
+        )
+        .catch((err: Error) =>
+          this.logger.warn(`Could not log question: ${err.message}`),
+        );
+    }
+  }
+
+  private async *generate(
     input: AskInput,
     signal: AbortSignal,
   ): AsyncGenerator<AskEvent> {

@@ -25,6 +25,7 @@ const book = (id: string, title: string): BookSummary => ({
   ratingAvg: null,
   ratingCount: 0,
   staffPickNote: null,
+  coverUrl: null,
 });
 
 const sources: AskSource[] = [

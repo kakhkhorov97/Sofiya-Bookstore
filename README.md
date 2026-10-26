@@ -29,6 +29,18 @@ npm run dev         # web on :3000, api on :8080
 
 Health checks: `http://localhost:8080/api/health` and `http://localhost:3000/api/health`.
 
+## Admin panel
+
+Sign in with an admin account (create one with `npm run db:create-admin -w @sofiya/api -- email "password" "Name"`) and open http://localhost:3000/admin. Everyone else gets a 404.
+
+- **Overview**: orders waiting for confirmation, confirmed revenue, low stock, AI index health, and what readers asked Sofiya.
+- **Books**: search and filter (status, AI index), create and edit books with formats, prices and stock, soft delete. A format that was ordered cannot be removed (set its stock to 0).
+- **Covers**: JPEG, PNG or WebP up to 5 MB. Every upload is decoded and re-encoded to WebP with sharp (non-images are rejected, EXIF/GPS is stripped) and stored under `apps/api/uploads/` (`UPLOADS_DIR`). Cloud Storage replaces local disk on Cloud Run.
+- **Draft with AI**: Gemini writes a description and suggests genre, pages and year from the title, author, an optional cover photo and notes (structured JSON output). It fills the form; nothing is saved until the admin reviews and saves. Unknown books get no invented page count or year.
+- **Orders**: filter and search by customer; confirm, mark delivered or cancel (only the moves the API allows).
+- **Members**: search, block and unblock (never yourself or another admin); blocking signs the member out at once.
+- **AI & search**: index status, background re-indexing (saving a book re-indexes it automatically), and questions the catalogue could not answer. Questions are stored without names.
+
 ## Website pages
 
 `/` home · `/books` browse, search and filter · `/books/:slug` book page · `/basket` · `/checkout` · `/orders`, `/orders/:id` · `/account` · `/signin`, `/signup`.
@@ -74,6 +86,16 @@ PostgreSQL via Drizzle ORM. Schema: `apps/api/src/db/schema.ts`; SQL migrations:
 | POST | `/api/newsletter` | `{ email }`; 201 new, 200 already subscribed |
 | GET | `/api/ai/status` | Whether AI is on and how many books are indexed |
 | POST | `/api/ask` | Ask Sofiya; server-sent events: `sources`, `delta`…, `done` |
+| GET | `/api/covers/:file` | Uploaded cover images (WebP, cached for a year) |
+| GET | `/api/admin/overview` | Admin dashboard data |
+| GET / POST | `/api/admin/books` | List (search, status, index filters) / create |
+| GET / PUT / DELETE | `/api/admin/books/:id` | Read / replace / soft delete |
+| PUT / DELETE | `/api/admin/books/:id/cover` | Upload (multipart `cover`) / remove cover |
+| POST | `/api/admin/books/ai-draft` | Multipart `title`, `author`, `notes`, optional `cover` → draft |
+| GET / POST | `/api/admin/ai/index` | Index job status / start re-indexing |
+| GET | `/api/admin/orders/detailed` | Orders with customer, search by email or name |
+| GET | `/api/admin/members` | Members with order counts and spend |
+| PATCH | `/api/admin/members/:id/status` | `{ status: ACTIVE \| BLOCKED }` |
 | POST | `/api/auth/signup` | `{ email, password, displayName }`; sets the session cookie |
 | POST | `/api/auth/signin` | `{ email, password }`; rate limited per IP |
 | POST | `/api/auth/signout` | Clears the session cookie |

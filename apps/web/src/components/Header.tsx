@@ -21,6 +21,11 @@ export function Header({ user, genres }: { user: PublicUser | null; genres: Genr
           <Link href="/orders" className="font-medium text-ink-2 hover:text-ink">
             Orders
           </Link>
+          {user?.role === "ADMIN" && (
+            <Link href="/admin" className="rounded-full bg-accent-soft px-3 py-1 text-sm font-semibold text-accent-ink hover:bg-accent hover:text-white">
+              Admin
+            </Link>
+          )}
         </nav>
         <form action="/books" role="search" className="ml-auto hidden max-w-[340px] flex-1 md:block">
           <label className="flex items-center gap-2.5 rounded-full bg-surface px-4 py-2.5 text-ink-3 focus-within:ring-2 focus-within:ring-accent">

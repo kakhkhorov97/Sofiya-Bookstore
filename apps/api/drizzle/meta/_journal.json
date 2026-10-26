@@ -22,6 +22,13 @@
       "when": 1792950365143,
       "tag": "0002_store_features_and_ai",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792998274848,
+      "tag": "0003_admin_covers_questions",
+      "breakpoints": true
     }
   ]
 }

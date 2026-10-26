@@ -25,7 +25,7 @@ export function slugify(title: string, author: string): string {
       .pop() ?? '';
   return `${title} ${lastName}`
     .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/['’]/g, '')
     .replace(/[^a-z0-9]+/g, '-')

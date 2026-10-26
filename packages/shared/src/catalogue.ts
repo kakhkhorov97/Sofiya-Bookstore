@@ -49,6 +49,8 @@ export interface BookSummary {
   ratingAvg: number | null;
   ratingCount: number;
   staffPickNote: string | null;
+  // Uploaded cover image, or null for the typographic cover.
+  coverUrl: string | null;
 }
 
 export interface BookDetail extends Omit<BookSummary, "formats"> {

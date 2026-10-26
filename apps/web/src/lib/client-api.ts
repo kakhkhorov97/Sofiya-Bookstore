@@ -30,3 +30,18 @@ export async function clientApi<T>(
   }
   return body as T;
 }
+
+// Multipart upload (covers, AI drafts). The browser sets the boundary.
+export async function clientUpload<T>(path: string, form: FormData, method = "POST"): Promise<T> {
+  const res = await fetch(`/api${path}`, { method, body: form, credentials: "same-origin" });
+  const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!res.ok) {
+    const issues = body.issues as { message: string }[] | undefined;
+    const message =
+      res.status === 413
+        ? "That file is too large. Use an image under 5 MB."
+        : (issues?.[0]?.message ?? (typeof body.message === "string" ? body.message : "Upload failed. Please try again."));
+    throw new ClientApiError(res.status, message, body);
+  }
+  return body as T;
+}

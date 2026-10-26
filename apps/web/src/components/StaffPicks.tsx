@@ -50,7 +50,7 @@ export function StaffPicks({ books }: { books: BookSummary[] }) {
               className="flex h-full gap-4 rounded-[16px] border border-line bg-white p-4 transition-colors hover:border-ink-3"
             >
               <div className="w-[96px] shrink-0">
-                <BookCover slug={b.slug} title={b.title} author={b.author} size="sm" />
+                <BookCover slug={b.slug} title={b.title} author={b.author} coverUrl={b.coverUrl} size="sm" />
               </div>
               <div className="flex min-w-0 flex-col">
                 <p className="line-clamp-2 font-bold leading-snug">{b.title}</p>

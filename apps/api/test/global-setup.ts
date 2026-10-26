@@ -12,9 +12,11 @@ export default async function globalSetup(): Promise<void> {
   try {
     // Start every run clean: drop what earlier test runs created.
     await db.execute(
-      sql`TRUNCATE order_items, orders, reviews, wishlist, newsletter_subscribers, users RESTART IDENTITY CASCADE`,
+      sql`TRUNCATE order_items, orders, reviews, wishlist, newsletter_subscribers, ai_questions, users RESTART IDENTITY CASCADE`,
     );
-    await db.execute(sql`DELETE FROM books WHERE slug LIKE 'test-book-%'`);
+    await db.execute(
+      sql`DELETE FROM books WHERE slug LIKE 'test-book-%' OR slug LIKE 'admin-test-%'`,
+    );
     await seedCatalogue(db);
     await indexBooks(db, new FakeProvider());
   } finally {

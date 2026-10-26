@@ -3,6 +3,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { loadEnv } from '../config/env';
 import { AskController } from './ask.controller';
 import { AskService } from './ask.service';
+import { IndexJobService } from './index-job.service';
 import { AI_PROVIDER, createProvider } from './provider';
 import { RetrievalService } from './retrieval.service';
 
@@ -24,7 +25,8 @@ import { RetrievalService } from './retrieval.service';
     },
     RetrievalService,
     AskService,
+    IndexJobService,
   ],
-  exports: [RetrievalService],
+  exports: [RetrievalService, IndexJobService, AI_PROVIDER],
 })
 export class AiModule {}

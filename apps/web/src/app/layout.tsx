@@ -1,10 +1,6 @@
-import type { GenreCount } from "@sofiya/shared";
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Figtree } from "next/font/google";
 import { BasketProvider } from "@/basket/BasketProvider";
-import { Footer } from "@/components/Footer";
-import { Header, PromoBar } from "@/components/Header";
-import { apiGet } from "@/lib/api";
 import { getCurrentUser } from "@/lib/session";
 import { WishlistProvider } from "@/wishlist/WishlistProvider";
 import "./globals.css";
@@ -28,12 +24,10 @@ export const metadata: Metadata = {
   description: "Classics, stories and programming books. Browse, search, ask our AI concierge and order from Sofiya.",
 };
 
+// Shop pages live in app/(store) with the header and footer; the admin in
+// app/admin has its own layout.
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const [user, genres] = await Promise.all([
-    getCurrentUser(),
-    apiGet<GenreCount[]>("/genres", { revalidate: 300 }).catch(() => [] as GenreCount[]),
-  ]);
-
+  const user = await getCurrentUser();
   return (
     <html lang="en">
       <body className={`${display.variable} ${body.variable} flex min-h-screen flex-col antialiased`}>
@@ -45,12 +39,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             >
               Skip to content
             </a>
-            <PromoBar />
-            <Header user={user} genres={genres} />
-            <main id="main" className="flex-1">
-              {children}
-            </main>
-            <Footer />
+            {children}
           </WishlistProvider>
         </BasketProvider>
       </body>

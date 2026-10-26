@@ -1,3 +1,5 @@
+import os from 'node:os';
+import path from 'node:path';
 import { TEST_DB_URL } from './test-db';
 
 process.env.DATABASE_URL = TEST_DB_URL;
@@ -9,3 +11,5 @@ process.env.AUTH_RATE_LIMIT = '10000';
 process.env.AI_PROVIDER = 'fake';
 process.env.GEMINI_API_KEY = '';
 process.env.AI_RATE_LIMIT = '10000';
+// Covers uploaded by tests go to a throwaway folder.
+process.env.UPLOADS_DIR = path.join(os.tmpdir(), 'sofiya-test-uploads');

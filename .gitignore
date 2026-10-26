@@ -8,3 +8,6 @@ coverage
 !.env.example
 *.tsbuildinfo
 .DS_Store
+
+# Uploaded files (book covers) in local development
+apps/api/uploads/

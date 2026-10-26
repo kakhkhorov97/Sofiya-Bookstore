@@ -43,7 +43,15 @@ export default async function BookPage({ params }: { params: Params }) {
 
   return (
     <Container>
-      <RecordView book={{ slug: book.slug, title: book.title, author: book.author, fromPriceCents: book.fromPriceCents }} />
+      <RecordView
+        book={{
+          slug: book.slug,
+          title: book.title,
+          author: book.author,
+          fromPriceCents: book.fromPriceCents,
+          coverUrl: book.coverUrl,
+        }}
+      />
       <nav aria-label="Breadcrumb" className="pt-6 text-sm text-ink-3">
         <Link href="/" className="hover:text-ink">
           Home
@@ -58,7 +66,7 @@ export default async function BookPage({ params }: { params: Params }) {
 
       <div className="mt-6 grid gap-10 md:grid-cols-[minmax(0,360px)_1fr] lg:gap-16">
         <div className="mx-auto w-full max-w-[220px] sm:max-w-[300px] md:max-w-none">
-          <BookCover slug={book.slug} title={book.title} author={book.author} size="lg" />
+          <BookCover slug={book.slug} title={book.title} author={book.author} coverUrl={book.coverUrl} size="lg" />
         </div>
 
         <div>
