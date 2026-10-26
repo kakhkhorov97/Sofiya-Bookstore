@@ -3,6 +3,9 @@ import type { Prices } from "@sofiya/shared";
 // "Recently viewed" lives only in this browser.
 const KEY = "sofiya.recent.v1";
 const MAX = 12;
+// Fired in this tab when the list is cleared; other tabs get a "storage" event.
+export const RECENT_CLEARED = "sofiya:recent-cleared";
+export const RECENT_KEY = KEY;
 
 export interface RecentBook {
   slug: string;
@@ -31,4 +34,13 @@ export function pushRecent(book: RecentBook): void {
   } catch {
     // Storage unavailable: nothing to remember.
   }
+}
+
+export function clearRecent(): void {
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    // Storage unavailable: nothing was remembered.
+  }
+  window.dispatchEvent(new Event(RECENT_CLEARED));
 }

@@ -15,9 +15,9 @@ import {
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
-import { clientApi } from "@/lib/client-api";
+import { useSignOut } from "@/lib/useSignOut";
 import { useWishlist } from "@/wishlist/WishlistProvider";
 
 interface Item {
@@ -36,7 +36,7 @@ export function AccountMenu({ user }: { user: PublicUser | null }) {
   const button = useRef<HTMLButtonElement>(null);
   const menuId = useId();
   const pathname = usePathname();
-  const router = useRouter();
+  const signOutAndForget = useSignOut();
   const { count: wishlistCount } = useWishlist();
 
   useEffect(() => setOpen(false), [pathname]);
@@ -72,11 +72,9 @@ export function AccountMenu({ user }: { user: PublicUser | null }) {
 
   async function signOut() {
     setSigningOut(true);
-    await clientApi("/auth/signout", { method: "POST" }).catch(() => undefined);
+    await signOutAndForget();
     setOpen(false);
     setSigningOut(false);
-    router.replace("/");
-    router.refresh();
   }
 
   const items: Item[] = user

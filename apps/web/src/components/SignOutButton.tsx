@@ -1,13 +1,12 @@
 "use client";
 
 import { LogOut } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { clientApi } from "@/lib/client-api";
+import { useSignOut } from "@/lib/useSignOut";
 import { buttonClass } from "./ui";
 
 export function SignOutButton() {
-  const router = useRouter();
+  const signOut = useSignOut();
   const [busy, setBusy] = useState(false);
   return (
     <button
@@ -15,9 +14,7 @@ export function SignOutButton() {
       disabled={busy}
       onClick={async () => {
         setBusy(true);
-        await clientApi("/auth/signout", { method: "POST" }).catch(() => undefined);
-        router.replace("/");
-        router.refresh();
+        await signOut();
       }}
       className={buttonClass.outline}
     >

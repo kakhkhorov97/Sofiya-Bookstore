@@ -3,7 +3,7 @@
 import { Price } from "@/currency/CurrencyProvider";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { pushRecent, readRecent, type RecentBook } from "@/lib/recent";
+import { RECENT_CLEARED, RECENT_KEY, pushRecent, readRecent, type RecentBook } from "@/lib/recent";
 import { BookCover } from "./BookCover";
 import { Container } from "./ui";
 
@@ -16,7 +16,20 @@ export function RecordView({ book }: { book: RecentBook }) {
 // Homepage row; hidden until the visitor has looked at a book.
 export function RecentlyViewed() {
   const [books, setBooks] = useState<RecentBook[]>([]);
-  useEffect(() => setBooks(readRecent().slice(0, 6)), []);
+  useEffect(() => {
+    const load = () => setBooks(readRecent().slice(0, 6));
+    load();
+    // Signing out clears the list, here or in another tab.
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === RECENT_KEY || e.key === null) load();
+    };
+    window.addEventListener(RECENT_CLEARED, load);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(RECENT_CLEARED, load);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
   if (books.length === 0) return null;
 
   return (
