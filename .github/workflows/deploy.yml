@@ -1,0 +1,125 @@
+name: Deploy to Cloud Run
+
+# Started by hand: pick the service. See docs/gcp-setup.md for the one-time
+# Google Cloud setup (secrets, bucket, service accounts, variables).
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: Which service to deploy
+        type: choice
+        options: [api, web, both]
+        default: both
+      seed:
+        description: Load the demo catalogue after migrating (first deploy only; it resets prices and stock of the demo books)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write # Workload Identity Federation, no JSON keys
+
+env:
+  REGION: ${{ vars.GCP_REGION }}
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  REPO: ${{ vars.GCP_ARTIFACT_REPO }}
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: sofiya
+          POSTGRES_PASSWORD: sofiya
+          POSTGRES_DB: sofiya_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U sofiya" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL_TEST: postgresql://sofiya:sofiya@localhost:5432/sofiya_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+
+  api:
+    needs: checks
+    if: inputs.service == 'api' || inputs.service == 'both'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Build and push image
+        run: |
+          IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/sofiya-api:${{ github.sha }}"
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+          docker build -f apps/api/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+      # Migrations run as a one-off Cloud Run job with the new image, before
+      # the new API version takes traffic. A failed migration stops here.
+      - name: Apply database migrations
+        run: |
+          gcloud run jobs deploy sofiya-migrate --image "$IMAGE" --region "$REGION" \
+            --service-account "${{ vars.GCP_API_RUNTIME_SA }}" \
+            --command node --args dist/db/migrate.js \
+            --set-secrets "DATABASE_URL=sofiya-database-url:latest" \
+            --max-retries 0 --task-timeout 600
+          gcloud run jobs execute sofiya-migrate --region "$REGION" --wait
+      - name: Load the demo catalogue
+        if: inputs.seed
+        run: |
+          gcloud run jobs deploy sofiya-seed --image "$IMAGE" --region "$REGION" \
+            --service-account "${{ vars.GCP_API_RUNTIME_SA }}" \
+            --command node --args dist/db/seed/seed.js \
+            --set-secrets "DATABASE_URL=sofiya-database-url:latest" \
+            --max-retries 0 --task-timeout 600
+          gcloud run jobs execute sofiya-seed --region "$REGION" --wait
+      # "^##^" switches the list separator, because WEB_ORIGINS may contain commas.
+      # --no-cpu-throttling keeps the CPU on between requests, so the AI index
+      # and other background work finish after a save.
+      - name: Deploy api
+        run: |
+          gcloud run deploy sofiya-api --image "$IMAGE" --region "$REGION" \
+            --service-account "${{ vars.GCP_API_RUNTIME_SA }}" \
+            --set-env-vars "^##^APP_VERSION=${{ github.sha }}##WEB_ORIGINS=${{ vars.WEB_ORIGINS }}##STORAGE_DRIVER=gcs##GCS_BUCKET=${{ vars.GCS_BUCKET }}" \
+            --set-secrets "DATABASE_URL=sofiya-database-url:latest,AUTH_SECRET=sofiya-auth-secret:latest,PROXY_SECRET=sofiya-proxy-secret:latest,GEMINI_API_KEY=sofiya-gemini-api-key:latest" \
+            --no-cpu-throttling --allow-unauthenticated --min-instances 0 --max-instances 3
+
+  web:
+    needs: [checks, api]
+    # Runs after the api job, or on its own when only the web is deployed.
+    if: always() && needs.checks.result == 'success' && (inputs.service == 'web' || (inputs.service == 'both' && needs.api.result == 'success'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      # API_URL is built into the image: Next.js fixes /api forwarding at build time.
+      - name: Build and push image
+        run: |
+          IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/sofiya-web:${{ github.sha }}"
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+          docker build -f apps/web/Dockerfile --build-arg "API_URL=${{ vars.API_URL }}" -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+      - name: Deploy web
+        run: |
+          gcloud run deploy sofiya-web --image "$IMAGE" --region "$REGION" \
+            --service-account "${{ vars.GCP_WEB_RUNTIME_SA }}" \
+            --set-env-vars "APP_VERSION=${{ github.sha }},CLIENT_IP_HOPS=${{ vars.CLIENT_IP_HOPS || '1' }}" \
+            --set-secrets "PROXY_SECRET=sofiya-proxy-secret:latest" \
+            --allow-unauthenticated --min-instances 0 --max-instances 3
