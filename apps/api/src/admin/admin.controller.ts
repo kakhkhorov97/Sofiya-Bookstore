@@ -45,7 +45,7 @@ import { MAX_UPLOAD_BYTES } from '../storage/images';
 import { AdminBooksService } from './admin-books.service';
 import { AdminPeopleService } from './admin-people.service';
 
-const Id = new ZodPipe(z.string().uuid());
+const Id = new ZodPipe(z.guid());
 
 // Memory upload, one file, size-capped before it reaches our code. The
 // image itself is validated by decoding it (see storage/images.ts).

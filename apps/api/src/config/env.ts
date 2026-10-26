@@ -1,4 +1,6 @@
 import { z } from 'zod';
+// Keeps zod's default messages in their zod 3 wording (see zod-messages.ts).
+import '@sofiya/shared';
 
 const EnvSchema = z.object({
   NODE_ENV: z
@@ -23,7 +25,7 @@ const EnvSchema = z.object({
   // arrives through the web app, so this is how rate limits see visitors.
   PROXY_SECRET: z.string().min(32).optional(),
   // Required from milestone 1 onwards; optional while only /health exists.
-  DATABASE_URL: z.string().url().optional(),
+  DATABASE_URL: z.url().optional(),
   GEMINI_API_KEY: z.string().min(1).optional(),
   // Model names are settings so they can be upgraded without code changes.
   // Measured 2026-10-26: 3.5-flash-lite answers in ~1s; 3.6-flash in ~5s

@@ -1,3 +1,5 @@
+import "./zod-messages";
+
 export * from "./domain";
 export * from "./pricing";
 export * from "./catalogue";

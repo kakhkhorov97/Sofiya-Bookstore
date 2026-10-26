@@ -30,7 +30,7 @@ import type { SessionUser } from '../auth/auth.guard';
 import { ZodPipe } from '../common/zod.pipe';
 import { CommunityService } from './community.service';
 
-const BookId = new ZodPipe(z.string().uuid());
+const BookId = new ZodPipe(z.guid());
 const Slug = new ZodPipe(
   z
     .string()

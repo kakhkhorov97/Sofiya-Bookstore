@@ -65,7 +65,7 @@ export interface MyReviewsResponse {
 
 // ---- Newsletter --------------------------------------------------------------
 
-export const NewsletterInput = z.object({ email: z.string().trim().toLowerCase().email().max(254) }).strict();
+export const NewsletterInput = z.object({ email: z.string().trim().toLowerCase().pipe(z.email().max(254)) }).strict();
 export type NewsletterInput = z.infer<typeof NewsletterInput>;
 
 // ---- Ask Sofiya (RAG) --------------------------------------------------------

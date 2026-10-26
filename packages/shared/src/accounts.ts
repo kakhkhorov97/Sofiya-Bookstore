@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { UserRole } from "./domain";
 
-const Email = z.string().trim().toLowerCase().email().max(254);
+const Email = z.string().trim().toLowerCase().pipe(z.email().max(254));
 const Password = z.string().min(8, "Use at least 8 characters").max(128);
 const DisplayName = z.string().trim().min(1).max(60);
 

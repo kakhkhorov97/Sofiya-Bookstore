@@ -24,7 +24,7 @@ import type { SessionUser } from '../auth/auth.guard';
 import { ZodPipe } from '../common/zod.pipe';
 import { OrdersService } from './orders.service';
 
-const OrderId = new ZodPipe(z.string().uuid());
+const OrderId = new ZodPipe(z.guid());
 
 @Controller('orders')
 @UseGuards(AuthGuard)

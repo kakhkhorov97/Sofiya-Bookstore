@@ -80,7 +80,7 @@ export const FormatLookupQuery = z.object({
   ids: z
     .string()
     .transform((s) => [...new Set(s.split(",").map((x) => x.trim()).filter(Boolean))])
-    .pipe(z.array(z.string().uuid()).min(1).max(50)),
+    .pipe(z.array(z.guid()).min(1).max(50)),
 });
 export type FormatLookupQuery = z.infer<typeof FormatLookupQuery>;
 
