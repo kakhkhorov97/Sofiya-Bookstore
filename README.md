@@ -38,14 +38,14 @@ The basket lives in the browser (localStorage) and is re-priced from the API on 
 ## AI: Ask Sofiya (RAG with Gemini)
 
 1. Get a key at https://aistudio.google.com and add it to `apps/api/.env`: `GEMINI_API_KEY=...`
-2. Embed the catalogue (re-run after adding or editing books; unchanged books are skipped):
+2. Embed the catalogue (re-run after adding or editing books; unchanged books are skipped). On Gemini's free tier (~100 embeddings a minute) the script waits and retries automatically:
 
    ```bash
    npm run ai:index -w @sofiya/api
    ```
 3. Start the site with `npm run dev` and open http://localhost:3000/ask.
 
-How it works: each book's title, author, genre and description is embedded (Gemini, 768 dimensions) into `book_embeddings` (pgvector, HNSW index). A question is matched by meaning (cosine similarity, above `AI_MIN_SIMILARITY`) and by keywords (Postgres full text, any word, plus partial title/author), and the two rankings are fused with Reciprocal Rank Fusion. The top 5 books are sent to Gemini with a prompt that allows recommending only those numbered books; the server keeps only citations that point at them. No candidates means no model call. If Gemini fails, the matching books are still shown. Limits: `AI_RATE_LIMIT` questions per minute per visitor and `AI_DAILY_CAP` per day.
+How it works: each book's title, author, genre and description is embedded (`gemini-embedding-001`, 768 dimensions) into `book_embeddings` (pgvector, HNSW index). A question is matched by meaning and by keywords (Postgres full text on the question's meaningful words, plus partial title/author), and the two rankings are fused with Reciprocal Rank Fusion. Meaning matches count only when the best book reaches `AI_MIN_SIMILARITY` (0.60) and the others are within `AI_SIMILARITY_WINDOW` (0.06) of it; on this catalogue real matches score 0.62–0.72 and off-topic or nonsense questions stay below 0.60. The top 5 books are sent to Gemini with a prompt that allows recommending only those numbered books; the server keeps only citations that point at them. No candidates means no model call. Answers come from `GEMINI_CHAT_MODEL` (`gemini-3.5-flash-lite`, about 1–2 s); if it fails or sends nothing within 10 s, `GEMINI_FALLBACK_MODEL` (`gemini-3.6-flash`) is tried once. If both fail, the matching books are still shown. Model names are settings because Google retires models for new keys (as happened to `gemini-2.5-flash`). Limits: `AI_RATE_LIMIT` questions per minute per visitor and `AI_DAILY_CAP` per day.
 
 Without a key the site works normally: search is keyword-only, "If you like this" uses the same genre, and the Ask page says it is not switched on. Tests use an offline fake provider (`AI_PROVIDER=fake`), so they need no key.
 

@@ -17,16 +17,22 @@ const EnvSchema = z.object({
   DATABASE_URL: z.string().url().optional(),
   GEMINI_API_KEY: z.string().min(1).optional(),
   // Model names are settings so they can be upgraded without code changes.
-  GEMINI_CHAT_MODEL: z.string().default('gemini-2.5-flash'),
+  // Measured 2026-10-26: 3.5-flash-lite answers in ~1s; 3.6-flash in ~5s
+  // with richer answers. The fallback is tried when the main model fails.
+  GEMINI_CHAT_MODEL: z.string().default('gemini-3.5-flash-lite'),
+  GEMINI_FALLBACK_MODEL: z.string().default('gemini-3.6-flash'),
   GEMINI_EMBED_MODEL: z.string().default('gemini-embedding-001'),
   // "fake" = offline deterministic provider for tests; default is Gemini
   // when GEMINI_API_KEY is set, otherwise AI features are switched off.
   AI_PROVIDER: z.enum(['gemini', 'fake']).optional(),
   // Ask Sofiya requests per minute per IP, and per day for the whole site.
   AI_RATE_LIMIT: z.coerce.number().int().positive().default(8),
-  // Meaning-search cut-off for Gemini embeddings (0–1). Raise it if search
-  // returns loosely related books; lower it if it misses good ones.
+  // Meaning search with gemini-embedding-001 (measured on this catalogue:
+  // real matches score 0.62-0.72 at the top, off-topic and nonsense
+  // questions stay below 0.60). The best book must reach the floor; other
+  // books must be within the window of the best one.
   AI_MIN_SIMILARITY: z.coerce.number().min(0).max(1).default(0.6),
+  AI_SIMILARITY_WINDOW: z.coerce.number().min(0).max(1).default(0.06),
   AI_DAILY_CAP: z.coerce.number().int().positive().default(200),
   // Signs session cookies. Required by the auth module; at least 32 chars.
   AUTH_SECRET: z.string().min(32).optional(),

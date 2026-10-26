@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 
 const STOP_WORDS = new Set(
-  'a an and are as at be but by for from has have i in into is it its me my of on or so that the their them then there these they this to too very was we were what when where which who why will with would you your want like book books something some read reading'.split(
+  'a an and are as at be but by for from has have i in into is it its me my of on or so that the their them then there these they this to too very was we were what when where which who why will with would you your want like book books something some read reading set kind sort please'.split(
     ' ',
   ),
 );

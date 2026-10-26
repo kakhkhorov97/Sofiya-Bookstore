@@ -5,6 +5,7 @@ import type { Db } from '../db/client';
 import { escapeLike } from '../common/like';
 import { InjectDb } from '../db/db.module';
 import { AI_PROVIDER, AiProvider } from './provider';
+import { terms } from './text';
 
 // Reciprocal Rank Fusion constant; 60 is the value from the original paper.
 const RRF_K = 60;
@@ -17,6 +18,41 @@ export interface Ranked {
   score: number;
   // 0–100: 100 means first in both the keyword and the meaning search.
   matchPercent: number;
+}
+
+export function keepCloseMatches<T extends { id: string; sim: number }>(
+  rows: T[],
+  floor: number,
+  window: number,
+): T[] {
+  const best = rows[0]?.sim;
+  if (best === undefined || best < floor) return [];
+  return rows.filter((r) => r.sim >= best - window);
+}
+
+// What the "Match" bar shows. Ordering still comes from rank fusion; this
+// only makes the number readable: meaning matches score 70–100 by how close
+// they are to the best one, keyword-only matches 40–65 by keyword rank, and
+// with no meaning matches at all keyword ranks span 50–100.
+export function matchPercents(
+  keywordIds: string[],
+  vectorRows: { id: string; sim: number }[],
+  window: number,
+): (id: string) => number {
+  const sims = new Map(vectorRows.map((r) => [r.id, r.sim]));
+  const best = vectorRows[0]?.sim;
+  return (id) => {
+    const sim = sims.get(id);
+    if (sim !== undefined && best !== undefined) {
+      const closeness = window > 0 ? 1 - (best - sim) / window : 1;
+      return Math.round(70 + 30 * Math.max(0, Math.min(1, closeness)));
+    }
+    const rank = keywordIds.indexOf(id);
+    if (rank === -1) return 0;
+    return vectorRows.length > 0
+      ? Math.max(40, 65 - rank)
+      : Math.max(50, 100 - 2 * rank);
+  };
 }
 
 @Injectable()
@@ -53,6 +89,7 @@ export class RetrievalService {
         sql`EXISTS (SELECT 1 FROM book_formats x WHERE x.book_id = b.id AND x.price_cents <= ${filters.maxPriceCents})`,
       );
     }
+    if (filters.maxPages) where.push(sql`b.pages <= ${filters.maxPages}`);
     if (filters.inStock) {
       where.push(
         sql`EXISTS (SELECT 1 FROM book_formats x WHERE x.book_id = b.id AND (x.stock IS NULL OR x.stock > 0))`,
@@ -98,8 +135,13 @@ export class RetrievalService {
     limit = 10,
   ): Promise<Ranked[]> {
     const where = this.filterSql(filters);
-    // OR of the query's stemmed words, so a sentence still finds keyword hits.
-    const anyWord = sql`to_tsquery('english', coalesce(nullif(array_to_string(tsvector_to_array(to_tsvector('english', ${query})), ' | '), ''), 'zzzz'))`;
+    // OR of the question's meaningful words, so a sentence still finds
+    // keyword hits; generic words ("book", "read", "something") are dropped
+    // so they cannot match titles like "The Book of Wonder".
+    const words = [...new Set(terms(query))];
+    const anyWord = words.length
+      ? sql`to_tsquery('english', ${words.join(' | ')})`
+      : sql`to_tsquery('english', 'zzzz')`;
 
     // Partial title/author matches ("Baskerv") count as keyword hits too.
     const like = `%${escapeLike(query.trim())}%`;
@@ -114,16 +156,23 @@ export class RetrievalService {
       this.queryVector(query),
     ]);
 
-    // Nearest neighbours always exist, so only close-enough books count;
-    // otherwise nonsense queries would "match" the whole catalogue.
+    // Nearest neighbours always exist, so meaning matches need two tests:
+    // the best book must clear an absolute floor (nonsense and off-topic
+    // questions do not), and the rest must be close to that best score.
     const literal = vector ? `[${vector.join(',')}]` : '';
-    const vectorRows = vector
-      ? await this.db.execute<{ id: string }>(sql`
-          SELECT b.id FROM books b JOIN book_embeddings e ON e.book_id = b.id
-          WHERE ${where} AND 1 - (e.embedding <=> ${literal}::vector) >= ${this.provider!.minSimilarity}
+    const nearest = vector
+      ? await this.db.execute<{ id: string; sim: number }>(sql`
+          SELECT b.id, 1 - (e.embedding <=> ${literal}::vector) AS sim
+          FROM books b JOIN book_embeddings e ON e.book_id = b.id
+          WHERE ${where}
           ORDER BY e.embedding <=> ${literal}::vector
           LIMIT ${CANDIDATES}`)
       : [];
+    const vectorRows = keepCloseMatches(
+      nearest.map((r) => ({ id: r.id, sim: Number(r.sim) })),
+      this.provider?.minSimilarity ?? 1,
+      this.provider?.similarityWindow ?? 0,
+    );
 
     const scores = new Map<string, number>();
     const add = (ids: { id: string }[]) =>
@@ -133,15 +182,18 @@ export class RetrievalService {
     add(keywordRows);
     add(vectorRows);
 
-    const arms = vectorRows.length > 0 ? 2 : 1;
-    const best = arms / (RRF_K + 1);
+    const percent = matchPercents(
+      keywordRows.map((r) => r.id),
+      vectorRows,
+      this.provider?.similarityWindow ?? 0,
+    );
     return [...scores.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, limit)
       .map(([bookId, score]) => ({
         bookId,
         score,
-        matchPercent: Math.round((score / best) * 100),
+        matchPercent: percent(bookId),
       }));
   }
 

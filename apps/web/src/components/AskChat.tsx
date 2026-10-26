@@ -29,7 +29,13 @@ const STARTERS = [
   "Philosophy that helps with stress",
 ];
 
-const REFINE = ["Shorter, please", "Something funnier", "Only books in stock", "Older classics", "More like the first one"];
+// Follow-ups say exactly what they ask for; length and stock use real filters.
+const REFINE: { label: string; message?: string; filters?: AskFilters }[] = [
+  { label: "Shorter books", filters: { maxPages: 250 } },
+  { label: "Something funnier", message: "Something funnier and lighter, please." },
+  { label: "Only books in stock", filters: { inStock: true } },
+  { label: "More like the first one", message: "More books like the first one you recommended." },
+];
 
 let nextId = 1;
 
@@ -44,6 +50,7 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
   const started = useRef(false);
   const abort = useRef<AbortController | null>(null);
 
+  const latestAssistantId = [...turns].reverse().find((t) => t.role === "assistant" && t.sources)?.id;
   const latestSources = [...turns].reverse().find((t) => t.role === "assistant" && t.sources)?.sources ?? [];
   const latestCited = [...turns].reverse().find((t) => t.role === "assistant" && t.cited)?.cited ?? [];
 
@@ -56,14 +63,14 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
   const update = (id: number, patch: Partial<Turn> | ((t: Turn) => Partial<Turn>)) =>
     setTurns((all) => all.map((t) => (t.id === id ? { ...t, ...(typeof patch === "function" ? patch(t) : patch) } : t)));
 
-  async function send(message: string) {
+  async function send(message: string, filterOverride?: AskFilters, note?: string) {
     const text = message.trim();
     if (!text || busy || !enabled) return;
     const history = turns
       .filter((t) => t.text && t.state !== "error")
       .slice(-6)
       .map((t) => ({ role: t.role, content: t.text.slice(0, 2000) }));
-    const userTurn: Turn = { id: nextId++, role: "user", text };
+    const userTurn: Turn = { id: nextId++, role: "user", text, note };
     const reply: Turn = { id: nextId++, role: "assistant", text: "", state: "streaming" };
     setTurns((all) => [...all, userTurn, reply]);
     setInput("");
@@ -75,7 +82,7 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
       const res = await fetch("/api/ask", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ message: text, history, filters }),
+        body: JSON.stringify({ message: text, history, filters: filterOverride ?? filters }),
         signal: controller.signal,
       });
       if (!res.ok || !res.body) {
@@ -178,12 +185,13 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
             <ol className="space-y-5" aria-live="polite">
               {turns.map((t) =>
                 t.role === "user" ? (
-                  <li key={t.id} className="flex justify-end">
+                  <li key={t.id} className="flex flex-col items-end gap-1">
                     <p className="max-w-[80%] rounded-[16px_16px_4px_16px] bg-ink px-4 py-3 font-medium text-white">{t.text}</p>
+                    {t.note && <span className="text-xs font-semibold text-ink-3">{t.note}</span>}
                   </li>
                 ) : (
                   <li key={t.id}>
-                    <AssistantTurn turn={t} />
+                    <AssistantTurn turn={t} latest={t.id === latestAssistantId} />
                   </li>
                 ),
               )}
@@ -194,12 +202,22 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
             <div className="mt-5 flex flex-wrap gap-2" aria-label="Refine">
               {REFINE.map((r) => (
                 <button
-                  key={r}
+                  key={r.label}
                   type="button"
-                  onClick={() => void send(r)}
+                  onClick={() => {
+                    if (r.filters) {
+                      // Apply the filter and ask the last question again.
+                      const merged = { ...filters, ...r.filters };
+                      setFilters(merged);
+                      const lastQuestion = [...turns].reverse().find((t) => t.role === "user")?.text ?? "";
+                      void send(lastQuestion, merged, r.label);
+                    } else {
+                      void send(r.message ?? r.label);
+                    }
+                  }}
                   className="h-9 rounded-full border border-line bg-white px-3.5 text-sm font-medium text-ink-2 hover:border-ink-3 hover:text-ink"
                 >
-                  {r}
+                  {r.label}
                 </button>
               ))}
             </div>
@@ -284,7 +302,9 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
   );
 }
 
-function AssistantTurn({ turn }: { turn: Turn }) {
+// Only the latest answer's numbers match the side panel; older answers link
+// straight to the book they cited.
+function AssistantTurn({ turn, latest }: { turn: Turn; latest: boolean }) {
   const parts = splitCitations(turn.text);
   const valid = new Set((turn.sources ?? []).map((s) => s.n));
   return (
@@ -297,14 +317,20 @@ function AssistantTurn({ turn }: { turn: Turn }) {
           {parts.map((p, i) =>
             typeof p === "number" ? (
               valid.has(p) ? (
-                <a
-                  key={i}
-                  href={`#source-${p}`}
-                  className="mx-0.5 inline-grid h-5 min-w-5 place-items-center rounded-[5px] bg-accent-soft px-1 align-[1px] text-xs font-bold text-accent-ink hover:bg-accent hover:text-white"
-                  aria-label={`Book ${p}`}
-                >
-                  {p}
-                </a>
+                (() => {
+                  const book = turn.sources!.find((s) => s.n === p)!.book;
+                  return (
+                    <a
+                      key={i}
+                      href={latest ? `#source-${p}` : `/books/${book.slug}`}
+                      title={book.title}
+                      className="mx-0.5 inline-grid h-5 min-w-5 place-items-center rounded-[5px] bg-accent-soft px-1 align-[1px] text-xs font-bold text-accent-ink hover:bg-accent hover:text-white"
+                      aria-label={`${book.title} (book ${p})`}
+                    >
+                      {p}
+                    </a>
+                  );
+                })()
               ) : null
             ) : (
               <span key={i}>{p}</span>
@@ -407,6 +433,19 @@ function FilterBar({ filters, onChange }: { filters: AskFilters; onChange: (f: A
         {[500, 1000, 1500, 2500].map((c) => (
           <option key={c} value={c}>
             Under {formatUsd(c)}
+          </option>
+        ))}
+      </select>
+      <select
+        aria-label="Length"
+        className={select}
+        value={filters.maxPages ?? ""}
+        onChange={(e) => onChange({ ...filters, maxPages: e.target.value ? Number(e.target.value) : undefined })}
+      >
+        <option value="">Any length</option>
+        {[150, 250, 400].map((p) => (
+          <option key={p} value={p}>
+            Under {p} pages
           </option>
         ))}
       </select>

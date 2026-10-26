@@ -60,6 +60,7 @@ export const AskFilters = z
     genre: Genre.optional(),
     format: BookFormat.optional(),
     maxPriceCents: z.number().int().positive().max(100_000).optional(),
+    maxPages: z.number().int().positive().max(5000).optional(),
     inStock: z.boolean().optional(),
   })
   .strict();
