@@ -198,6 +198,19 @@ export class AdminBooksService {
     return this.get(id);
   }
 
+  async setStatus(
+    id: string,
+    status: 'DRAFT' | 'LIVE' | 'PAUSED',
+  ): Promise<AdminBook> {
+    await this.get(id);
+    await this.db.execute(
+      sql`UPDATE books SET status = ${status}, updated_at = now() WHERE id = ${id}`,
+    );
+    // Only live books are searchable, so the index follows the status.
+    this.index.trigger();
+    return this.get(id);
+  }
+
   // Soft delete: orders keep their history, the shop stops showing the book.
   async remove(id: string): Promise<void> {
     await this.get(id);

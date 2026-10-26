@@ -102,8 +102,12 @@ export class AdminPeopleService {
   }
 
   async members(query: AdminMemberListQuery): Promise<Page<AdminMember>> {
-    const where: SQL[] = [sql`u.status <> 'DELETED'`];
-    if (query.status) where.push(sql`u.status = ${query.status}`);
+    // Deleted accounts are hidden unless asked for (to restore one).
+    const where: SQL[] = [
+      query.status
+        ? sql`u.status = ${query.status}`
+        : sql`u.status <> 'DELETED'`,
+    ];
     if (query.q) {
       const like = escapeLike(query.q);
       where.push(
@@ -165,16 +169,38 @@ export class AdminPeopleService {
     if (adminId === memberId) {
       throw new BadRequestException('You cannot change your own status.');
     }
-    const [member] = await this.db.execute<{ role: string }>(
-      sql`SELECT role FROM users WHERE id = ${memberId} AND status <> 'DELETED'`,
-    );
-    if (!member) throw new NotFoundException('Member not found');
-    if (member.role === 'ADMIN') {
-      throw new ForbiddenException('Admins cannot be blocked here.');
-    }
+    await this.manageableMember(memberId);
+    // Sessions re-read the status on every request, so blocking or deleting
+    // signs the member out at once.
     await this.db.execute(
       sql`UPDATE users SET status = ${input.status}, updated_at = now() WHERE id = ${memberId}`,
     );
+  }
+
+  async setMemberPoints(
+    adminId: string,
+    memberId: string,
+    points: number,
+  ): Promise<void> {
+    if (adminId === memberId) {
+      throw new BadRequestException('You cannot change your own points.');
+    }
+    await this.manageableMember(memberId);
+    await this.db.execute(
+      sql`UPDATE users SET points = ${points}, updated_at = now() WHERE id = ${memberId}`,
+    );
+  }
+
+  // Any reader account, including deleted ones (so they can be restored).
+  // Admin accounts are managed from the command line, not here.
+  private async manageableMember(memberId: string): Promise<void> {
+    const [member] = await this.db.execute<{ role: string }>(
+      sql`SELECT role FROM users WHERE id = ${memberId}`,
+    );
+    if (!member) throw new NotFoundException('Member not found');
+    if (member.role === 'ADMIN') {
+      throw new ForbiddenException('Admin accounts cannot be changed here.');
+    }
   }
 
   async overview(): Promise<AdminOverview> {

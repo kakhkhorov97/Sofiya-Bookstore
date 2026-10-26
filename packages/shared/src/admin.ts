@@ -116,7 +116,9 @@ export const AdminOrderListQuery = z.object({
 });
 export type AdminOrderListQuery = z.infer<typeof AdminOrderListQuery>;
 
-export const MEMBER_STATUSES = ["ACTIVE", "BLOCKED"] as const;
+// DELETED is a soft delete: the account cannot sign in, its orders and
+// reviews stay, and an admin can restore it.
+export const MEMBER_STATUSES = ["ACTIVE", "BLOCKED", "DELETED"] as const;
 
 export const AdminMemberListQuery = z.object({
   q: z.string().trim().max(200).optional().transform((v) => (v ? v : undefined)),
@@ -128,6 +130,14 @@ export type AdminMemberListQuery = z.infer<typeof AdminMemberListQuery>;
 
 export const MemberStatusInput = z.object({ status: z.enum(MEMBER_STATUSES) }).strict();
 export type MemberStatusInput = z.infer<typeof MemberStatusInput>;
+
+// Admins set a member's reading points directly (goodwill, corrections).
+export const MemberPointsInput = z.object({ points: z.number().int().min(0).max(1_000_000) }).strict();
+export type MemberPointsInput = z.infer<typeof MemberPointsInput>;
+
+// Quick status change from the books list, without sending the whole book.
+export const BookStatusInput = z.object({ status: z.enum(["DRAFT", "LIVE", "PAUSED"]) }).strict();
+export type BookStatusInput = z.infer<typeof BookStatusInput>;
 
 export interface AdminMember {
   id: string;

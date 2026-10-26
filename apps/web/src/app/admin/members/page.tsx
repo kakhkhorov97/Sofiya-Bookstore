@@ -39,6 +39,7 @@ export default async function AdminMembersPage({ searchParams }: { searchParams:
             [undefined, "All"],
             ["ACTIVE", "Active"],
             ["BLOCKED", "Blocked"],
+            ["DELETED", "Deleted"],
           ].map(([s, label]) => (
             <Link
               key={label}
@@ -73,7 +74,9 @@ export default async function AdminMembersPage({ searchParams }: { searchParams:
                 <th className={`${th} text-right`}>Spent</th>
                 <th className={`${th} text-right`}>Points</th>
                 <th className={th}>Status</th>
-                <th className={th} />
+                <th className={`${th} text-right`}>
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -97,10 +100,16 @@ export default async function AdminMembersPage({ searchParams }: { searchParams:
                   <td className={`${td} text-right tabular-nums`}>{formatPrices(m.spent, { skipZero: true })}</td>
                   <td className={`${td} text-right tabular-nums`}>{m.points}</td>
                   <td className={td}>
-                    <Tag tone={m.status === "ACTIVE" ? "ok" : "bad"}>{m.status === "ACTIVE" ? "Active" : "Blocked"}</Tag>
+                    <Tag tone={m.status === "ACTIVE" ? "ok" : m.status === "BLOCKED" ? "bad" : "muted"}>
+                      {m.status === "ACTIVE" ? "Active" : m.status === "BLOCKED" ? "Blocked" : "Deleted"}
+                    </Tag>
                   </td>
-                  <td className={td}>
-                    {m.role !== "ADMIN" && m.id !== me?.id ? <MemberActions id={m.id} name={m.displayName} status={m.status} /> : null}
+                  <td className={`${td} text-right`}>
+                    {m.role !== "ADMIN" && m.id !== me?.id ? (
+                      <MemberActions id={m.id} name={m.displayName} email={m.email} status={m.status} points={m.points} />
+                    ) : (
+                      <span className="text-xs text-ink-3">{m.id === me?.id ? "You" : "Admin"}</span>
+                    )}
                   </td>
                 </tr>
               ))}

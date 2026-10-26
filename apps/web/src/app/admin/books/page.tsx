@@ -2,7 +2,8 @@ import { AdminBookListQuery, BOOK_STATUSES, type AdminBook, type Page } from "@s
 import { Plus, Search } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AdminTitle, BookStatusTag, IndexBadge, Pager, Panel, td, th } from "@/components/admin/bits";
+import { AdminTitle, IndexBadge, Pager, Panel, td, th } from "@/components/admin/bits";
+import { BookActions, BookStatusSelect } from "@/components/admin/BookActions";
 import { BookCover } from "@/components/BookCover";
 import { buttonClass } from "@/components/ui";
 import { apiGet } from "@/lib/api";
@@ -81,7 +82,7 @@ export default async function AdminBooksPage({ searchParams }: { searchParams: S
 
       <Panel>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[860px] text-[14px]">
+          <table className="w-full min-w-[960px] text-[14px]">
             <thead className="border-b border-line bg-[#fafaf8]">
               <tr>
                 <th className={th}>Book</th>
@@ -89,6 +90,9 @@ export default async function AdminBooksPage({ searchParams }: { searchParams: S
                 <th className={th}>Formats</th>
                 <th className={th}>Status</th>
                 <th className={th}>AI index</th>
+                <th className={`${th} text-right`}>
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -117,16 +121,19 @@ export default async function AdminBooksPage({ searchParams }: { searchParams: S
                     ))}
                   </td>
                   <td className={td}>
-                    <BookStatusTag status={b.status} />
+                    <BookStatusSelect key={b.status} book={b} />
                   </td>
                   <td className={td}>
                     <IndexBadge status={b.indexStatus} />
+                  </td>
+                  <td className={`${td} text-right`}>
+                    <BookActions book={b} />
                   </td>
                 </tr>
               ))}
               {books.items.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-ink-3">
+                  <td colSpan={6} className="px-4 py-10 text-center text-ink-3">
                     No books match these filters.
                   </td>
                 </tr>

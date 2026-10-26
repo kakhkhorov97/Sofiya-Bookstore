@@ -22,6 +22,8 @@ import {
   AdminOrderListQuery,
   AiDraftInput,
   BookInput,
+  BookStatusInput,
+  MemberPointsInput,
   MemberStatusInput,
 } from '@sofiya/shared';
 import type {
@@ -100,6 +102,14 @@ export class AdminController {
     return this.books.update(id, input);
   }
 
+  @Patch('books/:id/status')
+  setBookStatus(
+    @Param('id', Id) id: string,
+    @Body(new ZodPipe(BookStatusInput)) input: BookStatusInput,
+  ): Promise<AdminBook> {
+    return this.books.setStatus(id, input.status);
+  }
+
   @Delete('books/:id')
   @HttpCode(204)
   async deleteBook(@Param('id', Id) id: string): Promise<void> {
@@ -172,5 +182,15 @@ export class AdminController {
     @Body(new ZodPipe(MemberStatusInput)) input: MemberStatusInput,
   ): Promise<void> {
     await this.people.setMemberStatus(admin.id, id, input);
+  }
+
+  @Patch('members/:id/points')
+  @HttpCode(204)
+  async setMemberPoints(
+    @CurrentUser() admin: SessionUser,
+    @Param('id', Id) id: string,
+    @Body(new ZodPipe(MemberPointsInput)) input: MemberPointsInput,
+  ): Promise<void> {
+    await this.people.setMemberPoints(admin.id, id, input.points);
   }
 }

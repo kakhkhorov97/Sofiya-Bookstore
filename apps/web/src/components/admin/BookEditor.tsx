@@ -213,6 +213,25 @@ export function BookEditor({ book, aiEnabled }: { book?: AdminBook; aiEnabled: b
   return (
     <form onSubmit={save} className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="space-y-6">
+        {/* On narrower screens the Publish panel sits below the whole form,
+            so status and Save are repeated here. */}
+        <div className="flex flex-wrap items-center gap-3 rounded-[14px] border border-line bg-white p-3 xl:hidden">
+          <label className="flex items-center gap-2 text-sm font-semibold">
+            Status
+            <select
+              className="h-10 rounded-[10px] border border-line bg-white px-3 text-[15px] font-medium outline-none focus:border-accent focus:ring-[3px] focus:ring-accent-soft"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as typeof status)}
+            >
+              <option value="DRAFT">Draft (hidden)</option>
+              <option value="LIVE">Live (in the shop)</option>
+              <option value="PAUSED">Paused (hidden)</option>
+            </select>
+          </label>
+          <button type="submit" disabled={saving} className={`${buttonClass.primary} ml-auto h-10`}>
+            {saving ? "Saving…" : book ? "Save changes" : "Create book"}
+          </button>
+        </div>
         {message && <Notice tone={message.tone}>{message.text}</Notice>}
 
         <Panel title="Details">

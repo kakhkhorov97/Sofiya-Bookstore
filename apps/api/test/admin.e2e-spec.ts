@@ -126,6 +126,37 @@ describe('Admin (e2e)', () => {
       expect(second.slug).toBe(`${first.slug}-2`);
     });
 
+    it('changes a book status from the list, and the shop follows', async () => {
+      const book = await createBook({ status: 'LIVE' });
+      await request(app.getHttpServer())
+        .get(`/api/books/${book.slug}`)
+        .expect(200);
+
+      const paused = await send(
+        admin,
+        'patch',
+        `/api/admin/books/${book.id}/status`,
+      )
+        .send({ status: 'PAUSED' })
+        .expect(200);
+      expect((paused.body as AdminBook).status).toBe('PAUSED');
+      await request(app.getHttpServer())
+        .get(`/api/books/${book.slug}`)
+        .expect(404);
+
+      await send(admin, 'patch', `/api/admin/books/${book.id}/status`)
+        .send({ status: 'LIVE' })
+        .expect(200);
+      await request(app.getHttpServer())
+        .get(`/api/books/${book.slug}`)
+        .expect(200);
+
+      // Deleting has its own endpoint; it is not a status you can set.
+      await send(admin, 'patch', `/api/admin/books/${book.id}/status`)
+        .send({ status: 'DELETED' })
+        .expect(400);
+    });
+
     it('validates the book', async () => {
       const post = (body: object) =>
         send(admin, 'post', '/api/admin/books').send(body).expect(400);
@@ -403,6 +434,42 @@ describe('Admin (e2e)', () => {
       await member.agent.get('/api/me').expect(401);
 
       await send(admin, 'patch', `/api/admin/members/${row.id}/status`)
+        .send({ status: 'ACTIVE' })
+        .expect(204);
+      await member.agent.get('/api/me').expect(200);
+    });
+
+    it('deletes and restores members, and sets their points', async () => {
+      const member = await signedInAgent(app);
+      const list = await admin
+        .get(`/api/admin/members?q=${encodeURIComponent(member.email)}`)
+        .expect(200);
+      const id = (list.body as Page<AdminMember>).items[0].id;
+
+      await send(admin, 'patch', `/api/admin/members/${id}/points`)
+        .send({ points: 12 })
+        .expect(204);
+      expect(
+        ((await member.agent.get('/api/me')).body as { points: number }).points,
+      ).toBe(12);
+      await send(admin, 'patch', `/api/admin/members/${id}/points`)
+        .send({ points: -1 })
+        .expect(400);
+
+      await send(admin, 'patch', `/api/admin/members/${id}/status`)
+        .send({ status: 'DELETED' })
+        .expect(204);
+      await member.agent.get('/api/me').expect(401);
+      const deleted = await admin
+        .get(
+          `/api/admin/members?status=DELETED&q=${encodeURIComponent(member.email)}`,
+        )
+        .expect(200);
+      expect((deleted.body as Page<AdminMember>).items[0].status).toBe(
+        'DELETED',
+      );
+
+      await send(admin, 'patch', `/api/admin/members/${id}/status`)
         .send({ status: 'ACTIVE' })
         .expect(204);
       await member.agent.get('/api/me').expect(200);
