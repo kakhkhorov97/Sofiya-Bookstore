@@ -54,7 +54,11 @@ export function useBasketInfo(lines: BasketLine[]) {
   const totals: OrderTotals | null =
     payable.length > 0
       ? computeOrderTotals(
-          payable.map((l) => ({ unitPrice: (l.info?.price ?? l.price)[currency], quantity: l.quantity })),
+          payable.map((l) => ({
+            unitPrice: (l.info?.price ?? l.price)[currency],
+            quantity: l.quantity,
+            format: l.info?.format ?? l.format,
+          })),
           currency,
         )
       : null;

@@ -125,6 +125,36 @@ describe('Orders (e2e)', () => {
       expect((res.body as OrderView).delivery).toBe(0);
     });
 
+    it('charges no delivery when the order has only digital formats', async () => {
+      const ebook = await createBook(db, { format: 'EBOOK', priceKrw: 9_000 });
+      const audio = await createBook(db, {
+        format: 'AUDIOBOOK',
+        priceKrw: 6_000,
+      });
+      const { agent } = await signedInAgent(app);
+      const res = await placeOrder(agent, [
+        { formatId: ebook.formatId, quantity: 1 },
+        { formatId: audio.formatId, quantity: 1 },
+      ]).expect(201);
+      const order = res.body as OrderView;
+      expect(order.subtotal).toBe(15_000);
+      expect(order.delivery).toBe(0);
+      expect(order.total).toBe(15_000);
+    });
+
+    it('keeps the delivery rule when digital and printed books are mixed', async () => {
+      const ebook = await createBook(db, { format: 'EBOOK', priceKrw: 9_000 });
+      const paperback = await createBook(db, { priceKrw: 6_000 });
+      const { agent } = await signedInAgent(app);
+      const res = await placeOrder(agent, [
+        { formatId: ebook.formatId, quantity: 1 },
+        { formatId: paperback.formatId, quantity: 1 },
+      ]).expect(201);
+      const order = res.body as OrderView;
+      expect(order.delivery).toBe(3_000);
+      expect(order.total).toBe(18_000);
+    });
+
     it('rejects currencies the store does not sell in', async () => {
       const { formatId } = await createBook(db);
       const { agent } = await signedInAgent(app);

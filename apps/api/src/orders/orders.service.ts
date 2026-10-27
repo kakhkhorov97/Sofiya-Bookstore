@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import {
   AdminOrderStatusInput,
+  BookFormat,
   canTransition,
   computeOrderTotals,
   CreateOrderInput,
@@ -222,10 +223,11 @@ export class OrdersService implements OnModuleInit, OnModuleDestroy {
       id: string;
       price_cents: number;
       price_krw: number;
+      format: BookFormat;
       stock: number | null;
       book_status: string;
     }>(sql`
-      SELECT bf.id, bf.price_cents, bf.price_krw, bf.stock, b.status AS book_status
+      SELECT bf.id, bf.price_cents, bf.price_krw, bf.format, bf.stock, b.status AS book_status
       FROM book_formats bf JOIN books b ON b.id = bf.book_id
       WHERE bf.id IN (${sql.join(
         ids.map((id) => sql`${id}`),
@@ -268,7 +270,11 @@ export class OrdersService implements OnModuleInit, OnModuleDestroy {
     const unitPrice = (id: string) =>
       currency === 'KRW' ? byId.get(id)!.price_krw : byId.get(id)!.price_cents;
     const totals = computeOrderTotals(
-      ids.map((id) => ({ unitPrice: unitPrice(id), quantity: lines.get(id)! })),
+      ids.map((id) => ({
+        unitPrice: unitPrice(id),
+        quantity: lines.get(id)!,
+        format: byId.get(id)!.format,
+      })),
       currency,
     );
 

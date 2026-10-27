@@ -14,7 +14,7 @@ export function OrderSummary({ totals, children }: { totals: OrderTotals | null;
           <dd>{money(totals?.total ?? 0)}</dd>
         </div>
       </dl>
-      {totals && toFree > 0 && (
+      {totals && totals.delivery > 0 && toFree > 0 && (
         <p className="mt-3 text-sm text-ink-2">Add {money(toFree)} more for free delivery.</p>
       )}
       {children}

@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { isDigital, type BookFormat } from '@sofiya/shared';
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import request from 'supertest';
@@ -27,17 +28,20 @@ export const testDb = () => createDb(TEST_DB_URL, { max: 2 });
 
 export const uniqueEmail = () => `reader-${randomUUID()}@example.test`;
 
-// A throwaway book with one paperback format, so tests never fight over
-// stock in the shared seeded catalogue.
+// A throwaway book with one format (a paperback unless told otherwise), so
+// tests never fight over stock in the shared seeded catalogue. Digital
+// formats default to untracked stock.
 export async function createBook(
   db: ReturnType<typeof testDb>['db'],
   opts: {
+    format?: BookFormat;
     priceCents?: number;
     priceKrw?: number;
     stock?: number | null;
     live?: boolean;
   } = {},
 ) {
+  const kind = opts.format ?? 'PAPERBACK';
   const slug = `test-book-${randomUUID()}`;
   const [book] = await db
     .insert(books)
@@ -54,10 +58,11 @@ export async function createBook(
     .insert(bookFormats)
     .values({
       bookId: book.id,
-      format: 'PAPERBACK',
+      format: kind,
       priceCents: opts.priceCents ?? 1234,
       priceKrw: opts.priceKrw ?? 17_300,
-      stock: opts.stock === undefined ? 10 : opts.stock,
+      stock:
+        opts.stock !== undefined ? opts.stock : isDigital(kind) ? null : 10,
     })
     .returning({ id: bookFormats.id });
   return { bookId: book.id, formatId: format.id, slug };

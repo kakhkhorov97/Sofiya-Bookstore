@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { BookFormat } from "./domain";
 
 // Money is always an integer in the currency's smallest unit:
 // won for KRW (it has no minor unit), cents for USD.
@@ -12,6 +13,7 @@ export const DEFAULT_CURRENCY: Currency = "KRW";
 export type Prices = Record<Currency, number>;
 
 // Delivery is a store policy per currency, not a conversion.
+// Orders with only digital formats have nothing to deliver and pay none.
 export const DELIVERY: Record<Currency, { freeFrom: number; fee: number }> = {
   KRW: { freeFrom: 30_000, fee: 3_000 },
   USD: { freeFrom: 100_00, fee: 5_00 },
@@ -26,9 +28,12 @@ export function suggestKrw(usdCents: number): number {
   return Math.max(100, Math.round((usdCents * KRW_PER_USD) / 100 / 100) * 100);
 }
 
+export const isDigital = (f: BookFormat) => f === "EBOOK" || f === "AUDIOBOOK";
+
 export interface PricedLine {
   unitPrice: number;
   quantity: number;
+  format: BookFormat;
 }
 
 export interface OrderTotals {
@@ -50,7 +55,8 @@ export function computeOrderTotals(lines: readonly PricedLine[], currency: Curre
     return sum + line.unitPrice * line.quantity;
   }, 0);
   const rule = DELIVERY[currency];
-  const delivery = subtotal >= rule.freeFrom ? 0 : rule.fee;
+  const shipsSomething = lines.some((line) => !isDigital(line.format));
+  const delivery = !shipsSomething || subtotal >= rule.freeFrom ? 0 : rule.fee;
   return { currency, subtotal, delivery, total: subtotal + delivery };
 }
 

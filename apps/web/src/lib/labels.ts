@@ -35,7 +35,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   CANCELLED: "Cancelled",
 };
 
-export const isDigital = (f: BookFormat) => f === "EBOOK" || f === "AUDIOBOOK";
+export { isDigital } from "@sofiya/shared";
 
 export function yearLabel(year: number | null): string | null {
   if (year === null) return null;
