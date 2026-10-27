@@ -105,11 +105,13 @@ so it does not end up in your shell history.
 ```bash
 read -rs DB_URL && printf '%s' "$DB_URL" | gcloud secrets create sofiya-database-url --data-file=- && unset DB_URL
 read -rs GEMINI && printf '%s' "$GEMINI" | gcloud secrets create sofiya-gemini-api-key --data-file=- && unset GEMINI
+# Toss Payments secret key: test_sk_… while testing, live_sk_… for real money.
+read -rs TOSS && printf '%s' "$TOSS" | gcloud secrets create sofiya-toss-secret-key --data-file=- && unset TOSS
 openssl rand -base64 48 | tr -d '\n' | gcloud secrets create sofiya-auth-secret --data-file=-
 openssl rand -base64 48 | tr -d '\n' | gcloud secrets create sofiya-proxy-secret --data-file=-
 
-# The API reads all four; the website only the proxy secret.
-for s in sofiya-database-url sofiya-gemini-api-key sofiya-auth-secret sofiya-proxy-secret; do
+# The API reads all five; the website only the proxy secret.
+for s in sofiya-database-url sofiya-gemini-api-key sofiya-toss-secret-key sofiya-auth-secret sofiya-proxy-secret; do
   gcloud secrets add-iam-policy-binding "$s" --member "serviceAccount:$API_SA" --role roles/secretmanager.secretAccessor
 done
 gcloud secrets add-iam-policy-binding sofiya-proxy-secret \
@@ -144,6 +146,8 @@ In GitHub → Settings → Secrets and variables → Actions → **Variables**:
 | `WEB_ORIGINS` | the website URL (first `echo` above; add your own domain later, comma-separated) |
 | `API_URL` | the API URL ending in `/api` (second `echo` above) |
 | `CLIENT_IP_HOPS` | optional: `1` (default). Use `2` if you put a Google load balancer in front later |
+| `TOSS_CLIENT_KEY` | Toss Payments client key (`test_ck_…` or `live_ck_…`; public by design) |
+| `BANK_NAME`, `BANK_ACCOUNT_NUMBER`, `BANK_ACCOUNT_HOLDER` | shown to customers who pay by bank transfer |
 
 None of these are secrets; real secrets stay in Secret Manager.
 
@@ -177,6 +181,9 @@ Quick checks:
 - `https://<web>/api/health` answers with the deployed version.
 - Upload a cover in the admin, redeploy, and check the cover is still there.
 - Ask Sofiya answers a question.
+- With Toss **test** keys, pay for an order with a test card: the order
+  becomes "Paid · Card" and is confirmed; cancelling it in the admin refunds
+  it. Switch to live keys only after signing a contract with Toss.
 
 ## Later deploys
 

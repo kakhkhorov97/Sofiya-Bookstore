@@ -16,6 +16,7 @@ import {
   OrderListQuery,
   OrderView,
   Page,
+  TossConfirmInput,
 } from '@sofiya/shared';
 import type { Response } from 'express';
 import { z } from 'zod';
@@ -57,6 +58,16 @@ export class OrdersController {
     @Param('id', OrderId) id: string,
   ): Promise<OrderView> {
     return this.orders.getForUser(user.id, id);
+  }
+
+  @Post(':id/payments/toss/confirm')
+  @HttpCode(200)
+  confirmTossPayment(
+    @CurrentUser() user: SessionUser,
+    @Param('id', OrderId) id: string,
+    @Body(new ZodPipe(TossConfirmInput)) input: TossConfirmInput,
+  ): Promise<OrderView> {
+    return this.orders.confirmCardPayment(user.id, id, input);
   }
 
   @Post(':id/cancel')

@@ -36,6 +36,13 @@
       "when": 1793000451179,
       "tag": "0004_currencies",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793088025429,
+      "tag": "0005_payments",
+      "breakpoints": true
     }
   ]
 }

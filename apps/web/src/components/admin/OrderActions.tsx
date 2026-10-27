@@ -1,6 +1,6 @@
 "use client";
 
-import { ADMIN_ORDER_TRANSITIONS, type OrderStatus } from "@sofiya/shared";
+import { ADMIN_ORDER_TRANSITIONS, type OrderStatus, type OrderView } from "@sofiya/shared";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { clientApi } from "@/lib/client-api";
@@ -11,16 +11,37 @@ const ACTION_LABELS: Partial<Record<OrderStatus, string>> = {
   CANCELLED: "Cancel",
 };
 
-// Only the moves the API allows from the current status are offered.
-export function OrderActions({ id, status }: { id: string; status: OrderStatus }) {
+// Only the moves the API allows from the current status are offered. Card
+// orders are confirmed by their payment, so they never get "Confirm" here.
+export function OrderActions({
+  id,
+  status,
+  payment,
+}: {
+  id: string;
+  status: OrderStatus;
+  payment: OrderView["payment"];
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const next = ADMIN_ORDER_TRANSITIONS[status];
+  const awaitingCard = payment.method === "CARD" && payment.status !== "PAID";
+  const next = ADMIN_ORDER_TRANSITIONS[status].filter((to) => !(to === "IN_PROCESS" && awaitingCard));
   if (next.length === 0) return <span className="text-sm text-ink-3">—</span>;
+  const refunds = payment.method === "CARD" && payment.status === "PAID";
+  const paidByTransfer = payment.method === "BANK_TRANSFER" && payment.status === "PAID";
 
   async function move(to: OrderStatus) {
-    if (to === "CANCELLED" && !confirm("Cancel this order? Stock goes back and any points are taken back.")) return;
+    const cancelNote = refunds
+      ? "The card payment is refunded through Toss."
+      : paidByTransfer
+        ? "This order was paid by bank transfer: refund the customer yourself."
+        : "";
+    if (
+      to === "CANCELLED" &&
+      !confirm(`Cancel this order? Stock goes back and any points are taken back. ${cancelNote}`.trim())
+    )
+      return;
     setBusy(true);
     setError(null);
     try {
@@ -48,7 +69,8 @@ export function OrderActions({ id, status }: { id: string; status: OrderStatus }
               : "bg-ink text-white hover:bg-black"
           }`}
         >
-          {ACTION_LABELS[to]}
+          {to === "IN_PROCESS" && payment.method === "BANK_TRANSFER" ? "Payment received · Confirm" : ACTION_LABELS[to]}
+          {to === "CANCELLED" && refunds ? " & refund" : ""}
         </button>
       ))}
       {error && <span className="basis-full text-xs font-medium text-bad">{error}</span>}

@@ -92,8 +92,8 @@ jobs:
         run: |
           gcloud run deploy sofiya-api --image "$IMAGE" --region "$REGION" \
             --service-account "${{ vars.GCP_API_RUNTIME_SA }}" \
-            --set-env-vars "^##^APP_VERSION=${{ github.sha }}##WEB_ORIGINS=${{ vars.WEB_ORIGINS }}##STORAGE_DRIVER=gcs##GCS_BUCKET=${{ vars.GCS_BUCKET }}" \
-            --set-secrets "DATABASE_URL=sofiya-database-url:latest,AUTH_SECRET=sofiya-auth-secret:latest,PROXY_SECRET=sofiya-proxy-secret:latest,GEMINI_API_KEY=sofiya-gemini-api-key:latest" \
+            --set-env-vars "^##^APP_VERSION=${{ github.sha }}##WEB_ORIGINS=${{ vars.WEB_ORIGINS }}##STORAGE_DRIVER=gcs##GCS_BUCKET=${{ vars.GCS_BUCKET }}##TOSS_CLIENT_KEY=${{ vars.TOSS_CLIENT_KEY }}##BANK_NAME=${{ vars.BANK_NAME }}##BANK_ACCOUNT_NUMBER=${{ vars.BANK_ACCOUNT_NUMBER }}##BANK_ACCOUNT_HOLDER=${{ vars.BANK_ACCOUNT_HOLDER }}" \
+            --set-secrets "DATABASE_URL=sofiya-database-url:latest,AUTH_SECRET=sofiya-auth-secret:latest,PROXY_SECRET=sofiya-proxy-secret:latest,GEMINI_API_KEY=sofiya-gemini-api-key:latest,TOSS_SECRET_KEY=sofiya-toss-secret-key:latest" \
             --no-cpu-throttling --allow-unauthenticated --min-instances 0 --max-instances 3
 
   web:

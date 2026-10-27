@@ -3,6 +3,7 @@ import { Package } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { OrderStatusTag } from "@/components/OrderStatusTag";
+import { PaymentStatusTag } from "@/components/PaymentStatusTag";
 import { ButtonLink, Chip, Container, PageTitle } from "@/components/ui";
 import { apiGet } from "@/lib/api";
 import { dateLabel, ORDER_STATUS_LABELS } from "@/lib/labels";
@@ -57,6 +58,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                     {dateLabel(o.createdAt)} · {o.items.reduce((n, i) => n + i.quantity, 0)} items · #{o.id.slice(0, 8)}
                   </p>
                 </div>
+                {o.status === "PAUSED" && o.payment.status === "UNPAID" && <PaymentStatusTag payment={o.payment} />}
                 <OrderStatusTag status={o.status} />
                 <p className="ml-auto font-bold sm:w-28 sm:text-right">{formatMoney(o.total, o.currency)}</p>
               </Link>

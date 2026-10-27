@@ -5,6 +5,7 @@ import Link from "next/link";
 import { OrderActions } from "@/components/admin/OrderActions";
 import { AdminTitle, Pager, Panel, td, th } from "@/components/admin/bits";
 import { OrderStatusTag } from "@/components/OrderStatusTag";
+import { PaymentStatusTag } from "@/components/PaymentStatusTag";
 import { buttonClass } from "@/components/ui";
 import { apiGet } from "@/lib/api";
 import { dateLabel, FORMAT_LABELS, ORDER_STATUS_LABELS } from "@/lib/labels";
@@ -69,6 +70,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
                 <th className={th}>Customer</th>
                 <th className={th}>Items</th>
                 <th className={`${th} text-right`}>Total</th>
+                <th className={th}>Payment</th>
                 <th className={th}>Status</th>
                 <th className={th}>Actions</th>
               </tr>
@@ -93,16 +95,19 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
                   </td>
                   <td className={`${td} text-right font-semibold tabular-nums`}>{formatMoney(o.total, o.currency)}</td>
                   <td className={td}>
+                    <PaymentStatusTag payment={o.payment} />
+                  </td>
+                  <td className={td}>
                     <OrderStatusTag status={o.status} />
                   </td>
                   <td className={td}>
-                    <OrderActions id={o.id} status={o.status} />
+                    <OrderActions id={o.id} status={o.status} payment={o.payment} />
                   </td>
                 </tr>
               ))}
               {orders.items.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-ink-3">
+                  <td colSpan={7} className="px-4 py-10 text-center text-ink-3">
                     No orders here.
                   </td>
                 </tr>

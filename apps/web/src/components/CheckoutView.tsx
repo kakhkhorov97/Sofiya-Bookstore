@@ -1,13 +1,14 @@
 "use client";
 
-import { formatMoney, type Currency, type OrderView } from "@sofiya/shared";
-import { Info } from "lucide-react";
+import { CURRENCY_LABELS, formatMoney, type Currency, type OrderView, type PaymentConfig, type PaymentMethod } from "@sofiya/shared";
+import { CreditCard, Landmark } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { basketFingerprint, type BasketLine } from "@/basket/basket";
 import { useBasket } from "@/basket/BasketProvider";
 import { useBasketInfo } from "@/basket/useBasketInfo";
+import { isUserCancel, startCardPayment } from "@/lib/card-payment";
 import { clientApi, ClientApiError } from "@/lib/client-api";
 import { FORMAT_LABELS } from "@/lib/labels";
 import { OrderSummary } from "./OrderSummary";
@@ -17,9 +18,9 @@ const KEY_STORAGE = "sofiya.checkout.v1";
 
 // One idempotency key per basket. Retrying (double click, flaky network)
 // sends the same key, so the API returns the same order instead of a second one.
-// Switching currency is a different order, so it gets a new key.
-function idempotencyKeyFor(lines: BasketLine[], currency: Currency): string {
-  const fingerprint = basketFingerprint(lines, currency);
+// Switching currency or payment method is a different order, so it gets a new key.
+function idempotencyKeyFor(lines: BasketLine[], currency: Currency, method: PaymentMethod): string {
+  const fingerprint = basketFingerprint(lines, `${currency}|${method}`);
   try {
     const saved = JSON.parse(sessionStorage.getItem(KEY_STORAGE) ?? "null") as { fingerprint: string; key: string } | null;
     if (saved?.fingerprint === fingerprint) return saved.key;
@@ -31,20 +32,31 @@ function idempotencyKeyFor(lines: BasketLine[], currency: Currency): string {
   }
 }
 
-export function CheckoutView() {
+export function CheckoutView({
+  config,
+  customer,
+}: {
+  config: PaymentConfig;
+  customer: { id: string; email: string; name: string };
+}) {
   const router = useRouter();
   const { lines, ready, dispatch } = useBasket();
   const { currency, checked, totals, hasProblems, refresh } = useBasketInfo(lines);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [placedId, setPlacedId] = useState<string | null>(null);
+  const [placed, setPlaced] = useState<{ id: string; paying: boolean } | null>(null);
+
+  const cardAvailable = config.card.enabled && config.card.currencies.includes(currency);
+  const [chosen, setChosen] = useState<PaymentMethod>(cardAvailable ? "CARD" : "BANK_TRANSFER");
+  // Switching to a currency cards don't support falls back to bank transfer.
+  const method: PaymentMethod = chosen === "CARD" && !cardAvailable ? "BANK_TRANSFER" : chosen;
 
   // The basket is cleared on success; show this instead of "Nothing to check out".
-  if (placedId) {
+  if (placed) {
     return (
       <div className="mt-8 rounded-[16px] bg-ok-soft px-6 py-12 text-center text-ok" role="status">
         <p className="font-display text-2xl font-extrabold">Order placed</p>
-        <p className="mt-2">Opening your order…</p>
+        <p className="mt-2">{placed.paying ? "Opening the secure payment window…" : "Opening your order…"}</p>
       </div>
     );
   }
@@ -67,8 +79,9 @@ export function CheckoutView() {
       const order = await clientApi<OrderView>("/orders", {
         method: "POST",
         body: {
-          idempotencyKey: idempotencyKeyFor(lines, currency),
+          idempotencyKey: idempotencyKeyFor(lines, currency, method),
           currency,
+          paymentMethod: method,
           lines: lines.map((l) => ({ formatId: l.formatId, quantity: l.quantity })),
         },
       });
@@ -77,8 +90,21 @@ export function CheckoutView() {
       } catch {
         /* ignore */
       }
-      setPlacedId(order.id);
+      // The order holds the stock now, so the basket is done either way.
       dispatch({ type: "clear" });
+      if (method === "CARD") {
+        setPlaced({ id: order.id, paying: true });
+        try {
+          await startCardPayment(config, order, customer);
+        } catch (err) {
+          // Closed the window, or Toss refused to open it: the order stays
+          // unpaid, and its page has a "Pay now" button.
+          const reason = isUserCancel(err) ? "cancelled" : "error";
+          router.push(`/orders/${order.id}?payment=${reason}`);
+        }
+        return;
+      }
+      setPlaced({ id: order.id, paying: false });
       router.push(`/orders/${order.id}?placed=1`);
     } catch (err) {
       if (err instanceof ClientApiError && (err.status === 409 || err.status === 422) && Array.isArray(err.body.formatIds)) {
@@ -127,13 +153,37 @@ export function CheckoutView() {
           </Link>
         </section>
 
-        <div className="flex gap-3 rounded-[12px] border border-line p-4 text-[15px] text-ink-2">
-          <Info size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden />
-          <p>
-            Online payment isn’t connected yet. Your order is saved as <b>awaiting confirmation</b> and the store
-            confirms it. You can cancel it until then.
-          </p>
-        </div>
+        <fieldset>
+          <legend className="font-display text-xl font-extrabold">Payment</legend>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <PaymentOption
+              value="CARD"
+              checked={method === "CARD"}
+              disabled={!cardAvailable}
+              onChange={setChosen}
+              icon={<CreditCard size={20} aria-hidden />}
+              title="Card or easy pay"
+              text={
+                !config.card.enabled
+                  ? "Not available right now."
+                  : cardAvailable
+                    ? "Cards, Toss Pay, KakaoPay, NaverPay. Paid now, confirmed at once."
+                    : `Not available in ${CURRENCY_LABELS[currency].name}s yet. Switch to ${config.card.currencies.map((c) => CURRENCY_LABELS[c].symbol).join(" / ")} to pay by card.`
+              }
+            />
+            <PaymentOption
+              value="BANK_TRANSFER"
+              checked={method === "BANK_TRANSFER"}
+              onChange={setChosen}
+              icon={<Landmark size={20} aria-hidden />}
+              title="Bank transfer"
+              text="Pay to our account after ordering. We confirm the order when the money arrives."
+            />
+          </div>
+          {method === "CARD" && config.card.provider === "fake" && (
+            <p className="mt-2 text-xs text-ink-3">Demo mode: card payments are simulated, no money moves.</p>
+          )}
+        </fieldset>
       </div>
 
       <OrderSummary totals={totals}>
@@ -143,10 +193,59 @@ export function CheckoutView() {
           disabled={busy || hasProblems || !totals}
           className={`${buttonClass.primary} mt-5 w-full`}
         >
-          {busy ? "Placing order…" : totals ? `Place order · ${formatMoney(totals.total, currency)}` : "Place order"}
+          {busy
+            ? "Placing order…"
+            : totals
+              ? `${method === "CARD" ? "Pay" : "Place order"} · ${formatMoney(totals.total, currency)}`
+              : "Place order"}
         </button>
-        <p className="mt-3 text-xs text-ink-3">The final price is confirmed by the store when the order is placed.</p>
+        <p className="mt-3 text-xs text-ink-3">
+          {method === "CARD"
+            ? "You pay in Toss Payments' secure window. Sofiya never sees your card details."
+            : "Prices are checked by the store when the order is placed."}
+        </p>
       </OrderSummary>
     </div>
+  );
+}
+
+function PaymentOption({
+  value,
+  checked,
+  disabled = false,
+  onChange,
+  icon,
+  title,
+  text,
+}: {
+  value: PaymentMethod;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (m: PaymentMethod) => void;
+  icon: React.ReactNode;
+  title: string;
+  text: string;
+}) {
+  return (
+    <label
+      className={`flex gap-3 rounded-[12px] border bg-white p-4 ${
+        disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+      } ${checked ? "border-accent ring-[3px] ring-accent-soft" : "border-line hover:border-ink-3"}`}
+    >
+      <input
+        type="radio"
+        name="payment"
+        value={value}
+        checked={checked}
+        disabled={disabled}
+        onChange={() => onChange(value)}
+        className="sr-only"
+      />
+      <span className={`mt-0.5 ${checked ? "text-accent" : "text-ink-3"}`}>{icon}</span>
+      <span>
+        <span className="block font-semibold">{title}</span>
+        <span className="block text-sm text-ink-2">{text}</span>
+      </span>
+    </label>
   );
 }

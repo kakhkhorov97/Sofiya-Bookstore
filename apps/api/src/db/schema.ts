@@ -146,10 +146,31 @@ export const orders = pgTable(
     // lines is a client bug and gets a 409 instead of a silent reuse.
     requestHash: text('request_hash').notNull(),
     pointsAwarded: integer('points_awarded').notNull().default(0),
+    // CARD = Toss Payments (paid before the order is confirmed);
+    // BANK_TRANSFER = the admin confirms once the money has arrived.
+    paymentMethod: text('payment_method').notNull().default('BANK_TRANSFER'),
+    // UNPAID -> CONFIRMING (while Toss approves) -> PAID -> REFUNDED.
+    paymentStatus: text('payment_status').notNull().default('UNPAID'),
+    // Toss's id for the payment; needed for refunds. Unique, so one Toss
+    // payment can never pay for two orders.
+    paymentKey: text('payment_key'),
+    paidAt: timestamp('paid_at', { withTimezone: true }),
+    receiptUrl: text('receipt_url'),
+    // Toss's message from the last failed attempt, shown to the customer.
+    paymentError: text('payment_error'),
     ...timestamps,
   },
   (t) => [
     uniqueIndex('orders_user_idempotency_key').on(t.userId, t.idempotencyKey),
+    uniqueIndex('orders_payment_key').on(t.paymentKey),
+    check(
+      'orders_payment_method_known',
+      sql`${t.paymentMethod} IN ('CARD', 'BANK_TRANSFER')`,
+    ),
+    check(
+      'orders_payment_status_known',
+      sql`${t.paymentStatus} IN ('UNPAID', 'CONFIRMING', 'PAID', 'REFUNDED')`,
+    ),
     index('orders_user_status_idx').on(t.userId, t.status),
     check('orders_currency_known', sql`${t.currency} IN ('USD', 'KRW')`),
     check(

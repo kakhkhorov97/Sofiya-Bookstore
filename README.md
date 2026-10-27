@@ -56,6 +56,15 @@ Prices are in **Korean won (₩, the default)** or **US dollars ($)**. Readers p
 - Delivery: ₩3,000, free from ₩30,000; or $5, free from $100.
 - An order is charged and stored in the currency it was placed in, and always shown in that currency. Admin revenue and member spend are totalled per currency.
 
+### Payments
+
+Two ways to pay, chosen at checkout:
+
+- **Card or easy pay (Toss Payments).** The order is created unpaid (stock is held), the Toss window opens, and Toss sends the browser to `/checkout/success`. The API then confirms the payment with Toss for the total it stored (never an amount from the browser), marks the order paid and confirms it at once. A declined card leaves the order unpaid with a **Pay now** button; unpaid card orders are cancelled after `CARD_PAYMENT_TIMEOUT_MINUTES` (30) and their stock returned. Cancelling a paid card order in the admin refunds it through Toss first.
+- **Bank transfer.** The order page shows the store's account (`BANK_*` settings); the admin confirms the order when the money arrives, which marks it paid.
+
+Cards are only offered in `CARD_CURRENCIES` (won by default: Toss needs a separate contract per currency). Settings: `TOSS_CLIENT_KEY` and `TOSS_SECRET_KEY` (test keys for test mode, no real money), or `PAYMENTS_PROVIDER=fake` to try the card flow locally with no Toss account (the window is skipped). Sofiya never sees card details: they are entered in Toss's window.
+
 ## AI: Ask Sofiya (RAG with Gemini)
 
 1. Get a key at https://aistudio.google.com and add it to `apps/api/.env`: `GEMINI_API_KEY=...`
@@ -109,11 +118,13 @@ PostgreSQL via Drizzle ORM. Schema: `apps/api/src/db/schema.ts`; SQL migrations:
 | POST | `/api/auth/signin` | `{ email, password }`; rate limited per IP |
 | POST | `/api/auth/signout` | Clears the session cookie |
 | GET / PATCH | `/api/me` | Profile; only `displayName` can be changed |
-| POST | `/api/orders` | `{ idempotencyKey, currency, lines: [{ formatId, quantity }] }`; `currency` is KRW (default) or USD. Prices come from the database. 201 new, 200 replay |
+| POST | `/api/orders` | `{ idempotencyKey, currency, paymentMethod, lines: [{ formatId, quantity }] }`; `currency` is KRW (default) or USD, `paymentMethod` is BANK_TRANSFER (default) or CARD. Prices come from the database. 201 new, 200 replay |
+| POST | `/api/orders/:id/payments/toss/confirm` | `{ paymentKey, amount }` from the Toss success redirect. Confirms with Toss for the stored total; a repeat with the same key returns the paid order |
+| GET | `/api/payments/config` | Public: card availability, Toss client key, card currencies, bank-transfer details |
 | GET | `/api/orders`, `/api/orders/:id` | Your own orders only |
-| POST | `/api/orders/:id/cancel` | Only while the order is `PAUSED`; stock is put back |
+| POST | `/api/orders/:id/cancel` | Only while the order is `PAUSED` and unpaid; stock is put back |
 | GET | `/api/admin/orders` | Admin only |
-| PATCH | `/api/admin/orders/:id/status` | Admin only. `{ expectedStatus, status }`; PAUSED → IN_PROCESS → DELIVERED, or CANCELLED. Points are awarded once |
+| PATCH | `/api/admin/orders/:id/status` | Admin only. `{ expectedStatus, status }`; PAUSED → IN_PROCESS → DELIVERED, or CANCELLED. Points are awarded once. Unpaid card orders cannot be confirmed; cancelling a paid card order refunds it |
 
 Sessions are a signed JWT in an `httpOnly`, `SameSite=Lax` cookie holding only the user id; role and status are re-read from the database on every request. Requests that change data are refused from origins outside `WEB_ORIGINS`. The web app forwards `/api/*` to the API so the cookie stays first-party.
 

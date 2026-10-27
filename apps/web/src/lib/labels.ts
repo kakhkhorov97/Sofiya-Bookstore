@@ -1,4 +1,4 @@
-import type { BookFormat, BookSort, Genre, OrderStatus } from "@sofiya/shared";
+import type { BookFormat, BookSort, Genre, OrderStatus, PaymentMethod, PaymentStatus } from "@sofiya/shared";
 
 export const GENRE_LABELS: Record<Genre, string> = {
   FICTION: "Fiction",
@@ -45,3 +45,15 @@ export function yearLabel(year: number | null): string | null {
 export function dateLabel(iso: string): string {
   return new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(new Date(iso));
 }
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  CARD: "Card",
+  BANK_TRANSFER: "Bank transfer",
+};
+
+export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  UNPAID: "Unpaid",
+  CONFIRMING: "Confirming",
+  PAID: "Paid",
+  REFUNDED: "Refunded",
+};

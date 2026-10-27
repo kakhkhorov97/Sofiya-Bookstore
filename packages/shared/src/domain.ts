@@ -41,10 +41,20 @@ export const OrderLineInput = z.object({
   formatId: z.guid(),
   quantity: z.number().int().min(1).max(20),
 });
+// CARD = pay now in the Toss Payments window; BANK_TRANSFER = pay to the
+// store's account, and the admin confirms the order once the money arrives.
+export const PAYMENT_METHODS = ["CARD", "BANK_TRANSFER"] as const;
+export const PaymentMethod = z.enum(PAYMENT_METHODS);
+export type PaymentMethod = z.infer<typeof PaymentMethod>;
+
+export const PAYMENT_STATUSES = ["UNPAID", "CONFIRMING", "PAID", "REFUNDED"] as const;
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
 export const CreateOrderInput = z.object({
   idempotencyKey: z.guid(),
   lines: z.array(OrderLineInput).min(1).max(50),
   // The order is priced and charged in this currency.
   currency: Currency.default(DEFAULT_CURRENCY),
+  paymentMethod: PaymentMethod.default("BANK_TRANSFER"),
 });
 export type CreateOrderInput = z.infer<typeof CreateOrderInput>;

@@ -13,3 +13,8 @@ process.env.GEMINI_API_KEY = '';
 process.env.AI_RATE_LIMIT = '10000';
 // Covers uploaded by tests go to a throwaway folder.
 process.env.UPLOADS_DIR = path.join(os.tmpdir(), 'sofiya-test-uploads');
+// Offline payments: "fake_ok…" keys are approved, "fake_fail…" are declined.
+process.env.PAYMENTS_PROVIDER = 'fake';
+process.env.TOSS_CLIENT_KEY = '';
+process.env.TOSS_SECRET_KEY = '';
+process.env.CARD_CURRENCIES = 'KRW';

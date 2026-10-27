@@ -6,6 +6,7 @@ import { BooksModule } from './books/books.module';
 import { CommunityModule } from './community/community.module';
 import { DbModule } from './db/db.module';
 import { HealthController } from './health/health.controller';
+import { PaymentsModule } from './payments/payments.module';
 import { OrdersModule } from './orders/orders.module';
 import { StorageModule } from './storage/storage.module';
 
@@ -16,6 +17,7 @@ import { StorageModule } from './storage/storage.module';
     AiModule,
     BooksModule,
     AuthModule,
+    PaymentsModule,
     OrdersModule,
     CommunityModule,
     AdminModule,

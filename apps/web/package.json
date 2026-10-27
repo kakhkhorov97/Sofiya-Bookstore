@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@sofiya/shared": "*",
+    "@tosspayments/tosspayments-sdk": "2.9.0",
     "lucide-react": "^1.61.0",
     "next": "15.5.28",
     "react": "19.1.0",

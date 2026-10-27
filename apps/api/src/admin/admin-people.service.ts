@@ -20,6 +20,7 @@ import {
   type Page,
   type Prices,
 } from '@sofiya/shared';
+import { toPaymentView, type PaymentColumns } from '../payments/payment-view';
 import { sql, SQL } from 'drizzle-orm';
 import { IndexJobService } from '../ai/index-job.service';
 import type { Db } from '../db/client';
@@ -55,6 +56,11 @@ export class AdminPeopleService {
         delivery_cents: number;
         total_cents: number;
         points_awarded: number;
+        payment_method: PaymentColumns['payment_method'];
+        payment_status: PaymentColumns['payment_status'];
+        paid_at: Date | null;
+        receipt_url: string | null;
+        payment_error: string | null;
         created_at: Date;
         updated_at: Date;
         display_name: string;
@@ -90,6 +96,7 @@ export class AdminPeopleService {
         delivery: r.delivery_cents,
         total: r.total_cents,
         pointsAwarded: r.points_awarded,
+        payment: toPaymentView(r),
         items: r.items,
         createdAt: new Date(r.created_at).toISOString(),
         updatedAt: new Date(r.updated_at).toISOString(),

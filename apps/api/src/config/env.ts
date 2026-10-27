@@ -50,6 +50,35 @@ const EnvSchema = z.object({
   // Sign-in/sign-up attempts per minute per IP.
   AUTH_RATE_LIMIT: z.coerce.number().int().positive().default(10),
   BCRYPT_ROUNDS: z.coerce.number().int().min(4).max(15).default(12),
+  // Toss Payments keys (test_ck_/test_sk_ for test mode, live_ for real
+  // money). The client key is public; the secret key stays on the server.
+  // Card payments are switched off until both are set.
+  TOSS_CLIENT_KEY: z.string().min(1).optional(),
+  TOSS_SECRET_KEY: z.string().min(1).optional(),
+  // "fake" = offline gateway for tests and demos (never in production).
+  PAYMENTS_PROVIDER: z.enum(['toss', 'fake']).optional(),
+  // Currencies cards may be charged in. Toss needs a separate merchant
+  // contract per currency, so only won by default.
+  CARD_CURRENCIES: z
+    .string()
+    .default('KRW')
+    .transform((v) =>
+      v
+        .split(',')
+        .map((c) => c.trim().toUpperCase())
+        .filter(Boolean),
+    ),
+  // Unpaid card orders hold stock; they are cancelled after this long.
+  CARD_PAYMENT_TIMEOUT_MINUTES: z.coerce
+    .number()
+    .int()
+    .min(5)
+    .max(1440)
+    .default(30),
+  // Shown to customers who choose bank transfer.
+  BANK_NAME: z.string().max(100).optional(),
+  BANK_ACCOUNT_NUMBER: z.string().max(100).optional(),
+  BANK_ACCOUNT_HOLDER: z.string().max(100).optional(),
 });
 
 // Production must not start half-configured: a missing secret or local
@@ -66,6 +95,11 @@ const ProductionEnv = EnvSchema.superRefine((env, ctx) => {
     env.STORAGE_DRIVER === 'gcs',
     'STORAGE_DRIVER',
     'must be "gcs" in production',
+  );
+  need(
+    env.PAYMENTS_PROVIDER !== 'fake',
+    'PAYMENTS_PROVIDER',
+    'cannot be "fake" in production',
   );
   if (env.STORAGE_DRIVER === 'gcs') {
     need(

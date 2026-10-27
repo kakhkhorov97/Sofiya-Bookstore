@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BookFormat, OrderStatus } from "./domain";
+import { BookFormat, OrderStatus, type PaymentMethod, type PaymentStatus } from "./domain";
 import type { Currency } from "./pricing";
 
 // Who may move an order where. Customers can only cancel a PAUSED order;
@@ -54,7 +54,45 @@ export interface OrderView {
   delivery: number;
   total: number;
   pointsAwarded: number;
+  payment: {
+    method: PaymentMethod;
+    status: PaymentStatus;
+    paidAt: string | null;
+    // Toss's card receipt page.
+    receiptUrl: string | null;
+    // Why the last card payment attempt failed, if it did.
+    error: string | null;
+  };
   items: OrderItemView[];
   createdAt: string;
   updatedAt: string;
+}
+
+// The browser comes back from the Toss window with these; the server
+// confirms the payment with Toss for the amount it stored, not this one.
+export const TossConfirmInput = z
+  .object({
+    paymentKey: z.string().trim().min(1).max(200),
+    amount: z.number().int().positive(),
+  })
+  .strict();
+export type TossConfirmInput = z.infer<typeof TossConfirmInput>;
+
+// Public payment settings for the checkout page.
+export interface PaymentConfig {
+  card: {
+    enabled: boolean;
+    // "fake" = offline demo: the checkout skips the Toss window.
+    provider: "toss" | "fake" | null;
+    // Toss client key: public by design (it only opens the payment window).
+    clientKey: string | null;
+    currencies: Currency[];
+  };
+  bankTransfer: {
+    bankName: string | null;
+    accountNumber: string | null;
+    accountHolder: string | null;
+  };
+  // Unpaid card orders are cancelled after this many minutes.
+  cardTimeoutMinutes: number;
 }
