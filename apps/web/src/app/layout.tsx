@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import { headers } from "next/headers";
 import { Bricolage_Grotesque, Figtree } from "next/font/google";
 import { BasketProvider } from "@/basket/BasketProvider";
 import { CurrencyProvider } from "@/currency/CurrencyProvider";
@@ -24,10 +25,16 @@ const body = Figtree({
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("meta");
+  const [t, h] = await Promise.all([getTranslations("meta"), headers()]);
+  // Link previews need absolute URLs; use the address the visitor came in on.
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   return {
+    metadataBase: new URL(`${proto}://${host}`),
     title: { default: t("title"), template: "%s · Sofiya" },
     description: t("description"),
+    openGraph: { type: "website", siteName: "Sofiya", title: t("title"), description: t("description") },
+    twitter: { card: "summary_large_image" },
   };
 }
 

@@ -29,7 +29,12 @@ async function loadBook(slug: string): Promise<BookDetail> {
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const book = await loadBook((await params).slug);
-  return { title: book.title, description: book.description };
+  const description = book.description.length > 200 ? `${book.description.slice(0, 197)}…` : book.description;
+  return {
+    title: book.title,
+    description,
+    openGraph: { type: "book", siteName: "Sofiya", title: `${book.title} · ${book.author}`, description },
+  };
 }
 
 export default async function BookPage({ params }: { params: Params }) {

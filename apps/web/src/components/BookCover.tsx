@@ -22,6 +22,12 @@ function hash(s: string): number {
   return h;
 }
 
+// Colours and motif for a slug; link-preview images draw the same jacket.
+export function jacket(slug: string) {
+  const h = hash(slug);
+  return { colors: PALETTE[h % PALETTE.length], motif: (h >> 3) % 3 };
+}
+
 interface Props {
   slug: string;
   title: string;
@@ -51,9 +57,7 @@ export function BookCover({ slug, title, author, coverUrl, size = "md", classNam
       />
     );
   }
-  const h = hash(slug);
-  const c = PALETTE[h % PALETTE.length];
-  const motif = (h >> 3) % 3;
+  const { colors: c, motif } = jacket(slug);
   const s = SIZES[size];
   const surname = coverName(author);
 
