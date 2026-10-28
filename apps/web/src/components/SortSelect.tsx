@@ -1,15 +1,17 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 export function SortSelect({ value, options }: { value: string; options: { value: string; label: string }[] }) {
+  const t = useTranslations("sort");
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
 
   return (
     <label className="flex items-center gap-2 text-sm font-medium text-ink-2">
-      Sort by
+      {t("label")}
       <select
         value={value}
         onChange={(e) => {

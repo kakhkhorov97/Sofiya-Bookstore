@@ -1,6 +1,7 @@
 import { GENRES, type BookSummary, type GenreCount, type Page } from "@sofiya/shared";
 import { ArrowRight, BookOpen, Clock3, Headphones, Search, Smartphone, Sparkles, Star, Truck } from "lucide-react";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { BookGrid } from "@/components/BookCard";
 import { BookCover } from "@/components/BookCover";
 import { NewsletterForm } from "@/components/NewsletterForm";
@@ -9,13 +10,21 @@ import { StaffPicks } from "@/components/StaffPicks";
 import { Chip, Container } from "@/components/ui";
 import { FreeDeliveryNote } from "@/currency/CurrencySwitcher";
 import { apiGet } from "@/lib/api";
-import { GENRE_LABELS } from "@/lib/labels";
 
 export const dynamic = "force-dynamic";
 
+// Keyword searches against the English catalogue, so they stay in English.
 const TRY = ["Sherlock Holmes", "Jane Austen", "ghost stories", "Python"];
+const ASK_EXAMPLES = ["e1", "e2", "e3", "e4"] as const;
+const FORMATS = [
+  { f: "HARDCOVER", Icon: BookOpen },
+  { f: "PAPERBACK", Icon: BookOpen },
+  { f: "EBOOK", Icon: Smartphone },
+  { f: "AUDIOBOOK", Icon: Headphones },
+] as const;
 
 export default async function HomePage() {
+  const t = await getTranslations();
   const [popular, mystery, programming, genres, picks] = await Promise.all([
     apiGet<Page<BookSummary>>("/books?sort=popular&limit=12", { revalidate: 60 }),
     apiGet<Page<BookSummary>>("/books?genre=MYSTERY&sort=popular&limit=6", { revalidate: 60 }),
@@ -32,25 +41,24 @@ export default async function HomePage() {
         <Container className="grid items-center gap-12 lg:grid-cols-[1fr_1.05fr]">
           <div>
             <h1 className="max-w-[13ch] text-balance font-display text-[42px] font-extrabold leading-[1.02] tracking-[-0.035em] sm:text-6xl">
-              Your next favourite book is already here.
+              {t("home.title")}
             </h1>
             <p className="mt-5 max-w-[46ch] text-lg text-ink-2">
-              {total} books across {genres.length} genres, from Austen and Dostoevsky to the classics of programming.
-              In hardcover, paperback, ebook and audio.
+              {t("home.intro", { total, genres: genres.length })}
             </p>
             <form action="/books" role="search" className="mt-8 flex gap-2 rounded-[14px] border-[1.5px] border-ink bg-white p-2 shadow-[0_8px_24px_rgba(21,23,28,0.06)] transition-shadow focus-within:shadow-[0_10px_30px_rgba(21,23,28,0.12)]">
               <label className="flex flex-1 items-center gap-2.5 pl-2.5 text-ink-3">
                 <Search size={20} aria-hidden />
-                <span className="sr-only">Search by title, author or topic</span>
+                <span className="sr-only">{t("home.searchLabel")}</span>
                 <input
                   name="q"
                   type="search"
-                  placeholder="Title, author or topic"
+                  placeholder={t("home.searchPlaceholder")}
                   className="min-w-0 flex-1 text-[17px] text-ink outline-none placeholder:text-ink-3"
                 />
               </label>
               <button type="submit" className="h-[46px] rounded-[10px] bg-ink px-5 font-semibold text-white hover:bg-black">
-                Search
+                {t("home.search")}
               </button>
               {/* Same box, handed to the AI concierge instead of keyword search. */}
               <button
@@ -58,7 +66,7 @@ export default async function HomePage() {
                 formAction="/ask"
                 className="hidden h-[46px] items-center gap-1.5 rounded-[10px] bg-accent px-4 font-semibold text-white hover:bg-accent-ink sm:inline-flex"
               >
-                <Sparkles size={17} aria-hidden /> Ask AI
+                <Sparkles size={17} aria-hidden /> {t("home.askAi")}
               </button>
             </form>
             <Link
@@ -69,13 +77,13 @@ export default async function HomePage() {
                 <Sparkles size={18} aria-hidden />
               </span>
               <span className="min-w-0 flex-1 text-[15px]">
-                <strong className="font-semibold">Not sure what to read?</strong>{" "}
-                <span className="text-ink-2">Describe a mood and Sofiya, our AI concierge, picks books we stock.</span>
+                <strong className="font-semibold">{t("home.notSure")}</strong>{" "}
+                <span className="text-ink-2">{t("home.notSureText")}</span>
               </span>
               <ArrowRight size={18} className="shrink-0 transition-transform group-hover:translate-x-0.5" aria-hidden />
             </Link>
             <p className="mt-4 flex flex-wrap items-center gap-2 text-sm text-ink-3">
-              Try:
+              {t("home.try")}
               {TRY.map((q) => (
                 <Chip key={q} href={`/books?q=${encodeURIComponent(q)}`}>
                   {q}
@@ -98,19 +106,19 @@ export default async function HomePage() {
                 <BookCover slug={b.slug} title={b.title} author={b.author} coverUrl={b.coverUrl} />
               </div>
             ))}
-            <p className="absolute bottom-5 left-6 text-sm font-medium text-ink-3">Most viewed this week</p>
+            <p className="absolute bottom-5 left-6 text-sm font-medium text-ink-3">{t("home.mostViewed")}</p>
           </div>
         </Container>
       </section>
 
-      <nav aria-label="Genres">
+      <nav aria-label={t("home.genresNav")}>
         <Container className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
           <Chip href="/books" active>
-            All books
+            {t("common.allBooks")}
           </Chip>
           {GENRES.map((g) => (
             <Chip key={g} href={`/books?genre=${g}`}>
-              {GENRE_LABELS[g]}
+              {t(`labels.genre.${g}`)}
             </Chip>
           ))}
         </Container>
@@ -118,7 +126,7 @@ export default async function HomePage() {
 
       <RecentlyViewed />
 
-      <Shelf title="Popular right now" href="/books?sort=popular" books={popular.items.slice(0, 6)} />
+      <Shelf title={t("home.popular")} seeAll={t("home.seeAll")} href="/books?sort=popular" books={popular.items.slice(0, 6)} />
 
       {picks.items.length > 0 && (
         <section className="mt-16">
@@ -133,29 +141,23 @@ export default async function HomePage() {
           <div className="grid items-center gap-8 rounded-[20px] bg-accent-soft p-7 sm:p-10 lg:grid-cols-[1.1fr_1fr]">
             <div>
               <p className="inline-flex items-center gap-2 font-semibold text-accent-ink">
-                <Sparkles size={18} aria-hidden /> Ask Sofiya
+                <Sparkles size={18} aria-hidden /> {t("common.askSofiya")}
               </p>
               <h2 className="mt-2 font-display text-3xl font-extrabold tracking-[-0.025em] sm:text-4xl">
-                Describe a mood. Get books we actually stock.
+                {t("home.askTitle")}
               </h2>
               <p className="mt-3 max-w-[48ch] text-ink-2">
-                Our AI concierge searches the catalogue by meaning and explains why each book fits, with every
-                recommendation linked to a real book on our shelves.
+                {t("home.askText")}
               </p>
               <Link
                 href="/ask"
                 className="mt-6 inline-flex h-[46px] items-center gap-2 rounded-[10px] bg-accent px-5 font-semibold text-white hover:bg-accent-ink"
               >
-                Start a conversation <ArrowRight size={18} aria-hidden />
+                {t("home.askStart")} <ArrowRight size={18} aria-hidden />
               </Link>
             </div>
             <ul className="space-y-2.5">
-              {[
-                "Something quiet and strange, set by the sea",
-                "A classic mystery I can finish in one evening",
-                "Stoic books for a stressful week",
-                "Where should I start with programming?",
-              ].map((q) => (
+              {ASK_EXAMPLES.map((key) => t(`home.askExamples.${key}`)).map((q) => (
                 <li key={q}>
                   <Link
                     href={`/ask?q=${encodeURIComponent(q)}`}
@@ -169,19 +171,14 @@ export default async function HomePage() {
           </div>
         </Container>
       </section>
-      <Shelf title="Mysteries" href="/books?genre=MYSTERY" books={mystery.items} />
-      <Shelf title="For programmers" href="/books?genre=PROGRAMMING" books={programming.items} />
+      <Shelf title={t("home.mysteries")} seeAll={t("home.seeAll")} href="/books?genre=MYSTERY" books={mystery.items} />
+      <Shelf title={t("home.programmers")} seeAll={t("home.seeAll")} href="/books?genre=PROGRAMMING" books={programming.items} />
 
       <section className="mt-20">
         <Container>
-          <h2 className="font-display text-3xl font-extrabold tracking-[-0.025em]">Shop by format</h2>
+          <h2 className="font-display text-3xl font-extrabold tracking-[-0.025em]">{t("home.byFormat")}</h2>
           <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {[
-              { f: "HARDCOVER", label: "Hardcover", sub: "Built to keep", Icon: BookOpen },
-              { f: "PAPERBACK", label: "Paperback", sub: "Light and easy", Icon: BookOpen },
-              { f: "EBOOK", label: "Ebook", sub: "Read instantly", Icon: Smartphone },
-              { f: "AUDIOBOOK", label: "Audiobook", sub: "Listen anywhere", Icon: Headphones },
-            ].map(({ f, label, sub, Icon }) => (
+            {FORMATS.map(({ f, Icon }) => (
               <Link
                 key={f}
                 href={`/books?format=${f}`}
@@ -191,8 +188,8 @@ export default async function HomePage() {
                   <Icon size={20} aria-hidden />
                 </span>
                 <span>
-                  <span className="block font-bold">{label}</span>
-                  <span className="text-sm text-ink-3">{sub}</span>
+                  <span className="block font-bold">{t(`labels.format.${f}`)}</span>
+                  <span className="text-sm text-ink-3">{t(`home.formatSub.${f}`)}</span>
                 </span>
               </Link>
             ))}
@@ -212,10 +209,10 @@ export default async function HomePage() {
             <Truck size={18} aria-hidden /> <FreeDeliveryNote />
           </span>
           <span className="inline-flex items-center gap-2">
-            <Clock3 size={18} aria-hidden /> Track every order from your account
+            <Clock3 size={18} aria-hidden /> {t("home.trackOrders")}
           </span>
           <span className="inline-flex items-center gap-2">
-            <Star size={18} aria-hidden /> Earn a point with every order
+            <Star size={18} aria-hidden /> {t("home.earnPoints")}
           </span>
         </Container>
       </section>
@@ -223,14 +220,14 @@ export default async function HomePage() {
   );
 }
 
-function Shelf({ title, href, books }: { title: string; href: string; books: BookSummary[] }) {
+function Shelf({ title, seeAll, href, books }: { title: string; seeAll: string; href: string; books: BookSummary[] }) {
   return (
     <section className="mt-16">
       <Container>
         <div className="mb-6 flex items-end justify-between gap-4">
           <h2 className="font-display text-3xl font-extrabold tracking-[-0.025em]">{title}</h2>
           <Link href={href} className="inline-flex items-center gap-1 font-semibold text-accent hover:text-accent-ink">
-            See all <ArrowRight size={16} aria-hidden />
+            {seeAll} <ArrowRight size={16} aria-hidden />
           </Link>
         </div>
         <BookGrid books={books} />

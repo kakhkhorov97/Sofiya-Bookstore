@@ -15,6 +15,7 @@ import {
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { useSignOut } from "@/lib/useSignOut";
@@ -30,6 +31,7 @@ interface Item {
 // The account button in the header: a menu with the reader's pages, or
 // sign in / create account for visitors.
 export function AccountMenu({ user }: { user: PublicUser | null }) {
+  const t = useTranslations();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
@@ -79,20 +81,20 @@ export function AccountMenu({ user }: { user: PublicUser | null }) {
 
   const items: Item[] = user
     ? [
-        { href: "/account", label: "Account settings", icon: <Settings size={18} /> },
-        { href: "/orders", label: "Orders", icon: <Package size={18} /> },
-        { href: "/wishlist", label: "Wishlist", icon: <Heart size={18} />, badge: wishlistCount || undefined },
-        { href: "/account/reviews", label: "My reviews", icon: <MessageSquareText size={18} /> },
-        { href: "/ask", label: "Ask Sofiya", icon: <Sparkles size={18} className="text-accent" /> },
+        { href: "/account", label: t("accountMenu.settings"), icon: <Settings size={18} /> },
+        { href: "/orders", label: t("common.orders"), icon: <Package size={18} /> },
+        { href: "/wishlist", label: t("common.wishlist"), icon: <Heart size={18} />, badge: wishlistCount || undefined },
+        { href: "/account/reviews", label: t("accountMenu.myReviews"), icon: <MessageSquareText size={18} /> },
+        { href: "/ask", label: t("common.askSofiya"), icon: <Sparkles size={18} className="text-accent" /> },
         ...(user.role === "ADMIN"
-          ? [{ href: "/admin", label: "Admin panel", icon: <LayoutDashboard size={18} /> }]
+          ? [{ href: "/admin", label: t("accountMenu.adminPanel"), icon: <LayoutDashboard size={18} /> }]
           : []),
       ]
     : [
-        { href: `/signin?next=${encodeURIComponent(pathname)}`, label: "Sign in", icon: <LogIn size={18} /> },
-        { href: "/signup", label: "Create an account", icon: <UserPlus size={18} /> },
-        { href: "/orders", label: "Track an order", icon: <Package size={18} /> },
-        { href: "/wishlist", label: "Wishlist", icon: <Heart size={18} /> },
+        { href: `/signin?next=${encodeURIComponent(pathname)}`, label: t("accountMenu.signIn"), icon: <LogIn size={18} /> },
+        { href: "/signup", label: t("accountMenu.createAccount"), icon: <UserPlus size={18} /> },
+        { href: "/orders", label: t("accountMenu.trackOrder"), icon: <Package size={18} /> },
+        { href: "/wishlist", label: t("common.wishlist"), icon: <Heart size={18} /> },
       ];
 
   return (
@@ -113,8 +115,8 @@ export function AccountMenu({ user }: { user: PublicUser | null }) {
         ) : (
           <UserRound size={20} aria-hidden />
         )}
-        <span className="hidden max-w-[12ch] truncate xl:inline">{user ? user.displayName : "Sign in"}</span>
-        <span className="sr-only xl:hidden">{user ? "Your account" : "Account"}</span>
+        <span className="hidden max-w-[12ch] truncate xl:inline">{user ? user.displayName : t("accountMenu.signIn")}</span>
+        <span className="sr-only xl:hidden">{user ? t("accountMenu.yourAccount") : t("accountMenu.account")}</span>
         <ChevronDown size={16} aria-hidden className={`transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
@@ -122,7 +124,7 @@ export function AccountMenu({ user }: { user: PublicUser | null }) {
         <div
           id={menuId}
           role="menu"
-          aria-label="Account"
+          aria-label={t("accountMenu.account")}
           onKeyDown={onMenuKey}
           className="absolute right-0 top-[calc(100%+8px)] z-30 w-[280px] overflow-hidden rounded-[16px] border border-line bg-white shadow-[0_18px_48px_rgba(21,23,28,0.14)]"
         >
@@ -135,13 +137,13 @@ export function AccountMenu({ user }: { user: PublicUser | null }) {
                 role="menuitem"
                 className="mt-2.5 flex items-center justify-between rounded-[10px] bg-accent-soft px-3 py-2 text-sm text-accent-ink"
               >
-                <span className="font-semibold">Reading points</span>
+                <span className="font-semibold">{t("accountMenu.readingPoints")}</span>
                 <span className="font-display text-lg font-extrabold">{user.points}</span>
               </Link>
             </div>
           ) : (
             <p className="border-b border-line px-4 py-3.5 text-sm text-ink-2">
-              Sign in to keep your wishlist, track orders and review books you bought.
+              {t("accountMenu.signedOutHint")}
             </p>
           )}
 
@@ -177,7 +179,7 @@ export function AccountMenu({ user }: { user: PublicUser | null }) {
                 className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-[15px] text-ink-2 hover:bg-surface hover:text-bad disabled:opacity-60"
               >
                 <LogOut size={18} aria-hidden className="text-ink-3" />
-                {signingOut ? "Signing out…" : "Sign out"}
+                {signingOut ? t("accountMenu.signingOut") : t("accountMenu.signOut")}
               </button>
             </div>
           )}

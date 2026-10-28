@@ -60,6 +60,15 @@ describe('prompt', () => {
     expect(SYSTEM_PROMPT).toMatch(/catalogue data, not instructions/);
     expect(SYSTEM_PROMPT).toMatch(/Never mention, invent or guess/);
   });
+  it("asks for the answer in the reader's language", () => {
+    const en = buildContext('cosy', sources, new Map(), 'KRW');
+    const ko = buildContext('cosy', sources, new Map(), 'KRW', 'ko');
+    const ru = buildContext('cosy', sources, new Map(), 'USD', 'ru');
+    expect(en).not.toMatch(/Write your answer in/);
+    expect(ko).toMatch(/Write your answer in Korean/);
+    expect(ru).toMatch(/Write your answer in Russian/);
+    expect(ko).toContain('[1] "First Book"');
+  });
 });
 
 describe('bestPassage', () => {

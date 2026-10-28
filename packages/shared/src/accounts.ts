@@ -49,3 +49,9 @@ export type ConfirmEmailInput = z.infer<typeof ConfirmEmailInput>;
 export interface AuthProviders {
   google: boolean;
 }
+
+// Signed in: change the password knowing the current one.
+export const ChangePasswordInput = z
+  .object({ currentPassword: z.string().min(1).max(128), newPassword: Password })
+  .strict();
+export type ChangePasswordInput = z.infer<typeof ChangePasswordInput>;

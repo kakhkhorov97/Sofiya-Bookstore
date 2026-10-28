@@ -104,6 +104,44 @@ describe('Email confirmation and Google sign-in (e2e)', () => {
     });
   });
 
+  describe('changing the password', () => {
+    it('needs the current password, keeps this browser signed in and signs out others', async () => {
+      const { agent, email, password } = await signedInAgent(app);
+      const other = request.agent(app.getHttpServer());
+      await other
+        .post('/api/auth/signin')
+        .set('Origin', WEB_ORIGIN)
+        .send({ email, password })
+        .expect(200);
+      await new Promise((r) => setTimeout(r, 1100)); // sessions are compared by the second
+
+      await agent
+        .patch('/api/me/password')
+        .set('Origin', WEB_ORIGIN)
+        .send({
+          currentPassword: 'wrong password',
+          newPassword: 'a brand new password',
+        })
+        .expect(400);
+      await agent
+        .patch('/api/me/password')
+        .set('Origin', WEB_ORIGIN)
+        .send({
+          currentPassword: password,
+          newPassword: 'a brand new password',
+        })
+        .expect(204);
+
+      await agent.get('/api/me').expect(200);
+      await other.get('/api/me').expect(401);
+      await request(app.getHttpServer())
+        .post('/api/auth/signin')
+        .set('Origin', WEB_ORIGIN)
+        .send({ email, password: 'a brand new password' })
+        .expect(200);
+    });
+  });
+
   describe('Continue with Google', () => {
     // Starts at /api/auth/google, then plays Google's redirect back.
     async function googleSignIn(code: string, next = '/books') {

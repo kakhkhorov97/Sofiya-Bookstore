@@ -3,14 +3,16 @@
 import { ReviewInput, type ReviewsResponse } from "@sofiya/shared";
 import { Star } from "lucide-react";
 import Link from "next/link";
+import { useFormatter, useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { clientApi } from "@/lib/client-api";
-import { dateLabel } from "@/lib/labels";
 import { Stars } from "./Stars";
 import { buttonClass, Notice } from "./ui";
 
 export function ReviewsSection({ slug }: { slug: string }) {
+  const t = useTranslations("reviews");
+  const format = useFormatter();
   const [data, setData] = useState<ReviewsResponse | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -28,11 +30,11 @@ export function ReviewsSection({ slug }: { slug: string }) {
   return (
     <section className="mt-20" aria-labelledby="reviews-title">
       <h2 id="reviews-title" className="font-display text-3xl font-extrabold tracking-[-0.025em]">
-        Reader reviews
+        {t("title")}
       </h2>
       {failed && (
         <div className="mt-4">
-          <Notice tone="bad">Reviews could not be loaded right now.</Notice>
+          <Notice tone="bad">{t("loadFailed")}</Notice>
         </div>
       )}
       {!data && !failed && <div className="mt-6 h-32 animate-pulse rounded-[16px] bg-surface" aria-busy />}
@@ -42,7 +44,7 @@ export function ReviewsSection({ slug }: { slug: string }) {
           <div className="space-y-8">
             <Composer slug={slug} data={data} onSaved={load} />
             {data.items.length === 0 ? (
-              <p className="text-ink-2">No reviews yet. Readers who buy this book can share what they thought.</p>
+              <p className="text-ink-2">{t("none")}</p>
             ) : (
               <ul className="divide-y divide-line border-y border-line">
                 {data.items.map((r) => (
@@ -53,7 +55,7 @@ export function ReviewsSection({ slug }: { slug: string }) {
                     </div>
                     <p className="mt-2 max-w-[70ch] leading-relaxed text-ink-2">{r.body}</p>
                     <p className="mt-2 text-sm text-ink-3">
-                      {r.reviewerName} · {dateLabel(r.createdAt)} · Verified purchase
+                      {r.reviewerName} · {format.dateTime(new Date(r.createdAt), { dateStyle: "medium" })} · {t("verified")}
                     </p>
                   </li>
                 ))}
@@ -67,6 +69,7 @@ export function ReviewsSection({ slug }: { slug: string }) {
 }
 
 function Summary({ data }: { data: ReviewsResponse }) {
+  const t = useTranslations("reviews");
   const { average, count, distribution } = data.summary;
   return (
     <div className="h-fit rounded-[16px] bg-surface p-6">
@@ -74,12 +77,10 @@ function Summary({ data }: { data: ReviewsResponse }) {
         <>
           <p className="font-display text-5xl font-extrabold">{average.toFixed(1)}</p>
           <Stars value={average} size={18} className="mt-2" />
-          <p className="mt-1 text-sm text-ink-3">
-            {count} {count === 1 ? "review" : "reviews"}
-          </p>
+          <p className="mt-1 text-sm text-ink-3">{t("count", { count })}</p>
         </>
       ) : (
-        <p className="font-semibold">No ratings yet</p>
+        <p className="font-semibold">{t("noRatings")}</p>
       )}
       <ul className="mt-5 space-y-1.5">
         {[5, 4, 3, 2, 1].map((stars) => {
@@ -101,6 +102,7 @@ function Summary({ data }: { data: ReviewsResponse }) {
 }
 
 function Composer({ slug, data, onSaved }: { slug: string; data: ReviewsResponse; onSaved: () => void }) {
+  const t = useTranslations("reviews");
   const pathname = usePathname();
   const mine = data.viewer.myReview;
   const [editing, setEditing] = useState(false);
@@ -111,22 +113,25 @@ function Composer({ slug, data, onSaved }: { slug: string; data: ReviewsResponse
   if (data.viewer.reason === "SIGN_IN") {
     return (
       <p className="text-[15px] text-ink-2">
-        <Link href={`/signin?next=${encodeURIComponent(pathname)}`} className="font-semibold text-accent underline underline-offset-2">
-          Sign in
-        </Link>{" "}
-        to review books you have bought.
+        {t.rich("signInToReview", {
+          link: (c) => (
+            <Link href={`/signin?next=${encodeURIComponent(pathname)}`} className="font-semibold text-accent underline underline-offset-2">
+              {c}
+            </Link>
+          ),
+        })}
       </p>
     );
   }
   if (!data.viewer.canReview) {
-    return <p className="text-[15px] text-ink-2">You can review this book once your order for it has been confirmed.</p>;
+    return <p className="text-[15px] text-ink-2">{t("afterConfirmed")}</p>;
   }
   if (mine && !editing) {
     return (
       <div className="flex flex-wrap items-center gap-3 rounded-[12px] bg-accent-soft px-4 py-3 text-[15px] text-accent-ink">
-        Thanks for your review.
+        {t("thanks")}
         <button type="button" onClick={() => setEditing(true)} className="font-semibold underline underline-offset-2">
-          Edit it
+          {t("editIt")}
         </button>
         <button
           type="button"
@@ -136,7 +141,7 @@ function Composer({ slug, data, onSaved }: { slug: string; data: ReviewsResponse
           }}
           className="font-semibold underline underline-offset-2"
         >
-          Delete it
+          {t("deleteIt")}
         </button>
       </div>
     );
@@ -147,7 +152,7 @@ function Composer({ slug, data, onSaved }: { slug: string; data: ReviewsResponse
     const form = new FormData(e.currentTarget);
     const parsed = ReviewInput.safeParse({ rating, title: form.get("title"), body: form.get("body") });
     if (!parsed.success) {
-      setError(rating === 0 ? "Choose a star rating." : parsed.error.issues[0].message);
+      setError(rating === 0 ? t("chooseRating") : t("tooShort"));
       return;
     }
     setBusy(true);
@@ -157,7 +162,7 @@ function Composer({ slug, data, onSaved }: { slug: string; data: ReviewsResponse
       setEditing(false);
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save your review.");
+      setError(err instanceof Error ? err.message : t("saveFailed"));
     } finally {
       setBusy(false);
     }
@@ -165,15 +170,15 @@ function Composer({ slug, data, onSaved }: { slug: string; data: ReviewsResponse
 
   return (
     <form onSubmit={submit} className="space-y-4 rounded-[16px] border border-line p-5">
-      <p className="font-semibold">{mine ? "Edit your review" : "Write a review"}</p>
+      <p className="font-semibold">{mine ? t("edit") : t("write")}</p>
       <fieldset>
-        <legend className="mb-1 text-sm text-ink-3">Your rating</legend>
+        <legend className="mb-1 text-sm text-ink-3">{t("yourRating")}</legend>
         <div className="flex gap-1">
           {[1, 2, 3, 4, 5].map((n) => (
             <button
               key={n}
               type="button"
-              aria-label={`${n} star${n > 1 ? "s" : ""}`}
+              aria-label={t("stars", { n })}
               aria-pressed={rating === n}
               onClick={() => setRating(n)}
               className="rounded p-0.5"
@@ -184,7 +189,7 @@ function Composer({ slug, data, onSaved }: { slug: string; data: ReviewsResponse
         </div>
       </fieldset>
       <label className="block text-sm font-semibold">
-        Title <span className="font-normal text-ink-3">(optional)</span>
+        {t("reviewTitle")} <span className="font-normal text-ink-3">{t("optional")}</span>
         <input
           name="title"
           maxLength={120}
@@ -193,7 +198,7 @@ function Composer({ slug, data, onSaved }: { slug: string; data: ReviewsResponse
         />
       </label>
       <label className="block text-sm font-semibold">
-        Your review
+        {t("yourReview")}
         <textarea
           name="body"
           required
@@ -207,11 +212,11 @@ function Composer({ slug, data, onSaved }: { slug: string; data: ReviewsResponse
       {error && <Notice tone="bad">{error}</Notice>}
       <div className="flex gap-2">
         <button type="submit" disabled={busy} className={buttonClass.primary}>
-          {busy ? "Saving…" : "Post review"}
+          {busy ? t("saving") : t("post")}
         </button>
         {mine && (
           <button type="button" onClick={() => setEditing(false)} className={buttonClass.outline}>
-            Cancel
+            {t("cancel")}
           </button>
         )}
       </div>

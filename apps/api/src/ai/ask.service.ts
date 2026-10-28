@@ -43,6 +43,33 @@ export function citedIds(text: string, sources: AskSource[]): string[] {
   return [...ids];
 }
 
+type Locale = AskInput['locale'];
+
+// The reader's language. Book titles stay as listed, since that is how the
+// shop shows them.
+const LANGUAGE_NOTE: Record<Locale, string> = {
+  en: '',
+  ko: '\n\nWrite your answer in Korean. Keep book titles and author names exactly as they appear in the list.',
+  ru: '\n\nWrite your answer in Russian. Keep book titles and author names exactly as they appear in the list.',
+};
+
+// Fixed replies that do not come from the model.
+const NOTHING_FOUND: Record<Locale, string> = {
+  en: "I couldn't find anything in our catalogue that fits that. Try describing the mood, setting or a book you liked.",
+  ko: '카탈로그에서 딱 맞는 책을 찾지 못했어요. 분위기나 배경, 좋아했던 책을 알려 주세요.',
+  ru: 'Я не нашла в каталоге ничего подходящего. Попробуйте описать настроение, место действия или книгу, которая вам понравилась.',
+};
+const CLOSEST: Record<Locale, string> = {
+  en: 'Here are the closest matches from our catalogue.',
+  ko: '카탈로그에서 가장 가까운 책들이에요.',
+  ru: 'Вот самые близкие варианты из нашего каталога.',
+};
+const CUT_SHORT: Record<Locale, string> = {
+  en: 'The answer was cut short. The books listed are still good matches.',
+  ko: '답변이 중간에 끊겼어요. 목록의 책들은 여전히 잘 맞는 추천이에요.',
+  ru: 'Ответ оборвался. Книги из списка всё равно хорошо подходят.',
+};
+
 const year = (y: number | null) =>
   y === null ? '' : y < 0 ? `, c. ${-y} BC` : `, ${y}`;
 
@@ -51,6 +78,7 @@ export function buildContext(
   sources: AskSource[],
   descriptions: Map<string, string>,
   currency: Currency,
+  locale: Locale = 'en',
 ): string {
   const lines = sources.map(
     (s) =>
@@ -58,7 +86,7 @@ export function buildContext(
         s.book.pages ? `, ${s.book.pages} pages` : ''
       }, from ${formatMoney(s.book.fromPrice[currency], currency)}${s.book.inStock ? '' : ', out of stock'})\n${descriptions.get(s.book.id) ?? ''}`,
   );
-  return `Reader's request: ${message}\n\nBooks from our catalogue that may fit:\n${lines.join('\n\n')}`;
+  return `Reader's request: ${message}\n\nBooks from our catalogue that may fit:\n${lines.join('\n\n')}${LANGUAGE_NOTE[locale]}`;
 }
 
 @Injectable()
@@ -162,7 +190,7 @@ export class AskService {
       // No candidates means nothing to ground an answer in: do not ask the model.
       yield {
         type: 'delta',
-        text: "I couldn't find anything in our catalogue that fits that. Try describing the mood, setting or a book you liked.",
+        text: NOTHING_FOUND[input.locale],
       };
       yield { type: 'done', citedBookIds: [], fallback: true };
       return;
@@ -177,6 +205,7 @@ export class AskService {
           sources,
           descriptions,
           input.currency,
+          input.locale,
         ),
       },
     ];
@@ -200,15 +229,14 @@ export class AskService {
         // The sources are still useful on their own.
         yield {
           type: 'delta',
-          text: 'Here are the closest matches from our catalogue.',
+          text: CLOSEST[input.locale],
         };
         yield { type: 'done', citedBookIds: [], fallback: true };
         return;
       }
       yield {
         type: 'error',
-        message:
-          'The answer was cut short. The books listed are still good matches.',
+        message: CUT_SHORT[input.locale],
       };
       return;
     }
@@ -216,7 +244,7 @@ export class AskService {
       // Both models returned nothing; the sources still answer the question.
       yield {
         type: 'delta',
-        text: 'Here are the closest matches from our catalogue.',
+        text: CLOSEST[input.locale],
       };
       yield { type: 'done', citedBookIds: [], fallback: true };
       return;

@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import {
+  ChangePasswordInput,
   ConfirmEmailInput,
   ForgotPasswordInput,
   ResetPasswordInput,
@@ -47,10 +48,10 @@ export class AuthController {
     private readonly googleAuth: GoogleAuthService,
   ) {}
 
-  private startSession(res: Response, userId: string) {
+  private startSession(res: Response, userId: string, issuedAt?: number) {
     res.cookie(
       SESSION_COOKIE,
-      signSession(env, userId),
+      signSession(env, userId, issuedAt),
       sessionCookieOptions(env),
     );
   }
@@ -188,6 +189,20 @@ export class AuthController {
     const { maxAge: _maxAge, ...opts } = sessionCookieOptions(env);
     void _maxAge;
     res.clearCookie(SESSION_COOKIE, opts);
+  }
+
+  @Patch('me/password')
+  @HttpCode(204)
+  @UseGuards(AuthGuard, ThrottlerGuard)
+  @Throttle({ default: { limit: env.AUTH_RATE_LIMIT, ttl: 60_000 } })
+  async changePassword(
+    @CurrentUser() user: SessionUser,
+    @Body(new ZodPipe(ChangePasswordInput)) input: ChangePasswordInput,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<void> {
+    const cutoff = await this.users.changePassword(user, input);
+    // Other devices are signed out; this browser gets a fresh session.
+    this.startSession(res, user.id, cutoff);
   }
 
   @Get('me')

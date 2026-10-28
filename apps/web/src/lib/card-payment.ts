@@ -2,12 +2,16 @@
 
 import type { OrderView, PaymentConfig } from "@sofiya/shared";
 
-// "Frankenstein and 2 more" (Toss shows this in the payment window).
-export function orderName(order: Pick<OrderView, "items">): string {
+// "Frankenstein and 2 more" (Toss shows this in the payment window, at most
+// 100 characters). `more` words it in the reader's language.
+export type OrderNameFormat = (first: string, count: number) => string;
+const englishName: OrderNameFormat = (first, count) => `${first} and ${count} more`;
+
+export function orderName(order: Pick<OrderView, "items">, more: OrderNameFormat = englishName): string {
   const [first, ...rest] = order.items;
-  const name = first ? first.bookTitle : "Sofiya order";
-  const more = rest.length ? ` and ${rest.length} more` : "";
-  return `${name.slice(0, 100 - more.length)}${more}`;
+  const title = first ? first.bookTitle : "Sofiya order";
+  const name = rest.length ? more(title, rest.length) : title;
+  return name.length > 100 ? `${name.slice(0, 99)}…` : name;
 }
 
 // Opens the Toss Payments window for an unpaid card order. Toss sends the
@@ -18,6 +22,7 @@ export async function startCardPayment(
   config: PaymentConfig,
   order: Pick<OrderView, "id" | "items" | "total" | "currency">,
   customer: { id: string; email: string; name: string },
+  more?: OrderNameFormat,
 ): Promise<void> {
   const origin = window.location.origin;
   if (config.card.provider === "fake") {
@@ -38,7 +43,7 @@ export async function startCardPayment(
     method: "CARD",
     amount: { currency: order.currency, value: order.total },
     orderId: order.id,
-    orderName: orderName(order),
+    orderName: orderName(order, more),
     customerEmail: customer.email,
     customerName: customer.name,
     successUrl: `${origin}/checkout/success`,

@@ -1,11 +1,11 @@
 import type { AuthorPage } from "@sofiya/shared";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { BookGrid } from "@/components/BookCard";
 import { Container } from "@/components/ui";
 import { ApiError, apiGet } from "@/lib/api";
-import { GENRE_LABELS, yearLabel } from "@/lib/labels";
 
 export const dynamic = "force-dynamic";
 
@@ -22,11 +22,14 @@ async function loadAuthor(slug: string): Promise<AuthorPage> {
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const author = await loadAuthor((await params).slug);
-  return { title: author.name, description: `Books by ${author.name} at Sofiya.` };
+  const t = await getTranslations("author");
+  return { title: author.name, description: t("metaDescription", { name: author.name }) };
 }
 
 export default async function AuthorPageView({ params }: { params: Params }) {
   const author = await loadAuthor((await params).slug);
+  const t = await getTranslations();
+  const yearLabel = (y: number) => (y < 0 ? t("labels.yearBC", { year: -y }) : String(y));
   const genres = [...new Set(author.books.map((b) => b.genre))];
   const years = author.books.map((b) => b.publishedYear).filter((y): y is number => y !== null);
   const span =
@@ -45,13 +48,13 @@ export default async function AuthorPageView({ params }: { params: Params }) {
 
   return (
     <Container>
-      <nav aria-label="Breadcrumb" className="pt-6 text-sm text-ink-3">
+      <nav aria-label={t("bookPage.breadcrumb")} className="pt-6 text-sm text-ink-3">
         <Link href="/" className="hover:text-ink">
-          Home
+          {t("bookPage.home")}
         </Link>
         {" / "}
         <Link href="/books" className="hover:text-ink">
-          Books
+          {t("author.books")}
         </Link>
         {" / "}
         <span className="text-ink-2">{author.name}</span>
@@ -67,16 +70,16 @@ export default async function AuthorPageView({ params }: { params: Params }) {
         <div>
           <h1 className="font-display text-4xl font-extrabold tracking-[-0.03em] sm:text-5xl">{author.name}</h1>
           <p className="mt-2 text-ink-2">
-            {author.books.length} {author.books.length === 1 ? "book" : "books"} at Sofiya
-            {span ? ` · published ${span}` : ""}
+            {t("author.count", { count: author.books.length })}
+            {span ? ` · ${t("author.published", { span })}` : ""}
             {" · "}
-            {genres.map((g) => GENRE_LABELS[g]).join(", ")}
+            {genres.map((g) => t(`labels.genre.${g}`)).join(", ")}
           </p>
         </div>
       </header>
 
       <section className="mt-10">
-        <h2 className="sr-only">Books</h2>
+        <h2 className="sr-only">{t("author.books")}</h2>
         <BookGrid books={author.books} />
       </section>
     </Container>

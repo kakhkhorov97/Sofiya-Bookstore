@@ -1,10 +1,12 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import type {
+  ChangePasswordInput,
   PublicUser,
   SignInInput,
   SignUpInput,
@@ -91,6 +93,34 @@ export class UsersService {
       .where(eq(users.id, id))
       .limit(1);
     return user && user.status === 'ACTIVE' ? user : null;
+  }
+
+  // Ends every session issued before this moment and returns it (whole
+  // seconds), so the caller can sign this browser in again at exactly that
+  // time: one clock, so the new session is never older than the cutoff.
+  async changePassword(
+    user: UserRow,
+    input: ChangePasswordInput,
+  ): Promise<number> {
+    const ok = await bcrypt.compare(input.currentPassword, user.passwordHash);
+    if (!ok) {
+      throw new BadRequestException(
+        user.googleSub
+          ? 'The current password is incorrect. If you only ever used Google, set a password with "Forgot password" on the sign-in page.'
+          : 'The current password is incorrect.',
+      );
+    }
+    const passwordHash = await bcrypt.hash(input.newPassword, this.rounds);
+    const cutoff = Math.floor(Date.now() / 1000);
+    await this.db
+      .update(users)
+      .set({
+        passwordHash,
+        sessionsValidAfter: new Date(cutoff * 1000),
+        updatedAt: sql`now()`,
+      })
+      .where(eq(users.id, user.id));
+    return cutoff;
   }
 
   async updateProfile(id: string, input: UpdateProfileInput): Promise<UserRow> {

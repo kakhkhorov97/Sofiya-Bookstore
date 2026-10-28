@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { clientApi } from "@/lib/client-api";
@@ -10,6 +11,7 @@ export function CancelOrderButton({ orderId }: { orderId: string }) {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const t = useTranslations("cancelOrder");
 
   async function cancel() {
     setBusy(true);
@@ -18,7 +20,7 @@ export function CancelOrderButton({ orderId }: { orderId: string }) {
       await clientApi(`/orders/${orderId}/cancel`, { method: "POST" });
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not cancel the order.");
+      setError(err instanceof Error ? err.message : t("failed"));
     } finally {
       setBusy(false);
       setConfirming(false);
@@ -29,17 +31,17 @@ export function CancelOrderButton({ orderId }: { orderId: string }) {
     <div className="space-y-3">
       {confirming ? (
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-[15px] font-medium">Cancel this order?</span>
+          <span className="text-[15px] font-medium">{t("confirm")}</span>
           <button type="button" onClick={cancel} disabled={busy} className={`${buttonClass.dark} h-10`}>
-            {busy ? "Cancelling…" : "Yes, cancel order"}
+            {busy ? t("cancelling") : t("yes")}
           </button>
           <button type="button" onClick={() => setConfirming(false)} className={`${buttonClass.outline} h-10`}>
-            Keep order
+            {t("keep")}
           </button>
         </div>
       ) : (
         <button type="button" onClick={() => setConfirming(true)} className={buttonClass.outline}>
-          Cancel order
+          {t("cancel")}
         </button>
       )}
       {error && <Notice tone="bad">{error}</Notice>}

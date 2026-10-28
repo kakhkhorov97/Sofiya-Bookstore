@@ -10,12 +10,12 @@ import {
 import { SearchX } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { BookGrid } from "@/components/BookCard";
 import { SortSelect } from "@/components/SortSelect";
 import { ButtonLink, Container } from "@/components/ui";
 import { getCurrency } from "@/currency/server";
 import { apiGet } from "@/lib/api";
-import { FORMAT_LABELS, GENRE_LABELS, SORT_LABELS } from "@/lib/labels";
 
 export const dynamic = "force-dynamic";
 
@@ -32,12 +32,14 @@ function readParams(raw: Record<string, string | string[] | undefined>) {
 
 export async function generateMetadata({ searchParams }: { searchParams: SearchParams }): Promise<Metadata> {
   const q = readParams(await searchParams);
+  const t = await getTranslations();
   if (q.q) return { title: `“${q.q}”` };
-  if (q.genre) return { title: GENRE_LABELS[q.genre] };
-  return { title: "All books" };
+  if (q.genre) return { title: t(`labels.genre.${q.genre}`) };
+  return { title: t("common.allBooks") };
 }
 
 export default async function BooksPage({ searchParams }: { searchParams: SearchParams }) {
+  const t = await getTranslations();
   // Price sorting follows the reader's currency cookie, not the URL.
   const query = { ...readParams(await searchParams), currency: await getCurrency() };
   const qs = (overrides: Record<string, string | number | boolean | undefined>) => {
@@ -63,12 +65,12 @@ export default async function BooksPage({ searchParams }: { searchParams: Search
   const pages = Math.max(1, Math.ceil(result.total / result.limit));
   const sorts = BOOK_SORTS.filter((s) => s !== "relevance" || query.q);
   const heading = query.q
-    ? `Results for “${query.q}”`
+    ? t("books.resultsFor", { q: query.q })
     : query.staffPicks
-      ? "Staff picks"
+      ? t("common.staffPicks")
       : query.genre
-        ? GENRE_LABELS[query.genre]
-        : "All books";
+        ? t(`labels.genre.${query.genre}`)
+        : t("common.allBooks");
 
   return (
     <Container className="pb-8">
@@ -76,51 +78,51 @@ export default async function BooksPage({ searchParams }: { searchParams: Search
         <div>
           <h1 className="font-display text-4xl font-extrabold tracking-[-0.03em] sm:text-5xl">{heading}</h1>
           <p className="mt-2 text-ink-3" aria-live="polite">
-            {result.total} {result.total === 1 ? "book" : "books"}
-            {query.format ? ` · ${FORMAT_LABELS[query.format]}` : ""}
-            {query.inStock ? " · in stock" : ""}
+            {t("books.count", { count: result.total })}
+            {query.format ? ` · ${t(`labels.format.${query.format}`)}` : ""}
+            {query.inStock ? ` · ${t("books.inStockNote")}` : ""}
           </p>
         </div>
         <SortSelect
           value={query.sort ?? (query.q ? "relevance" : "popular")}
-          options={sorts.map((s) => ({ value: s, label: SORT_LABELS[s] }))}
+          options={sorts.map((s) => ({ value: s, label: t(`labels.sort.${s}`) }))}
         />
       </div>
 
       <div className="mt-8 grid gap-10 lg:grid-cols-[220px_1fr]">
-        <aside aria-label="Filters" className="min-w-0 space-y-8 text-[15px]">
+        <aside aria-label={t("books.filters")} className="min-w-0 space-y-8 text-[15px]">
           <form action="/books" role="search" className="lg:hidden">
             <input
               name="q"
               type="search"
               defaultValue={query.q}
-              placeholder="Search title or author"
-              aria-label="Search books"
+              placeholder={t("books.searchPlaceholder")}
+              aria-label={t("common.searchBooks")}
               className="w-full rounded-full bg-surface px-4 py-2.5 outline-none focus:ring-2 focus:ring-accent"
             />
           </form>
-          <FilterGroup title="Genre">
+          <FilterGroup title={t("books.genre")}>
             <FilterLink href={qs({ genre: undefined })} active={!query.genre}>
-              All genres
+              {t("books.allGenres")}
             </FilterLink>
             {GENRES.map((g) => (
               <FilterLink key={g} href={qs({ genre: g })} active={query.genre === g}>
-                {GENRE_LABELS[g]}
+                {t(`labels.genre.${g}`)}
                 <span className="ml-auto text-ink-3">{genres.find((x) => x.genre === g)?.count ?? 0}</span>
               </FilterLink>
             ))}
           </FilterGroup>
-          <FilterGroup title="Format">
+          <FilterGroup title={t("books.format")}>
             <FilterLink href={qs({ format: undefined })} active={!query.format}>
-              Any format
+              {t("books.anyFormat")}
             </FilterLink>
             {BOOK_FORMATS.map((f) => (
               <FilterLink key={f} href={qs({ format: f })} active={query.format === f}>
-                {FORMAT_LABELS[f]}
+                {t(`labels.format.${f}`)}
               </FilterLink>
             ))}
           </FilterGroup>
-          <FilterGroup title="Availability">
+          <FilterGroup title={t("books.availability")}>
             <FilterLink href={qs({ inStock: !query.inStock })} active={query.inStock}>
               <span
                 aria-hidden
@@ -128,37 +130,37 @@ export default async function BooksPage({ searchParams }: { searchParams: Search
               >
                 {query.inStock ? "✓" : ""}
               </span>
-              In stock only
+              {t("books.inStockOnly")}
             </FilterLink>
           </FilterGroup>
         </aside>
 
-        <section aria-label="Results" className="min-w-0">
+        <section aria-label={t("books.results")} className="min-w-0">
           {result.items.length > 0 ? (
             <BookGrid books={result.items} />
           ) : (
             <div className="rounded-[16px] bg-surface px-6 py-14 text-center">
               <SearchX size={32} className="mx-auto text-ink-3" aria-hidden />
-              <h2 className="mt-3 font-display text-2xl font-extrabold">No books match that</h2>
+              <h2 className="mt-3 font-display text-2xl font-extrabold">{t("books.noMatch")}</h2>
               <p className="mx-auto mt-2 max-w-[44ch] text-ink-2">
-                Try fewer words, check the spelling, or remove a filter.
+                {t("books.noMatchText")}
               </p>
               <ButtonLink href="/books" variant="outline" className="mt-6">
-                Clear search and filters
+                {t("books.clear")}
               </ButtonLink>
             </div>
           )}
 
           {pages > 1 && (
-            <nav aria-label="Pages" className="mt-12 flex items-center justify-center gap-2">
+            <nav aria-label={t("books.pages")} className="mt-12 flex items-center justify-center gap-2">
               <PageLink href={qs({ page: query.page - 1 })} disabled={query.page <= 1}>
-                Previous
+                {t("books.previous")}
               </PageLink>
               <span className="px-3 text-sm text-ink-3">
-                Page {query.page} of {pages}
+                {t("books.pageOf", { page: query.page, pages })}
               </span>
               <PageLink href={qs({ page: query.page + 1 })} disabled={query.page >= pages}>
-                Next
+                {t("books.next")}
               </PageLink>
             </nav>
           )}

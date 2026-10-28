@@ -1,6 +1,7 @@
 "use client";
 
 import { formatMoney, type Currency, type Prices } from "@sofiya/shared";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useMemo, useState, useTransition } from "react";
 import { currencyCookie } from "./currency";
@@ -39,12 +40,22 @@ export function useCurrency(): CurrencyContextValue {
 }
 
 // A price in the reader's currency, for server and client components alike.
-export function Price({ prices, prefix }: { prices: Prices; prefix?: string }) {
+export function Price({ prices }: { prices: Prices }) {
   const { currency } = useCurrency();
+  return <>{formatMoney(prices[currency], currency)}</>;
+}
+
+// "from ₩15,400" / "₩15,400부터" / "от ₩15 400": word order differs by
+// language, so the whole phrase comes from the translation.
+export function FromPrice({ prices, boldAmount = false }: { prices: Prices; boldAmount?: boolean }) {
+  const { currency } = useCurrency();
+  const t = useTranslations("price");
   return (
     <>
-      {prefix}
-      {formatMoney(prices[currency], currency)}
+      {t.rich("from", {
+        amount: formatMoney(prices[currency], currency),
+        b: (chunks) => (boldAmount ? <span className="font-bold text-ink">{chunks}</span> : <>{chunks}</>),
+      })}
     </>
   );
 }

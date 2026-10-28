@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Heart } from "lucide-react";
 import { useWishlist } from "@/wishlist/WishlistProvider";
 
@@ -13,8 +14,9 @@ export function WishlistButton({
   variant?: "icon" | "button";
 }) {
   const { has, toggle } = useWishlist();
+  const t = useTranslations("wishlist");
   const saved = has(bookId);
-  const label = saved ? `Remove ${title} from your wishlist` : `Save ${title} to your wishlist`;
+  const label = saved ? t("remove", { title }) : t("save", { title });
 
   if (variant === "button") {
     return (

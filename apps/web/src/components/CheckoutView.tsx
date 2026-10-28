@@ -3,6 +3,7 @@
 import { CURRENCY_LABELS, formatMoney, type Currency, type OrderView, type PaymentConfig, type PaymentMethod } from "@sofiya/shared";
 import { CreditCard, Landmark } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { basketFingerprint, type BasketLine } from "@/basket/basket";
@@ -10,7 +11,6 @@ import { useBasket } from "@/basket/BasketProvider";
 import { useBasketInfo } from "@/basket/useBasketInfo";
 import { isUserCancel, startCardPayment } from "@/lib/card-payment";
 import { clientApi, ClientApiError } from "@/lib/client-api";
-import { FORMAT_LABELS } from "@/lib/labels";
 import { OrderSummary } from "./OrderSummary";
 import { buttonClass, ButtonLink, Notice } from "./ui";
 
@@ -40,6 +40,7 @@ export function CheckoutView({
   customer: { id: string; email: string; name: string };
 }) {
   const router = useRouter();
+  const t = useTranslations();
   const { lines, ready, dispatch } = useBasket();
   const { currency, checked, totals, hasProblems, refresh } = useBasketInfo(lines);
   const [busy, setBusy] = useState(false);
@@ -55,8 +56,8 @@ export function CheckoutView({
   if (placed) {
     return (
       <div className="mt-8 rounded-[16px] bg-ok-soft px-6 py-12 text-center text-ok" role="status">
-        <p className="font-display text-2xl font-extrabold">Order placed</p>
-        <p className="mt-2">{placed.paying ? "Opening the secure payment window…" : "Opening your order…"}</p>
+        <p className="font-display text-2xl font-extrabold">{t("checkout.placed")}</p>
+        <p className="mt-2">{placed.paying ? t("checkout.openingPayment") : t("checkout.openingOrder")}</p>
       </div>
     );
   }
@@ -64,9 +65,9 @@ export function CheckoutView({
   if (lines.length === 0) {
     return (
       <div className="mt-8 rounded-[16px] bg-surface px-6 py-12 text-center">
-        <p className="font-display text-2xl font-extrabold">Nothing to check out</p>
+        <p className="font-display text-2xl font-extrabold">{t("checkout.nothing")}</p>
         <ButtonLink href="/books" className="mt-5">
-          Browse books
+          {t("checkout.browse")}
         </ButtonLink>
       </div>
     );
@@ -95,7 +96,7 @@ export function CheckoutView({
       if (method === "CARD") {
         setPlaced({ id: order.id, paying: true });
         try {
-          await startCardPayment(config, order, customer);
+          await startCardPayment(config, order, customer, (first, count) => t("payNow.orderName", { first, count }));
         } catch (err) {
           // Closed the window, or Toss refused to open it: the order stays
           // unpaid, and its page has a "Pay now" button.
@@ -111,13 +112,13 @@ export function CheckoutView({
         const ids = err.body.formatIds as string[];
         const titles = lines.filter((l) => ids.includes(l.formatId)).map((l) => l.title);
         setError(
-          `${err.status === 409 ? "Not enough stock for" : "No longer available:"} ${titles.join(", ")}. Update your basket and try again.`,
+          t(err.status === 409 ? "checkout.notEnoughStock" : "checkout.noLongerAvailable", { titles: titles.join(", ") }),
         );
         void refresh();
       } else if (err instanceof ClientApiError && err.status === 401) {
         router.push("/signin?next=/checkout");
       } else {
-        setError(err instanceof Error ? err.message : "Could not place the order. Please try again.");
+        setError(err instanceof Error ? err.message : t("checkout.placeFailed"));
       }
       setBusy(false);
     }
@@ -129,11 +130,17 @@ export function CheckoutView({
         {error && <Notice tone="bad">{error}</Notice>}
         {hasProblems && (
           <Notice>
-            Some items can’t be ordered right now. <Link href="/basket" className="underline">Review your basket</Link>.
+            {t.rich("checkout.problems", {
+              link: (c) => (
+                <Link href="/basket" className="underline">
+                  {c}
+                </Link>
+              ),
+            })}
           </Notice>
         )}
         <section>
-          <h2 className="font-display text-xl font-extrabold">Items</h2>
+          <h2 className="font-display text-xl font-extrabold">{t("checkout.items")}</h2>
           <ul className="mt-3 divide-y divide-line border-y border-line">
             {checked.map((l) => (
               <li key={l.formatId} className="flex justify-between gap-4 py-3 text-[15px]">
@@ -141,7 +148,7 @@ export function CheckoutView({
                   <span className="font-semibold">{l.title}</span>
                   <span className="text-ink-3">
                     {" "}
-                    · {FORMAT_LABELS[l.format]} × {l.quantity}
+                    · {t(`labels.format.${l.format}`)} × {l.quantity}
                   </span>
                 </span>
                 <span className="font-semibold">{formatMoney((l.info?.price ?? l.price)[currency] * l.quantity, currency)}</span>
@@ -149,12 +156,12 @@ export function CheckoutView({
             ))}
           </ul>
           <Link href="/basket" className="mt-3 inline-block text-sm font-semibold text-accent">
-            Edit basket
+            {t("checkout.editBasket")}
           </Link>
         </section>
 
         <fieldset>
-          <legend className="font-display text-xl font-extrabold">Payment</legend>
+          <legend className="font-display text-xl font-extrabold">{t("checkout.payment")}</legend>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <PaymentOption
               value="CARD"
@@ -162,13 +169,16 @@ export function CheckoutView({
               disabled={!cardAvailable}
               onChange={setChosen}
               icon={<CreditCard size={20} aria-hidden />}
-              title="Card or easy pay"
+              title={t("checkout.card")}
               text={
                 !config.card.enabled
-                  ? "Not available right now."
+                  ? t("checkout.cardOff")
                   : cardAvailable
-                    ? "Cards, Toss Pay, KakaoPay, NaverPay. Paid now, confirmed at once."
-                    : `Not available in ${CURRENCY_LABELS[currency].name}s yet. Switch to ${config.card.currencies.map((c) => CURRENCY_LABELS[c].symbol).join(" / ")} to pay by card.`
+                    ? t("checkout.cardText")
+                    : t("checkout.cardNotInCurrency", {
+                        currency: t(`currency.${currency}`),
+                        symbols: config.card.currencies.map((c) => CURRENCY_LABELS[c].symbol).join(" / "),
+                      })
               }
             />
             <PaymentOption
@@ -176,8 +186,8 @@ export function CheckoutView({
               checked={method === "BANK_TRANSFER"}
               onChange={setChosen}
               icon={<Landmark size={20} aria-hidden />}
-              title="Bank transfer"
-              text="Pay to our account after ordering. We confirm the order when the money arrives."
+              title={t("checkout.transfer")}
+              text={t("checkout.transferText")}
             />
           </div>
           {method === "CARD" && config.card.testMode && <TestModeNote fake={config.card.provider === "fake"} />}
@@ -192,15 +202,15 @@ export function CheckoutView({
           className={`${buttonClass.primary} mt-5 w-full`}
         >
           {busy
-            ? "Placing order…"
+            ? t("checkout.placing")
             : totals
-              ? `${method === "CARD" ? "Pay" : "Place order"} · ${formatMoney(totals.total, currency)}`
-              : "Place order"}
+              ? t(method === "CARD" ? "checkout.pay" : "checkout.placeOrderAmount", { amount: formatMoney(totals.total, currency) })
+              : t("checkout.placeOrder")}
         </button>
         <p className="mt-3 text-xs text-ink-3">
           {method === "CARD"
-            ? "You pay in Toss Payments' secure window. Sofiya never sees your card details."
-            : "Prices are checked by the store when the order is placed."}
+            ? t("checkout.cardNote")
+            : t("checkout.transferNote")}
         </p>
       </OrderSummary>
     </div>
@@ -250,12 +260,10 @@ function PaymentOption({
 
 // This is a portfolio shop: make it impossible to mistake for a real charge.
 export function TestModeNote({ fake = false }: { fake?: boolean }) {
+  const t = useTranslations("checkout");
   return (
     <p className="mt-3 rounded-[10px] bg-accent-soft px-3.5 py-2.5 text-sm text-accent-ink">
-      <b>Test mode, no real money.</b>{" "}
-      {fake
-        ? "Card payments are simulated on this demo shop."
-        : "This demo shop uses Toss Payments' test environment. In the payment window, pick a card company and use Toss's test card details rather than your own Toss Pay account."}
+      <b>{t("testModeTitle")}</b> {fake ? t("testModeFake") : t("testModeToss")}
     </p>
   );
 }

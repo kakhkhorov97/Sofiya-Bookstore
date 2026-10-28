@@ -3,12 +3,13 @@
 import { BOOK_FORMATS, type GenreCount } from "@sofiya/shared";
 import { ChevronDown, Sparkles, Star } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { FORMAT_LABELS, GENRE_LABELS } from "@/lib/labels";
 import { FEATURED_AUTHORS } from "@/lib/nav";
 
 export function MegaMenu({ genres }: { genres: GenreCount[] }) {
+  const t = useTranslations();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const hoveredAt = useRef(0);
@@ -46,14 +47,14 @@ export function MegaMenu({ genres }: { genres: GenreCount[] }) {
         }}
         className={`flex items-center gap-1 font-medium ${active ? "text-ink" : "text-ink-2 hover:text-ink"}`}
       >
-        Browse <ChevronDown size={16} className={`transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
+        {t("megaMenu.browse")} <ChevronDown size={16} className={`transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
       </button>
 
       {open && (
         <div id="browse-menu" className="absolute left-[-24px] top-full z-30 pt-4">
           <div className="grid w-[720px] grid-cols-[1.3fr_1fr_1fr] gap-8 rounded-[16px] border border-line bg-white p-7 shadow-[0_24px_60px_rgba(21,23,28,0.14)]">
             <div>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.06em] text-ink-3">Genres</p>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.06em] text-ink-3">{t("megaMenu.genres")}</p>
               <ul className="grid gap-1">
                 {genres.map((g) => (
                   <li key={g.genre}>
@@ -61,7 +62,7 @@ export function MegaMenu({ genres }: { genres: GenreCount[] }) {
                       href={`/books?genre=${g.genre}`}
                       className="flex justify-between rounded-[8px] px-2 py-1.5 text-[15px] hover:bg-surface"
                     >
-                      {GENRE_LABELS[g.genre]}
+                      {t(`labels.genre.${g.genre}`)}
                       <span className="text-ink-3">{g.count}</span>
                     </Link>
                   </li>
@@ -69,32 +70,32 @@ export function MegaMenu({ genres }: { genres: GenreCount[] }) {
               </ul>
             </div>
             <div>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.06em] text-ink-3">Formats</p>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.06em] text-ink-3">{t("megaMenu.formats")}</p>
               <ul className="grid gap-1">
                 {BOOK_FORMATS.map((f) => (
                   <li key={f}>
                     <Link href={`/books?format=${f}`} className="block rounded-[8px] px-2 py-1.5 text-[15px] hover:bg-surface">
-                      {FORMAT_LABELS[f]}
+                      {t(`labels.format.${f}`)}
                     </Link>
                   </li>
                 ))}
               </ul>
-              <p className="mb-3 mt-6 text-xs font-semibold uppercase tracking-[0.06em] text-ink-3">Discover</p>
+              <p className="mb-3 mt-6 text-xs font-semibold uppercase tracking-[0.06em] text-ink-3">{t("megaMenu.discover")}</p>
               <ul className="grid gap-1">
                 <li>
                   <Link href="/books?staffPicks=true" className="flex items-center gap-2 rounded-[8px] px-2 py-1.5 text-[15px] hover:bg-surface">
-                    <Star size={16} className="text-[#e3a008]" aria-hidden /> Staff picks
+                    <Star size={16} className="text-[#e3a008]" aria-hidden /> {t("common.staffPicks")}
                   </Link>
                 </li>
                 <li>
                   <Link href="/ask" className="flex items-center gap-2 rounded-[8px] px-2 py-1.5 text-[15px] hover:bg-surface">
-                    <Sparkles size={16} className="text-accent" aria-hidden /> Ask Sofiya
+                    <Sparkles size={16} className="text-accent" aria-hidden /> {t("common.askSofiya")}
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.06em] text-ink-3">Popular authors</p>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.06em] text-ink-3">{t("megaMenu.popularAuthors")}</p>
               <ul className="grid gap-1">
                 {FEATURED_AUTHORS.map((a) => (
                   <li key={a.slug}>
@@ -105,7 +106,7 @@ export function MegaMenu({ genres }: { genres: GenreCount[] }) {
                 ))}
               </ul>
               <Link href="/books" className="mt-4 inline-block px-2 text-sm font-semibold text-accent">
-                All books →
+                {t("megaMenu.allBooks")}
               </Link>
             </div>
           </div>

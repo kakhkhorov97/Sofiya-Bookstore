@@ -15,8 +15,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslations } from "next-intl";
 import { CurrencySwitcher } from "@/currency/CurrencySwitcher";
-import { GENRE_LABELS } from "@/lib/labels";
+import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
 import { FEATURED_AUTHORS } from "@/lib/nav";
 
 export function MobileMenu({
@@ -26,6 +27,7 @@ export function MobileMenu({
   genres: GenreCount[];
   user: PublicUser | null;
 }) {
+  const t = useTranslations();
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -47,7 +49,7 @@ export function MobileMenu({
     <div className="lg:hidden">
       <button
         type="button"
-        aria-label="Open menu"
+        aria-label={t("mobileMenu.open")}
         aria-expanded={open}
         onClick={() => setOpen(true)}
         className="grid size-10 place-items-center rounded-[10px] text-ink-2 hover:bg-surface"
@@ -63,11 +65,11 @@ export function MobileMenu({
             className="fixed inset-0 z-50"
             role="dialog"
             aria-modal="true"
-            aria-label="Menu"
+            aria-label={t("mobileMenu.title")}
           >
             <button
               type="button"
-              aria-label="Close menu"
+              aria-label={t("mobileMenu.close")}
               className="absolute inset-0 bg-ink/40"
               onClick={() => setOpen(false)}
             />
@@ -79,7 +81,7 @@ export function MobileMenu({
                 <button
                   ref={closeRef}
                   type="button"
-                  aria-label="Close menu"
+                  aria-label={t("mobileMenu.close")}
                   onClick={() => setOpen(false)}
                   className="grid size-10 place-items-center rounded-[10px] hover:bg-surface"
                 >
@@ -94,50 +96,54 @@ export function MobileMenu({
                   <input
                     name="q"
                     type="search"
-                    placeholder="Search title or author"
+                    placeholder={t("mobileMenu.search")}
                     className="min-w-0 flex-1 bg-transparent text-ink outline-none"
                   />
                 </label>
               </form>
 
               <div className="flex items-center justify-between px-5 pb-3 text-[15px]">
-                <span className="text-ink-2">Currency</span>
+                <span className="text-ink-2">{t("mobileMenu.language")}</span>
+                <LanguageSwitcher />
+              </div>
+              <div className="flex items-center justify-between px-5 pb-3 text-[15px]">
+                <span className="text-ink-2">{t("mobileMenu.currency")}</span>
                 <CurrencySwitcher />
               </div>
 
-              <nav aria-label="Mobile" className="px-2 pb-6 text-[15px]">
+              <nav aria-label={t("mobileMenu.nav")} className="px-2 pb-6 text-[15px]">
                 <MobileLink
                   href="/ask"
                   icon={<Sparkles size={18} className="text-accent" />}
                 >
-                  Ask Sofiya
+                  {t("common.askSofiya")}
                 </MobileLink>
                 <MobileLink
                   href="/books?staffPicks=true"
                   icon={<Star size={18} className="text-[#e3a008]" />}
                 >
-                  Staff picks
+                  {t("common.staffPicks")}
                 </MobileLink>
                 <MobileLink href="/wishlist" icon={<Heart size={18} />}>
-                  Wishlist
+                  {t("common.wishlist")}
                 </MobileLink>
                 <MobileLink href="/orders" icon={<Package size={18} />}>
-                  Orders
+                  {t("common.orders")}
                 </MobileLink>
                 {user?.role === "ADMIN" && (
                   <MobileLink href="/admin" icon={<Sparkles size={18} className="text-accent" />}>
-                    Admin
+                    {t("common.admin")}
                   </MobileLink>
                 )}
                 <MobileLink
                   href={user ? "/account" : "/signin"}
                   icon={<UserRound size={18} />}
                 >
-                  {user ? user.displayName : "Sign in"}
+                  {user ? user.displayName : t("mobileMenu.signIn")}
                 </MobileLink>
 
                 <p className="mb-1 mt-6 px-3 text-xs font-semibold uppercase tracking-[0.06em] text-ink-3">
-                  Genres
+                  {t("mobileMenu.genres")}
                 </p>
                 {genres.map((g) => (
                   <Link
@@ -145,13 +151,13 @@ export function MobileMenu({
                     href={`/books?genre=${g.genre}`}
                     className="flex justify-between rounded-[8px] px-3 py-2 hover:bg-surface"
                   >
-                    {GENRE_LABELS[g.genre]}
+                    {t(`labels.genre.${g.genre}`)}
                     <span className="text-ink-3">{g.count}</span>
                   </Link>
                 ))}
 
                 <p className="mb-1 mt-6 px-3 text-xs font-semibold uppercase tracking-[0.06em] text-ink-3">
-                  Authors
+                  {t("mobileMenu.authors")}
                 </p>
                 {FEATURED_AUTHORS.map((a) => (
                   <Link

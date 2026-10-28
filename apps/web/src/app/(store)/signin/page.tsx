@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AuthForm } from "@/components/AuthForm";
@@ -8,15 +9,11 @@ import { getAuthProviders } from "@/lib/providers";
 import { getCurrentUser } from "@/lib/session";
 import { safeNext } from "@/lib/safe-next";
 
-export const metadata: Metadata = { title: "Sign in" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("auth"))("signInTitle") };
+}
 
-const GOOGLE_ERRORS: Record<string, string> = {
-  cancelled: "Google sign-in was cancelled.",
-  expired: "That Google sign-in took too long or came from another window. Please try again.",
-  unverified: "Google hasn't verified the email on that account, so we can't use it. Verify it with Google, or sign up with email.",
-  closed: "This account has been closed or blocked. Please contact the store.",
-  failed: "Google sign-in didn't work. Please try again, or use email.",
-};
+const GOOGLE_ERRORS = ["cancelled", "expired", "unverified", "closed", "failed"] as const;
 
 export default async function SignInPage({
   searchParams,
@@ -25,13 +22,15 @@ export default async function SignInPage({
 }) {
   const { next, reset, google } = await searchParams;
   if (await getCurrentUser()) redirect(safeNext(next, "/account"));
-  const providers = await getAuthProviders();
-  const googleError = google ? GOOGLE_ERRORS[google] ?? GOOGLE_ERRORS.failed : null;
+  const [providers, t] = await Promise.all([getAuthProviders(), getTranslations("auth")]);
+  const googleError = google
+    ? t(`googleErrors.${(GOOGLE_ERRORS as readonly string[]).includes(google) ? (google as (typeof GOOGLE_ERRORS)[number]) : "failed"}`)
+    : null;
 
   return (
     <div className="mx-auto w-[min(420px,calc(100%-32px))] py-14">
-      <h1 className="font-display text-4xl font-extrabold tracking-[-0.03em]">Sign in</h1>
-      <p className="mt-2 text-ink-2">Welcome back. Sign in to check out and track your orders.</p>
+      <h1 className="font-display text-4xl font-extrabold tracking-[-0.03em]">{t("signInTitle")}</h1>
+      <p className="mt-2 text-ink-2">{t("signInIntro")}</p>
       {googleError && (
         <div className="mt-6">
           <Notice tone={google === "cancelled" ? "warn" : "bad"}>{googleError}</Notice>
@@ -45,7 +44,7 @@ export default async function SignInPage({
       )}
       {reset === "1" && (
         <div className="mt-6">
-          <Notice tone="ok">Your password has been changed. Sign in with the new one.</Notice>
+          <Notice tone="ok">{t("passwordChanged")}</Notice>
         </div>
       )}
       <Suspense>

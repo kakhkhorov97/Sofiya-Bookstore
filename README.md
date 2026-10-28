@@ -47,6 +47,14 @@ Sign in with an admin account (create one with `npm run db:create-admin -w @sofi
 
 The basket lives in the browser (localStorage) and is re-priced from the API on every view; checkout sends one idempotency key per basket so a double click cannot create two orders.
 
+### Languages
+
+The shop speaks **English, Korean and Russian** (ENG / KOR / RUS switch in the header and the mobile menu). The first visit follows the browser's language; the choice is kept in the `sofiya_locale` cookie, so pages render in it on the server. URLs stay the same in every language.
+
+- Texts live in `apps/web/messages/{en,ko,ru}.json` and are loaded with next-intl (`apps/web/src/i18n/`). A test checks that all three files have the same keys and no empty strings.
+- Ask Sofiya answers in the chosen language; book titles, descriptions and author names stay as they are in the catalogue (English).
+- The admin panel and emails are English only.
+
 ### Currencies
 
 Prices are in **Korean won (₩, the default)** or **US dollars ($)**. Readers pick one with the ₩ KRW / $ USD switch in the header (or the mobile menu); the choice is kept in the `sofiya_currency` cookie so server pages render in it straight away.
@@ -126,7 +134,7 @@ PostgreSQL via Drizzle ORM. Schema: `apps/api/src/db/schema.ts`; SQL migrations:
 | PUT / DELETE | `/api/wishlist/:bookId` | Save or remove a book |
 | POST | `/api/newsletter` | `{ email }`; 201 new, 200 already subscribed |
 | GET | `/api/ai/status` | Whether AI is on and how many books are indexed |
-| POST | `/api/ask` | Ask Sofiya (`message`, `history`, `filters`, `currency`; `filters.maxPrice` is in that currency); server-sent events: `sources`, `delta`…, `done` |
+| POST | `/api/ask` | Ask Sofiya (`message`, `history`, `filters`, `currency`, `locale`; `filters.maxPrice` is in that currency, `locale` is en, ko or ru); server-sent events: `sources`, `delta`…, `done` |
 | GET | `/api/covers/:file` | Uploaded cover images (WebP, cached for a year) |
 | GET | `/api/admin/overview` | Admin dashboard data |
 | GET / POST | `/api/admin/books` | List (search, status, index filters) / create |
@@ -147,6 +155,7 @@ PostgreSQL via Drizzle ORM. Schema: `apps/api/src/db/schema.ts`; SQL migrations:
 | POST | `/api/auth/password/forgot` | `{ email }`; always 202. Emails a reset link if the account exists (rate limited) |
 | POST | `/api/auth/password/reset` | `{ token, password }`; sets the password, uses up the link and ends all sessions |
 | GET / PATCH | `/api/me` | Profile; only `displayName` can be changed |
+| PATCH | `/api/me/password` | `{ currentPassword, newPassword }`; 204. Signs out every other session and keeps this one (rate limited) |
 | POST | `/api/orders` | `{ idempotencyKey, currency, paymentMethod, lines: [{ formatId, quantity }] }`; `currency` is KRW (default) or USD, `paymentMethod` is BANK_TRANSFER (default) or CARD. Prices come from the database. 201 new, 200 replay |
 | POST | `/api/orders/:id/payments/toss/confirm` | `{ paymentKey, amount }` from the Toss success redirect. Confirms with Toss for the stored total; a repeat with the same key returns the paid order |
 | GET | `/api/payments/config` | Public: card availability, Toss client key, card currencies, bank-transfer details |

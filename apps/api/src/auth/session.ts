@@ -25,12 +25,22 @@ function secret(env: Env): string {
   return env.AUTH_SECRET;
 }
 
-export function signSession(env: Env, userId: string): string {
-  return jwt.sign({}, secret(env), {
-    subject: userId,
-    expiresIn: `${SESSION_DAYS}d`,
-    algorithm: 'HS256',
-  });
+// issuedAt (seconds) lets a caller line the session up exactly with a
+// sessions_valid_after cutoff it has just written.
+export function signSession(
+  env: Env,
+  userId: string,
+  issuedAt?: number,
+): string {
+  return jwt.sign(
+    issuedAt === undefined ? {} : { iat: issuedAt },
+    secret(env),
+    {
+      subject: userId,
+      expiresIn: `${SESSION_DAYS}d`,
+      algorithm: 'HS256',
+    },
+  );
 }
 
 export function verifySession(env: Env, token: string): Session | null {

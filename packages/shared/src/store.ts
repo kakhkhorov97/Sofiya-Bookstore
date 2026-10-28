@@ -92,6 +92,8 @@ export const AskInput = z
     filters: AskFilters.default({}),
     // Prices in the answer and the max-price filter use this currency.
     currency: Currency.default(DEFAULT_CURRENCY),
+    // The reader's language; Sofiya answers in it.
+    locale: z.enum(["en", "ko", "ru"]).default("en"),
   })
   .strict();
 export type AskInput = z.infer<typeof AskInput>;

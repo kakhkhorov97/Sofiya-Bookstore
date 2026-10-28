@@ -1,11 +1,15 @@
+"use client";
+
 import type { BookSummary } from "@sofiya/shared";
-import { Price } from "@/currency/CurrencyProvider";
+import { useTranslations } from "next-intl";
+import { FromPrice } from "@/currency/CurrencyProvider";
 import Link from "next/link";
 import { BookCover } from "./BookCover";
 import { RatingLine } from "./Stars";
 import { WishlistButton } from "./WishlistButton";
 
 export function BookCard({ book }: { book: BookSummary }) {
+  const t = useTranslations("book");
   return (
     <article className="group flex flex-col">
       <div className="relative">
@@ -31,10 +35,9 @@ export function BookCard({ book }: { book: BookSummary }) {
       <div className="mt-1 min-h-5">
         <RatingLine avg={book.ratingAvg} count={book.ratingCount} />
       </div>
-      <p className="mt-auto pt-1.5 text-sm">
-        <span className="text-ink-3">from </span>
-        <span className="font-bold"><Price prices={book.fromPrice} /></span>
-        {!book.inStock && <span className="ml-2 text-xs font-semibold text-warn">Out of stock</span>}
+      <p className="mt-auto pt-1.5 text-sm text-ink-3">
+        <FromPrice prices={book.fromPrice} boldAmount />
+        {!book.inStock && <span className="ml-2 text-xs font-semibold text-warn">{t("outOfStock")}</span>}
       </p>
     </article>
   );

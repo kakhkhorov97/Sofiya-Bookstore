@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { clientApi, ClientApiError } from "@/lib/client-api";
@@ -13,6 +14,7 @@ export const inputClass =
 export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
+  const t = useTranslations("auth");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const signup = mode === "signup";
@@ -34,11 +36,18 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
       window.location.assign(next);
     } catch (err) {
       setError(
+        // The API's messages are English; these statuses have their own words.
         err instanceof ClientApiError && err.status === 429
-          ? "Too many attempts. Please wait a minute and try again."
-          : err instanceof Error
-            ? err.message
-            : "Something went wrong. Please try again.",
+          ? t("tooMany")
+          : err instanceof ClientApiError && err.status === 401
+            ? t("wrongCredentials")
+            : err instanceof ClientApiError && err.status === 403
+              ? t("blocked")
+              : err instanceof ClientApiError && err.status === 409
+                ? t("emailTaken")
+                : err instanceof ClientApiError && err.status === 400
+                  ? t("checkFields")
+                  : t("generic"),
       );
       setBusy(false);
     }
@@ -51,20 +60,20 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
       {error && <Notice tone="bad">{error}</Notice>}
       {signup && (
         <label className="block text-sm font-semibold">
-          Your name
+          {t("yourName")}
           <input name="displayName" required maxLength={60} autoComplete="name" className={inputClass} />
         </label>
       )}
       <label className="block text-sm font-semibold">
-        Email
+        {t("email")}
         <input name="email" type="email" required autoComplete="email" className={inputClass} />
       </label>
       <label className="block text-sm font-semibold">
         <span className="flex items-baseline justify-between">
-          Password
+          {t("password")}
           {!signup && (
             <Link href="/forgot-password" className="text-sm font-semibold text-accent hover:text-accent-ink">
-              Forgot password?
+              {t("forgot")}
             </Link>
           )}
         </span>
@@ -77,15 +86,15 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
           autoComplete={signup ? "new-password" : "current-password"}
           className={inputClass}
         />
-        {signup && <span className="mt-1.5 block font-normal text-ink-3">At least 8 characters.</span>}
+        {signup && <span className="mt-1.5 block font-normal text-ink-3">{t("atLeast8")}</span>}
       </label>
       <button type="submit" disabled={busy} className={`${buttonClass.primary} w-full`}>
-        {busy ? "Please wait…" : signup ? "Create account" : "Sign in"}
+        {busy ? t("pleaseWait") : signup ? t("createAccount") : t("signIn")}
       </button>
       <p className="text-center text-[15px] text-ink-2">
-        {signup ? "Already have an account? " : "New to Sofiya? "}
+        {signup ? t("haveAccount") : t("newHere")}{" "}
         <Link href={otherHref} className="font-semibold text-accent underline underline-offset-2">
-          {signup ? "Sign in" : "Create an account"}
+          {signup ? t("signIn") : t("createAnAccount")}
         </Link>
       </p>
     </form>

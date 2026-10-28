@@ -1,6 +1,7 @@
 "use client";
 
 import { computeOrderTotals, type FormatInfo, type OrderTotals } from "@sofiya/shared";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { clientApi } from "@/lib/client-api";
 import { useCurrency } from "@/currency/CurrencyProvider";
@@ -17,6 +18,7 @@ export interface CheckedLine extends BasketLine {
 // Fetches today's price and stock for every basket line.
 export function useBasketInfo(lines: BasketLine[]) {
   const { currency } = useCurrency();
+  const t = useTranslations("basket");
   const ids = useMemo(() => [...new Set(lines.map((l) => l.formatId))].sort().join(","), [lines]);
   const [infos, setInfos] = useState<Map<string, FormatInfo>>(new Map());
   const [loading, setLoading] = useState(false);
@@ -33,11 +35,11 @@ export function useBasketInfo(lines: BasketLine[]) {
       const rows = await clientApi<FormatInfo[]>(`/formats?ids=${ids}`);
       setInfos(new Map(rows.map((r) => [r.formatId, r])));
     } catch {
-      setError("Could not check prices and stock. Please refresh the page.");
+      setError(t("checkFailed"));
     } finally {
       setLoading(false);
     }
-  }, [ids]);
+  }, [ids, t]);
 
   useEffect(() => {
     void refresh();

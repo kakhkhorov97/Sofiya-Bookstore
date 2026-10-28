@@ -1,10 +1,14 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { Star } from "lucide-react";
 
 // Read-only stars, rounded to the nearest half.
 export function Stars({ value, size = 14, className = "" }: { value: number; size?: number; className?: string }) {
+  const t = useTranslations("book");
   const rounded = Math.round(value * 2) / 2;
   return (
-    <span className={`inline-flex items-center gap-[1px] ${className}`} role="img" aria-label={`${value} out of 5 stars`}>
+    <span className={`inline-flex items-center gap-[1px] ${className}`} role="img" aria-label={t("stars", { value })}>
       {[1, 2, 3, 4, 5].map((i) => {
         const fill = rounded >= i ? 1 : rounded >= i - 0.5 ? 0.5 : 0;
         return (

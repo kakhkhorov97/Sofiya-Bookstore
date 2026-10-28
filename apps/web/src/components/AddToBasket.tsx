@@ -3,12 +3,13 @@
 import type { BookDetail } from "@sofiya/shared";
 import { Check, Minus, Plus, Truck } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { MAX_PER_LINE } from "@/basket/basket";
 import { useBasket } from "@/basket/BasketProvider";
 import { Price } from "@/currency/CurrencyProvider";
 import { FreeDeliveryNote } from "@/currency/CurrencySwitcher";
-import { FORMAT_LABELS, isDigital } from "@/lib/labels";
+import { isDigital } from "@/lib/labels";
 import { buttonClass } from "./ui";
 import { WishlistButton } from "./WishlistButton";
 
@@ -16,6 +17,7 @@ export function AddToBasket({ book }: { book: BookDetail }) {
   const { dispatch } = useBasket();
   const firstAvailable = book.formats.find((f) => f.inStock) ?? book.formats[0];
   const [formatId, setFormatId] = useState(firstAvailable?.id);
+  const t = useTranslations();
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const selected = book.formats.find((f) => f.id === formatId);
@@ -44,11 +46,11 @@ export function AddToBasket({ book }: { book: BookDetail }) {
     <div className="mt-7 max-w-[540px]">
       <p className="font-display text-4xl font-extrabold tracking-[-0.02em]">
         <Price prices={selected.price} />
-        <span className="ml-2 font-sans text-base font-medium text-ink-3">{FORMAT_LABELS[selected.format]}</span>
+        <span className="ml-2 font-sans text-base font-medium text-ink-3">{t(`labels.format.${selected.format}`)}</span>
       </p>
 
       <fieldset className="mt-4">
-        <legend className="sr-only">Choose a format</legend>
+        <legend className="sr-only">{t("buy.chooseFormat")}</legend>
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
           {book.formats.map((f) => {
             const active = f.id === formatId;
@@ -70,9 +72,9 @@ export function AddToBasket({ book }: { book: BookDetail }) {
                   }}
                   className="sr-only"
                 />
-                <span className="block text-[15px] font-bold">{FORMAT_LABELS[f.format]}</span>
+                <span className="block text-[15px] font-bold">{t(`labels.format.${f.format}`)}</span>
                 <span className="text-sm text-ink-3">
-                  {f.inStock ? <Price prices={f.price} /> : "Out of stock"}
+                  {f.inStock ? <Price prices={f.price} /> : t("book.outOfStock")}
                 </span>
               </label>
             );
@@ -82,10 +84,10 @@ export function AddToBasket({ book }: { book: BookDetail }) {
 
       <div className="mt-4 flex gap-2.5">
         {!digital && (
-          <div className="flex items-center rounded-[10px] border border-line" role="group" aria-label="Quantity">
+          <div className="flex items-center rounded-[10px] border border-line" role="group" aria-label={t("buy.quantity")}>
             <button
               type="button"
-              aria-label="Fewer"
+              aria-label={t("buy.fewer")}
               onClick={() => setQuantity((q) => Math.max(1, q - 1))}
               className="grid size-11 place-items-center disabled:opacity-40"
               disabled={quantity <= 1}
@@ -97,7 +99,7 @@ export function AddToBasket({ book }: { book: BookDetail }) {
             </span>
             <button
               type="button"
-              aria-label="More"
+              aria-label={t("buy.more")}
               onClick={() => setQuantity((q) => Math.min(MAX_PER_LINE, q + 1))}
               className="grid size-11 place-items-center disabled:opacity-40"
               disabled={quantity >= MAX_PER_LINE}
@@ -107,7 +109,7 @@ export function AddToBasket({ book }: { book: BookDetail }) {
           </div>
         )}
         <button type="button" onClick={add} disabled={!selected.inStock} className={`${buttonClass.primary} flex-1`}>
-          {selected.inStock ? "Add to basket" : "Out of stock"}
+          {selected.inStock ? t("buy.add") : t("book.outOfStock")}
         </button>
         <WishlistButton bookId={book.id} title={book.title} variant="button" />
       </div>
@@ -115,17 +117,17 @@ export function AddToBasket({ book }: { book: BookDetail }) {
       <div className="mt-3 min-h-6 text-sm" aria-live="polite">
         {added ? (
           <p className="flex items-center gap-2 font-medium text-ok">
-            <Check size={17} aria-hidden /> Added to your basket.{" "}
+            <Check size={17} aria-hidden /> {t("buy.added")}{" "}
             <Link href="/basket" className="font-semibold text-accent underline underline-offset-2">
-              View basket
+              {t("buy.viewBasket")}
             </Link>
           </p>
         ) : selected.lowStock ? (
-          <p className="font-semibold text-warn">Only {selected.lowStock} left</p>
+          <p className="font-semibold text-warn">{t("buy.onlyLeft", { count: selected.lowStock })}</p>
         ) : (
           <p className="flex items-center gap-2 text-ink-2">
             <Truck size={17} className="text-ok" aria-hidden />
-            {digital ? "Available instantly after the order is confirmed" : <FreeDeliveryNote />}
+            {digital ? t("buy.digital") : <FreeDeliveryNote />}
           </p>
         )}
       </div>

@@ -1,6 +1,7 @@
 import type { BookDetail, BookSummary, Page } from "@sofiya/shared";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { AddToBasket } from "@/components/AddToBasket";
 import { BookGrid } from "@/components/BookCard";
@@ -11,7 +12,7 @@ import { RatingLine } from "@/components/Stars";
 import { Container, Tag } from "@/components/ui";
 import { Star } from "lucide-react";
 import { ApiError, apiGet } from "@/lib/api";
-import { GENRE_LABELS, yearLabel } from "@/lib/labels";
+
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,14 @@ export default async function BookPage({ params }: { params: Params }) {
   ]);
   const similarSlugs = new Set(similar.map((b) => b.slug));
   const more = related.items.filter((b) => b.slug !== book.slug && !similarSlugs.has(b.slug)).slice(0, 6);
-  const year = yearLabel(book.publishedYear);
+  const t = await getTranslations();
+  const genre = t(`labels.genre.${book.genre}`);
+  const year =
+    book.publishedYear === null
+      ? null
+      : book.publishedYear < 0
+        ? t("labels.yearBC", { year: -book.publishedYear })
+        : String(book.publishedYear);
 
   return (
     <Container>
@@ -52,13 +60,13 @@ export default async function BookPage({ params }: { params: Params }) {
           coverUrl: book.coverUrl,
         }}
       />
-      <nav aria-label="Breadcrumb" className="pt-6 text-sm text-ink-3">
+      <nav aria-label={t("bookPage.breadcrumb")} className="pt-6 text-sm text-ink-3">
         <Link href="/" className="hover:text-ink">
-          Home
+          {t("bookPage.home")}
         </Link>
         {" / "}
         <Link href={`/books?genre=${book.genre}`} className="hover:text-ink">
-          {GENRE_LABELS[book.genre]}
+          {genre}
         </Link>
         {" / "}
         <span className="text-ink-2">{book.title}</span>
@@ -71,26 +79,29 @@ export default async function BookPage({ params }: { params: Params }) {
 
         <div>
           <Link href={`/books?genre=${book.genre}`} className="text-sm font-semibold text-accent">
-            {GENRE_LABELS[book.genre]}
+            {genre}
           </Link>
           <h1 className="mt-1.5 text-balance font-display text-4xl font-extrabold leading-[1.02] tracking-[-0.035em] sm:text-5xl">
             {book.title}
           </h1>
           <p className="mt-2 text-lg text-ink-2">
-            by{" "}
-            <Link
-              href={`/authors/${book.authorSlug}`}
-              className="font-semibold text-ink underline underline-offset-[3px] hover:text-accent"
-            >
-              {book.author}
-            </Link>
+            {t.rich("bookPage.by", {
+              author: () => (
+                <Link
+                  href={`/authors/${book.authorSlug}`}
+                  className="font-semibold text-ink underline underline-offset-[3px] hover:text-accent"
+                >
+                  {book.author}
+                </Link>
+              ),
+            })}
           </p>
           <div className="mt-2">
             <RatingLine avg={book.ratingAvg} count={book.ratingCount} />
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
-            {book.pages && <Tag>{book.pages} pages</Tag>}
-            {year && <Tag>First published {year}</Tag>}
+            {book.pages && <Tag>{t("bookPage.pages", { count: book.pages })}</Tag>}
+            {year && <Tag>{t("bookPage.firstPublished", { year })}</Tag>}
             <Tag>{book.language}</Tag>
           </div>
 
@@ -98,7 +109,7 @@ export default async function BookPage({ params }: { params: Params }) {
             <p className="mt-5 flex max-w-[540px] gap-2.5 rounded-[12px] bg-[#fff6db] px-4 py-3 text-[15px] text-[#7a5600]">
               <Star size={18} className="mt-0.5 shrink-0" fill="currentColor" strokeWidth={0} aria-hidden />
               <span>
-                <b>Staff pick:</b> {book.staffPickNote}
+                {t.rich("bookPage.staffPick", { b: (c) => <b>{c}</b>, note: book.staffPickNote })}
               </span>
             </p>
           )}
@@ -106,7 +117,7 @@ export default async function BookPage({ params }: { params: Params }) {
           <AddToBasket book={book} />
 
           <section className="mt-10 max-w-[68ch]">
-            <h2 className="font-display text-2xl font-extrabold">About this book</h2>
+            <h2 className="font-display text-2xl font-extrabold">{t("bookPage.about")}</h2>
             <p className="mt-2 text-[17px] leading-relaxed text-ink-2">{book.description}</p>
           </section>
         </div>
@@ -114,8 +125,8 @@ export default async function BookPage({ params }: { params: Params }) {
 
       {similar.length > 0 && (
         <section className="mt-20">
-          <h2 className="font-display text-3xl font-extrabold tracking-[-0.025em]">If you like this</h2>
-          <p className="mt-1 text-ink-3">Books with a similar story, mood or subject.</p>
+          <h2 className="font-display text-3xl font-extrabold tracking-[-0.025em]">{t("bookPage.similarTitle")}</h2>
+          <p className="mt-1 text-ink-3">{t("bookPage.similarText")}</p>
           <div className="mt-6">
             <BookGrid books={similar} />
           </div>
@@ -127,7 +138,7 @@ export default async function BookPage({ params }: { params: Params }) {
       {more.length > 0 && (
         <section className="mt-20">
           <h2 className="font-display text-3xl font-extrabold tracking-[-0.025em]">
-            More in {GENRE_LABELS[book.genre]}
+            {t("bookPage.moreIn", { genre })}
           </h2>
           <div className="mt-6">
             <BookGrid books={more} />

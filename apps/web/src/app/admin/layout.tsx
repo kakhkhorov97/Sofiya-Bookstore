@@ -2,6 +2,8 @@ import type { AdminOverview } from "@sofiya/shared";
 import { ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { NextIntlClientProvider } from "next-intl";
+import en from "../../../messages/en.json";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { apiGet } from "@/lib/api";
 import { requireAdmin } from "@/lib/session";
@@ -37,7 +39,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
       </aside>
       <main id="main" className="min-w-0 flex-1 px-4 py-6 sm:px-8 sm:py-8">
-        {children}
+        {/* The admin stays in English whatever language the shop is in. */}
+        <NextIntlClientProvider locale="en" messages={en} timeZone="Asia/Seoul">
+          {children}
+        </NextIntlClientProvider>
       </main>
     </div>
   );

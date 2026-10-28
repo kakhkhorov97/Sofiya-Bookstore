@@ -2,19 +2,16 @@
 
 import { MailCheck } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { clientApi, ClientApiError } from "@/lib/client-api";
 import { inputClass } from "./AuthForm";
 import { buttonClass, Notice } from "./ui";
 
-const errorText = (err: unknown) =>
-  err instanceof ClientApiError && err.status === 429
-    ? "Too many attempts. Please wait a minute and try again."
-    : err instanceof Error
-      ? err.message
-      : "Something went wrong. Please try again.";
+const isStatus = (err: unknown, status: number) => err instanceof ClientApiError && err.status === status;
 
 export function ForgotPasswordForm() {
+  const t = useTranslations("auth");
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -28,7 +25,8 @@ export function ForgotPasswordForm() {
       await clientApi("/auth/password/forgot", { method: "POST", body: { email } });
       setSentTo(email);
     } catch (err) {
-      setError(errorText(err));
+      // 503 means email is switched off; its message says what to do.
+      setError(isStatus(err, 429) ? t("tooMany") : isStatus(err, 503) && err instanceof Error ? err.message : t("generic"));
     } finally {
       setBusy(false);
     }
@@ -38,13 +36,10 @@ export function ForgotPasswordForm() {
     return (
       <div className="mt-8 rounded-[14px] bg-surface p-6" role="status">
         <MailCheck size={26} className="text-accent" aria-hidden />
-        <p className="mt-3 font-semibold">Check your inbox</p>
-        <p className="mt-1 text-[15px] text-ink-2">
-          If <b>{sentTo}</b> has a Sofiya account, we’ve sent it a link to choose a new password. It works once, for 30
-          minutes. Nothing there? Check your spam folder, or try again in a minute.
-        </p>
+        <p className="mt-3 font-semibold">{t("checkInbox")}</p>
+        <p className="mt-1 text-[15px] text-ink-2">{t.rich("sentText", { b: (c) => <b>{c}</b>, email: sentTo })}</p>
         <Link href="/signin" className="mt-4 inline-block font-semibold text-accent">
-          Back to sign in
+          {t("backToSignIn")}
         </Link>
       </div>
     );
@@ -54,16 +49,16 @@ export function ForgotPasswordForm() {
     <form onSubmit={onSubmit} className="mt-8 space-y-5">
       {error && <Notice tone="bad">{error}</Notice>}
       <label className="block text-sm font-semibold">
-        Email
+        {t("email")}
         <input name="email" type="email" required autoComplete="email" className={inputClass} />
       </label>
       <button type="submit" disabled={busy} className={`${buttonClass.primary} w-full`}>
-        {busy ? "Sending…" : "Send reset link"}
+        {busy ? t("sending") : t("sendLink")}
       </button>
       <p className="text-center text-[15px] text-ink-2">
-        Remembered it?{" "}
+        {t("remembered")}{" "}
         <Link href="/signin" className="font-semibold text-accent underline underline-offset-2">
-          Sign in
+          {t("signIn")}
         </Link>
       </p>
     </form>
@@ -71,7 +66,8 @@ export function ForgotPasswordForm() {
 }
 
 export function ResetPasswordForm({ token }: { token: string }) {
-  const [error, setError] = useState<string | null>(null);
+  const t = useTranslations("auth");
+  const [error, setError] = useState<{ text: string; newLink: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -79,7 +75,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
     const form = new FormData(e.currentTarget);
     const password = String(form.get("password") ?? "");
     if (password !== String(form.get("confirm") ?? "")) {
-      setError("The two passwords don’t match.");
+      setError({ text: t("mismatch"), newLink: false });
       return;
     }
     setBusy(true);
@@ -89,7 +85,12 @@ export function ResetPasswordForm({ token }: { token: string }) {
       // The reset ended every session: reload fully so nothing signed-in remains.
       window.location.replace("/signin?reset=1");
     } catch (err) {
-      setError(errorText(err));
+      // 400 here means the link is used up or expired.
+      setError(
+        isStatus(err, 400)
+          ? { text: t("linkExpired"), newLink: true }
+          : { text: isStatus(err, 429) ? t("tooMany") : t("generic"), newLink: false },
+      );
       setBusy(false);
     }
   }
@@ -98,27 +99,27 @@ export function ResetPasswordForm({ token }: { token: string }) {
     <form onSubmit={onSubmit} className="mt-8 space-y-5">
       {error && (
         <Notice tone="bad">
-          {error}{" "}
-          {/expired|invalid/i.test(error) && (
+          {error.text}{" "}
+          {error.newLink && (
             <Link href="/forgot-password" className="font-semibold underline">
-              Get a new link
+              {t("getNewLink")}
             </Link>
           )}
         </Notice>
       )}
       <label className="block text-sm font-semibold">
-        New password
+        {t("newPassword")}
         <input name="password" type="password" required minLength={8} maxLength={128} autoComplete="new-password" className={inputClass} />
-        <span className="mt-1.5 block font-normal text-ink-3">At least 8 characters.</span>
+        <span className="mt-1.5 block font-normal text-ink-3">{t("atLeast8")}</span>
       </label>
       <label className="block text-sm font-semibold">
-        Repeat the new password
+        {t("repeatPassword")}
         <input name="confirm" type="password" required minLength={8} maxLength={128} autoComplete="new-password" className={inputClass} />
       </label>
       <button type="submit" disabled={busy} className={`${buttonClass.primary} w-full`}>
-        {busy ? "Saving…" : "Set new password"}
+        {busy ? t("saving") : t("setPassword")}
       </button>
-      <p className="text-sm text-ink-3">This signs you out everywhere else.</p>
+      <p className="text-sm text-ink-3">{t("signsOutElsewhere")}</p>
     </form>
   );
 }

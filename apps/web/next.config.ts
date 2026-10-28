@@ -1,5 +1,6 @@
 import path from "node:path";
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
 
 const apiUrl = process.env.API_URL ?? "http://localhost:8080/api";
 const production = process.env.NODE_ENV === "production";
@@ -40,4 +41,5 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Translations: src/i18n/request.ts picks the language for each request.
+export default createNextIntlPlugin("./src/i18n/request.ts")(nextConfig);

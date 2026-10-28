@@ -1,12 +1,14 @@
 "use client";
 
 import { LogOut } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useSignOut } from "@/lib/useSignOut";
 import { buttonClass } from "./ui";
 
 export function SignOutButton() {
   const signOut = useSignOut();
+  const t = useTranslations("accountMenu");
   const [busy, setBusy] = useState(false);
   return (
     <button
@@ -18,7 +20,7 @@ export function SignOutButton() {
       }}
       className={buttonClass.outline}
     >
-      <LogOut size={18} aria-hidden /> {busy ? "Signing out…" : "Sign out"}
+      <LogOut size={18} aria-hidden /> {busy ? t("signingOut") : t("signOut")}
     </button>
   );
 }

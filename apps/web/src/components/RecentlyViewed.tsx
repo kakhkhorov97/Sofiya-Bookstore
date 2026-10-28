@@ -1,6 +1,7 @@
 "use client";
 
-import { Price } from "@/currency/CurrencyProvider";
+import { useTranslations } from "next-intl";
+import { FromPrice } from "@/currency/CurrencyProvider";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { RECENT_CLEARED, RECENT_KEY, pushRecent, readRecent, type RecentBook } from "@/lib/recent";
@@ -15,6 +16,7 @@ export function RecordView({ book }: { book: RecentBook }) {
 
 // Homepage row; hidden until the visitor has looked at a book.
 export function RecentlyViewed() {
+  const t = useTranslations("recent");
   const [books, setBooks] = useState<RecentBook[]>([]);
   useEffect(() => {
     const load = () => setBooks(readRecent().slice(0, 6));
@@ -36,7 +38,7 @@ export function RecentlyViewed() {
     <section className="mt-16" aria-labelledby="recent-title">
       <Container>
         <h2 id="recent-title" className="mb-6 font-display text-3xl font-extrabold tracking-[-0.025em]">
-          Recently viewed
+          {t("title")}
         </h2>
         <ul className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-6">
           {books.map((b) => (
@@ -46,7 +48,7 @@ export function RecentlyViewed() {
                 <p className="mt-2 line-clamp-1 text-sm font-semibold">{b.title}</p>
                 {b.fromPrice && (
                   <p className="text-xs text-ink-3">
-                    <Price prices={b.fromPrice} prefix="from " />
+                    <FromPrice prices={b.fromPrice} />
                   </p>
                 )}
               </Link>

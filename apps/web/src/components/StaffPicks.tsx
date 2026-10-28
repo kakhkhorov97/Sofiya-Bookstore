@@ -1,7 +1,8 @@
 "use client";
 
 import type { BookSummary } from "@sofiya/shared";
-import { Price } from "@/currency/CurrencyProvider";
+import { useTranslations } from "next-intl";
+import { FromPrice } from "@/currency/CurrencyProvider";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import Link from "next/link";
 import { useRef } from "react";
@@ -9,6 +10,7 @@ import { BookCover } from "./BookCover";
 
 // A scroll-snap carousel: swipe on phones, arrow buttons on desktop.
 export function StaffPicks({ books }: { books: BookSummary[] }) {
+  const t = useTranslations("staffPicks");
   const track = useRef<HTMLUListElement>(null);
   const scroll = (dir: 1 | -1) => {
     const el = track.current;
@@ -20,14 +22,14 @@ export function StaffPicks({ books }: { books: BookSummary[] }) {
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
           <h2 className="flex items-center gap-2 font-display text-3xl font-extrabold tracking-[-0.025em]">
-            <Star size={24} className="text-[#e3a008]" fill="currentColor" strokeWidth={0} aria-hidden /> Staff picks
+            <Star size={24} className="text-[#e3a008]" fill="currentColor" strokeWidth={0} aria-hidden /> {t("title")}
           </h2>
-          <p className="mt-1 text-ink-3">Books our team keeps pressing into people’s hands.</p>
+          <p className="mt-1 text-ink-3">{t("subtitle")}</p>
         </div>
         <div className="hidden gap-2 sm:flex">
           <button
             type="button"
-            aria-label="Previous picks"
+            aria-label={t("previous")}
             onClick={() => scroll(-1)}
             className="grid size-10 place-items-center rounded-full border border-line hover:border-ink-3"
           >
@@ -35,7 +37,7 @@ export function StaffPicks({ books }: { books: BookSummary[] }) {
           </button>
           <button
             type="button"
-            aria-label="Next picks"
+            aria-label={t("next")}
             onClick={() => scroll(1)}
             className="grid size-10 place-items-center rounded-full border border-line hover:border-ink-3"
           >
@@ -57,7 +59,7 @@ export function StaffPicks({ books }: { books: BookSummary[] }) {
                 <p className="line-clamp-2 font-bold leading-snug">{b.title}</p>
                 <p className="text-sm text-ink-3">{b.author}</p>
                 <p className="mt-2 line-clamp-4 text-sm italic text-ink-2">“{b.staffPickNote}”</p>
-                <p className="mt-auto pt-2 text-sm font-bold"><Price prices={b.fromPrice} prefix="from " /></p>
+                <p className="mt-auto pt-2 text-sm font-bold"><FromPrice prices={b.fromPrice} /></p>
               </div>
             </Link>
           </li>

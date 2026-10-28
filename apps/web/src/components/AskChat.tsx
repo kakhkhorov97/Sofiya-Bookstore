@@ -5,8 +5,8 @@ import { ArrowUp, BookOpen, RotateCcw, SlidersHorizontal, Sparkles } from "lucid
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Price, useCurrency } from "@/currency/CurrencyProvider";
-import { FORMAT_LABELS, GENRE_LABELS } from "@/lib/labels";
+import { useLocale, useTranslations } from "next-intl";
+import { FromPrice, useCurrency } from "@/currency/CurrencyProvider";
 import { readEvents, splitCitations } from "@/lib/sse";
 import { BookCover } from "./BookCover";
 import { Notice } from "./ui";
@@ -21,21 +21,12 @@ interface Turn {
   note?: string;
 }
 
-const STARTERS = [
-  "Something quiet and strange, set by the sea",
-  "A classic mystery I can finish in one evening",
-  "Books like Pride and Prejudice but darker",
-  "I want to learn programming from scratch",
-  "A short horror story for a stormy night",
-  "Philosophy that helps with stress",
-];
-
-// Follow-ups say exactly what they ask for; length and stock use real filters.
-const REFINE: { label: string; message?: string; filters?: AskFilters }[] = [
-  { label: "Shorter books", filters: { maxPages: 250 } },
-  { label: "Something funnier", message: "Something funnier and lighter, please." },
-  { label: "Only books in stock", filters: { inStock: true } },
-  { label: "More like the first one", message: "More books like the first one you recommended." },
+const STARTERS = ["s1", "s2", "s3", "s4", "s5", "s6"] as const;
+const REFINE: { key: string; message?: string; filters?: AskFilters }[] = [
+  { key: "shorter", filters: { maxPages: 250 } },
+  { key: "funnier", message: "funnierMessage" },
+  { key: "inStock", filters: { inStock: true } },
+  { key: "moreLike", message: "moreLikeMessage" },
 ];
 
 let nextId = 1;
@@ -46,6 +37,8 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const { currency } = useCurrency();
+  const t = useTranslations();
+  const locale = useLocale();
   const [filters, setFilters] = useState<AskFilters>({});
   // A price limit only means something in the currency it was picked in.
   const [filterCurrency, setFilterCurrency] = useState(currency);
@@ -90,7 +83,7 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
       const res = await fetch("/api/ask", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ message: text, history, filters: filterOverride ?? filters, currency }),
+        body: JSON.stringify({ message: text, history, filters: filterOverride ?? filters, currency, locale }),
         signal: controller.signal,
       });
       if (!res.ok || !res.body) {
@@ -100,8 +93,8 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
           text: "",
           note:
             res.status === 429
-              ? body.message ?? "You’ve asked a lot of questions in a short time. Please wait a minute."
-              : body.message ?? "Ask Sofiya couldn’t answer right now. Please try again.",
+              ? body.message ?? t("ask.tooMany")
+              : body.message ?? t("ask.failed"),
         });
         return;
       }
@@ -114,7 +107,7 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
       update(reply.id, (t) => (t.state === "streaming" ? { state: "done" } : {}));
     } catch (err) {
       if ((err as Error).name !== "AbortError") {
-        update(reply.id, { state: "error", note: "The connection dropped. Please try again." });
+        update(reply.id, { state: "error", note: t("ask.dropped") });
       }
     } finally {
       setBusy(false);
@@ -144,16 +137,15 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="flex items-center gap-2.5 font-display text-4xl font-extrabold tracking-[-0.03em] sm:text-5xl">
-            <Sparkles className="text-accent" size={34} aria-hidden /> Ask Sofiya
+            <Sparkles className="text-accent" size={34} aria-hidden /> {t("common.askSofiya")}
           </h1>
           <p className="mt-2 max-w-[60ch] text-ink-2">
-            Describe what you’re in the mood for. Sofiya searches our catalogue by meaning and recommends only books we
-            stock, with a reason for each.
+            {t("ask.intro")}
           </p>
         </div>
         {turns.length > 0 && (
           <button type="button" onClick={reset} className="inline-flex items-center gap-2 text-sm font-semibold text-ink-2 hover:text-ink">
-            <RotateCcw size={16} aria-hidden /> New conversation
+            <RotateCcw size={16} aria-hidden /> {t("ask.newConversation")}
           </button>
         )}
       </div>
@@ -162,20 +154,22 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
         <div className="mt-6">
           <Notice tone="accent">
             {configured
-              ? "Ask Sofiya is warming up: the catalogue hasn’t been indexed yet."
-              : "Ask Sofiya isn’t switched on yet."}{" "}
-            Meanwhile, <Link href="/books" className="font-semibold underline">search the catalogue</Link>.
+              ? t("ask.warmingUp")
+              : t("ask.notOn")}{" "}
+            {t.rich("ask.meanwhile", {
+              link: (c) => <Link href="/books" className="font-semibold underline">{c}</Link>,
+            })}
           </Notice>
         </div>
       )}
 
       <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
-        <section aria-label="Conversation" className="min-w-0">
+        <section aria-label={t("ask.conversation")} className="min-w-0">
           {turns.length === 0 ? (
             <div className="rounded-[20px] bg-surface p-6 sm:p-8">
-              <p className="font-semibold">Try one of these</p>
+              <p className="font-semibold">{t("ask.tryThese")}</p>
               <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
-                {STARTERS.map((s) => (
+                {STARTERS.map((k) => t(`ask.starters.${k}`)).map((s) => (
                   <li key={s}>
                     <button
                       type="button"
@@ -207,25 +201,25 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
           )}
 
           {turns.length > 0 && !busy && turns.at(-1)?.state === "done" && (
-            <div className="mt-5 flex flex-wrap gap-2" aria-label="Refine">
+            <div className="mt-5 flex flex-wrap gap-2" aria-label={t("ask.refineLabel")}>
               {REFINE.map((r) => (
                 <button
-                  key={r.label}
+                  key={r.key}
                   type="button"
                   onClick={() => {
                     if (r.filters) {
                       // Apply the filter and ask the last question again.
                       const merged = { ...filters, ...r.filters };
                       setFilters(merged);
-                      const lastQuestion = [...turns].reverse().find((t) => t.role === "user")?.text ?? "";
-                      void send(lastQuestion, merged, r.label);
+                      const lastQuestion = [...turns].reverse().find((turn) => turn.role === "user")?.text ?? "";
+                      void send(lastQuestion, merged, t(`ask.refine.${r.key}`));
                     } else {
-                      void send(r.message ?? r.label);
+                      void send(t(`ask.refine.${r.message ?? r.key}`));
                     }
                   }}
                   className="h-9 rounded-full border border-line bg-white px-3.5 text-sm font-medium text-ink-2 hover:border-ink-3 hover:text-ink"
                 >
-                  {r.label}
+                  {t(`ask.refine.${r.key}`)}
                 </button>
               ))}
             </div>
@@ -240,7 +234,7 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
           >
             <div className="flex items-end gap-2">
               <label className="flex-1">
-                <span className="sr-only">Describe the book you want</span>
+                <span className="sr-only">{t("ask.describe")}</span>
                 <textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -253,7 +247,7 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
                   rows={1}
                   maxLength={500}
                   disabled={!enabled}
-                  placeholder={turns.length ? "Ask a follow-up…" : "e.g. a cosy mystery set in a small village"}
+                  placeholder={turns.length ? t("ask.followUp") : t("ask.placeholder")}
                   className="block max-h-40 min-h-11 w-full resize-none px-3 py-2.5 text-base outline-none disabled:bg-transparent"
                 />
               </label>
@@ -261,7 +255,7 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
                 type="button"
                 onClick={() => setShowFilters((s) => !s)}
                 aria-expanded={showFilters}
-                aria-label="Filters"
+                aria-label={t("ask.filters")}
                 className="relative grid size-11 place-items-center rounded-[10px] text-ink-2 hover:bg-surface"
               >
                 <SlidersHorizontal size={19} />
@@ -274,7 +268,7 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
               <button
                 type="submit"
                 disabled={busy || !input.trim() || !enabled}
-                aria-label="Send"
+                aria-label={t("ask.send")}
                 className="grid size-11 place-items-center rounded-[10px] bg-accent text-white hover:bg-accent-ink disabled:bg-line disabled:text-ink-3"
               >
                 <ArrowUp size={20} />
@@ -283,19 +277,18 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
             {showFilters && <FilterBar filters={filters} currency={currency} onChange={setFilters} />}
           </form>
           <p className="mt-3 text-center text-xs text-ink-3">
-            Answers are written by AI (Google Gemini) from our catalogue and can be imperfect. Check the book page before
-            you buy.
+            {t("ask.disclaimer")}
           </p>
           <div ref={bottom} />
         </section>
 
-        <aside aria-label="Books Sofiya found" className="min-w-0 lg:sticky lg:top-24">
-          <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em]">Books Sofiya found</h2>
-          <p className="mt-1 text-sm text-ink-3">Every number in the answer points to one of these.</p>
+        <aside aria-label={t("ask.found")} className="min-w-0 lg:sticky lg:top-24">
+          <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em]">{t("ask.found")}</h2>
+          <p className="mt-1 text-sm text-ink-3">{t("ask.foundHint")}</p>
           {latestSources.length === 0 ? (
             <div className="mt-4 rounded-[16px] border border-dashed border-line px-5 py-10 text-center text-ink-3">
               <BookOpen className="mx-auto" size={28} aria-hidden />
-              <p className="mt-2 text-sm">Matching books will appear here.</p>
+              <p className="mt-2 text-sm">{t("ask.emptySources")}</p>
             </div>
           ) : (
             <ul className="mt-4 space-y-3">
@@ -314,6 +307,7 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
 // straight to the book they cited.
 function AssistantTurn({ turn, latest }: { turn: Turn; latest: boolean }) {
   const parts = splitCitations(turn.text);
+  const t = useTranslations();
   const valid = new Set((turn.sources ?? []).map((s) => s.n));
   return (
     <div className="rounded-[16px] border border-line bg-white px-5 py-4">
@@ -333,7 +327,7 @@ function AssistantTurn({ turn, latest }: { turn: Turn; latest: boolean }) {
                       href={latest ? `#source-${p}` : `/books/${book.slug}`}
                       title={book.title}
                       className="mx-0.5 inline-grid h-5 min-w-5 place-items-center rounded-[5px] bg-accent-soft px-1 align-[1px] text-xs font-bold text-accent-ink hover:bg-accent hover:text-white"
-                      aria-label={`${book.title} (book ${p})`}
+                      aria-label={t("ask.bookN", { title: book.title, n: p })}
                     >
                       {p}
                     </a>
@@ -348,7 +342,7 @@ function AssistantTurn({ turn, latest }: { turn: Turn; latest: boolean }) {
         </p>
       ) : turn.state === "streaming" ? (
         <p className="mt-2 text-ink-3">
-          {turn.sources ? `Found ${turn.sources.length} books. Writing an answer…` : "Searching the catalogue…"}
+          {turn.sources ? t("ask.writing", { count: turn.sources.length }) : t("ask.searching")}
         </p>
       ) : null}
       {turn.note && <p className="mt-2 text-sm font-medium text-warn">{turn.note}</p>}
@@ -357,6 +351,7 @@ function AssistantTurn({ turn, latest }: { turn: Turn; latest: boolean }) {
 }
 
 function SourceCard({ source, cited }: { source: AskSource; cited: boolean }) {
+  const t = useTranslations();
   const b = source.book;
   return (
     <li
@@ -372,17 +367,17 @@ function SourceCard({ source, cited }: { source: AskSource; cited: boolean }) {
             <span className="grid h-5 min-w-5 place-items-center rounded-[5px] bg-accent-soft px-1 text-xs font-bold text-accent-ink">
               {source.n}
             </span>
-            {cited && <span className="text-xs font-semibold text-accent">Recommended</span>}
-            {!b.inStock && <span className="text-xs font-semibold text-warn">Out of stock</span>}
+            {cited && <span className="text-xs font-semibold text-accent">{t("ask.recommended")}</span>}
+            {!b.inStock && <span className="text-xs font-semibold text-warn">{t("ask.outOfStock")}</span>}
           </div>
           <Link href={`/books/${b.slug}`} className="mt-1 block font-bold leading-snug hover:text-accent">
             {b.title}
           </Link>
           <p className="text-sm text-ink-3">
-            {b.author} · {GENRE_LABELS[b.genre]}
+            {b.author} · {t(`labels.genre.${b.genre}`)}
           </p>
           <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-ink-2">
-            Match
+            {t("ask.match")}
             <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface">
               <span className="block h-full rounded-full bg-accent" style={{ width: `${source.matchPercent}%` }} />
             </span>
@@ -391,10 +386,10 @@ function SourceCard({ source, cited }: { source: AskSource; cited: boolean }) {
           <blockquote className="mt-2 rounded-[8px] bg-surface px-3 py-2 text-[13.5px] text-ink-2">“{source.passage}”</blockquote>
           <div className="mt-2.5 flex items-center justify-between">
             <span className="text-sm font-bold">
-              <Price prices={b.fromPrice} prefix="from " />
+              <FromPrice prices={b.fromPrice} />
             </span>
             <Link href={`/books/${b.slug}`} className="text-sm font-semibold text-accent hover:text-accent-ink">
-              View book →
+              {t("ask.viewBook")}
             </Link>
           </div>
         </div>
@@ -418,58 +413,59 @@ function FilterBar({
   currency: Currency;
   onChange: (f: AskFilters) => void;
 }) {
+  const t = useTranslations();
   const select = "h-9 rounded-[9px] border border-line bg-white px-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-accent";
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-line px-1 pt-3">
       <select
-        aria-label="Genre"
+        aria-label={t("ask.genre")}
         className={select}
         value={filters.genre ?? ""}
         onChange={(e) => onChange({ ...filters, genre: (e.target.value || undefined) as AskFilters["genre"] })}
       >
-        <option value="">Any genre</option>
+        <option value="">{t("ask.anyGenre")}</option>
         {GENRES.map((g) => (
           <option key={g} value={g}>
-            {GENRE_LABELS[g]}
+            {t(`labels.genre.${g}`)}
           </option>
         ))}
       </select>
       <select
-        aria-label="Format"
+        aria-label={t("ask.format")}
         className={select}
         value={filters.format ?? ""}
         onChange={(e) => onChange({ ...filters, format: (e.target.value || undefined) as AskFilters["format"] })}
       >
-        <option value="">Any format</option>
+        <option value="">{t("ask.anyFormat")}</option>
         {BOOK_FORMATS.map((f) => (
           <option key={f} value={f}>
-            {FORMAT_LABELS[f]}
+            {t(`labels.format.${f}`)}
           </option>
         ))}
       </select>
       <select
-        aria-label="Maximum price"
+        aria-label={t("ask.maxPrice")}
         className={select}
         value={filters.maxPrice ?? ""}
         onChange={(e) => onChange({ ...filters, maxPrice: e.target.value ? Number(e.target.value) : undefined })}
       >
-        <option value="">Any price</option>
+        <option value="">{t("ask.anyPrice")}</option>
         {PRICE_LIMITS[currency].map((c) => (
           <option key={c} value={c}>
-            Under {formatMoney(c, currency)}
+            {t("ask.under", { price: formatMoney(c, currency) })}
           </option>
         ))}
       </select>
       <select
-        aria-label="Length"
+        aria-label={t("ask.length")}
         className={select}
         value={filters.maxPages ?? ""}
         onChange={(e) => onChange({ ...filters, maxPages: e.target.value ? Number(e.target.value) : undefined })}
       >
-        <option value="">Any length</option>
+        <option value="">{t("ask.anyLength")}</option>
         {[150, 250, 400].map((p) => (
           <option key={p} value={p}>
-            Under {p} pages
+            {t("ask.underPages", { count: p })}
           </option>
         ))}
       </select>
@@ -480,11 +476,11 @@ function FilterBar({
           onChange={(e) => onChange({ ...filters, inStock: e.target.checked || undefined })}
           className="size-4 accent-[var(--accent)]"
         />
-        In stock
+        {t("ask.inStock")}
       </label>
       {Object.values(filters).some((v) => v !== undefined) && (
         <button type="button" onClick={() => onChange({})} className="ml-auto text-sm font-semibold text-accent">
-          Clear
+          {t("ask.clear")}
         </button>
       )}
     </div>
