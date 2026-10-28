@@ -94,6 +94,7 @@ describe('Payments (e2e)', () => {
     expect(config.card).toMatchObject({
       enabled: true,
       provider: 'fake',
+      testMode: true,
       currencies: ['KRW'],
     });
     expect(config.cardTimeoutMinutes).toBe(30);

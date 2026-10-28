@@ -163,6 +163,12 @@ Sessions are a signed JWT in an `httpOnly`, `SameSite=Lax` cookie holding only t
 npm run check       # typecheck, lint, tests, build
 ```
 
+## Security headers
+
+Every page sends `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, a strict `Referrer-Policy`, a `Permissions-Policy`, and a Content-Security-Policy limited to `frame-ancestors 'none'; object-src 'none'; base-uri 'self'` (plus HSTS and `upgrade-insecure-requests` in production). The API sends `default-src 'none'` and no `X-Powered-By`. A full script/frame CSP is a later step: Toss loads its payment window and card-company pages from many domains, and an incomplete list would break checkout.
+
+Payments: with Toss **test** keys (`test_ck_…`), checkout shows "Test mode, no real money" and the footer says so; both disappear automatically with live keys (`live_ck_…`).
+
 ## Deploy
 
 Both apps ship as containers to Google Cloud Run (`apps/*/Dockerfile`, built from the repo root). Do the one-time setup in `docs/gcp-setup.md`, then run the **Deploy to Cloud Run** workflow from GitHub Actions.

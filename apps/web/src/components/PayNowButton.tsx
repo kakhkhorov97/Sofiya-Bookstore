@@ -39,6 +39,9 @@ export function PayNowButton({
         {busy ? "Opening payment…" : `Pay ${formatMoney(order.total, order.currency)}`}
       </button>
       {error && <p className="mt-2 text-sm font-medium text-bad">{error}</p>}
+      {config.card.testMode && (
+        <p className="mt-2 text-xs text-ink-3">Test mode: no real money is charged.</p>
+      )}
     </div>
   );
 }

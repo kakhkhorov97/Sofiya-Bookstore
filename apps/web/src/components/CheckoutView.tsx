@@ -180,9 +180,7 @@ export function CheckoutView({
               text="Pay to our account after ordering. We confirm the order when the money arrives."
             />
           </div>
-          {method === "CARD" && config.card.provider === "fake" && (
-            <p className="mt-2 text-xs text-ink-3">Demo mode: card payments are simulated, no money moves.</p>
-          )}
+          {method === "CARD" && config.card.testMode && <TestModeNote fake={config.card.provider === "fake"} />}
         </fieldset>
       </div>
 
@@ -247,5 +245,17 @@ function PaymentOption({
         <span className="block text-sm text-ink-2">{text}</span>
       </span>
     </label>
+  );
+}
+
+// This is a portfolio shop: make it impossible to mistake for a real charge.
+export function TestModeNote({ fake = false }: { fake?: boolean }) {
+  return (
+    <p className="mt-3 rounded-[10px] bg-accent-soft px-3.5 py-2.5 text-sm text-accent-ink">
+      <b>Test mode, no real money.</b>{" "}
+      {fake
+        ? "Card payments are simulated on this demo shop."
+        : "This demo shop uses Toss Payments' test environment. In the payment window, pick a card company and use Toss's test card details rather than your own Toss Pay account."}
+    </p>
   );
 }

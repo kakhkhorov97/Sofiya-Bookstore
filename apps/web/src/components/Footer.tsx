@@ -2,7 +2,7 @@ import Link from "next/link";
 import { FreeDeliveryNote } from "@/currency/CurrencySwitcher";
 import { GENRE_LABELS } from "@/lib/labels";
 
-export function Footer() {
+export function Footer({ paymentsTestMode = true }: { paymentsTestMode?: boolean }) {
   return (
     <footer className="mt-24 border-t border-line bg-surface">
       <div className="mx-auto grid w-[min(1240px,calc(100%-32px))] grid-cols-2 gap-8 py-12 text-[15px] text-ink-2 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
@@ -36,7 +36,8 @@ export function Footer() {
         />
         <p className="col-span-2 border-t border-line pt-5 text-[13px] text-ink-3 md:col-span-4">
           A portfolio project. The catalogue lists real public-domain and freely licensed books; prices, stock and orders
-          are demo data and no payment is taken.
+          are demo data and nothing is shipped.
+          {paymentsTestMode && " Card payments run in Toss test mode, so no real money is ever charged."}
         </p>
       </div>
     </footer>

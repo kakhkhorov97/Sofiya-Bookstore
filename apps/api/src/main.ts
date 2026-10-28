@@ -16,12 +16,24 @@ export function configureApp(app: INestApplication, env: Env): void {
     ? Number(env.TRUST_PROXY)
     : env.TRUST_PROXY;
   (app as NestExpressApplication).set('trust proxy', trust);
+  (app as NestExpressApplication).disable('x-powered-by');
   // On Cloud Run the web app names the visitor's IP (see client-ip.ts).
   app.use(clientIpMiddleware(env.PROXY_SECRET));
   app.setGlobalPrefix('api');
   // Explicit allowlist with credentials (legacy defect: origin: true).
   app.enableCors({ origin: origins, credentials: true });
   app.use(cookieParser());
+  // The API answers JSON and images only: never framed, never sniffed.
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'none'; frame-ancestors 'none'",
+    );
+    next();
+  });
   // Second line of CSRF defence after SameSite=Lax: a browser request that
   // changes data must come from one of our own origins.
   app.use((req: Request, res: Response, next: NextFunction) => {

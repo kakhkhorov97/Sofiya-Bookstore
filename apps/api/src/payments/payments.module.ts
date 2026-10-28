@@ -23,6 +23,10 @@ export function paymentConfig(env: Env): PaymentConfig {
       enabled: gateway !== null,
       provider:
         gateway instanceof FakeGateway ? 'fake' : gateway ? 'toss' : null,
+      // Live keys start with live_; anything else cannot charge real money.
+      testMode:
+        gateway instanceof FakeGateway ||
+        !env.TOSS_CLIENT_KEY?.startsWith('live_'),
       clientKey: env.TOSS_CLIENT_KEY ?? null,
       currencies: env.CARD_CURRENCIES.filter(
         (c): c is Currency => c === 'KRW' || c === 'USD',

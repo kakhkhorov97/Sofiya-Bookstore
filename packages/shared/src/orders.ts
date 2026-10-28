@@ -84,6 +84,8 @@ export interface PaymentConfig {
     enabled: boolean;
     // "fake" = offline demo: the checkout skips the Toss window.
     provider: "toss" | "fake" | null;
+    // Toss test keys or the fake gateway: no real money can move.
+    testMode: boolean;
     // Toss client key: public by design (it only opens the payment window).
     clientKey: string | null;
     currencies: Currency[];

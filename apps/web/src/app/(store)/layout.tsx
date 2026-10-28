@@ -1,4 +1,4 @@
-import type { GenreCount } from "@sofiya/shared";
+import type { GenreCount, PaymentConfig } from "@sofiya/shared";
 import { AskLauncher } from "@/components/AskLauncher";
 import { ConfirmEmailBanner } from "@/components/EmailConfirmation";
 import { Footer } from "@/components/Footer";
@@ -7,9 +7,10 @@ import { apiGet } from "@/lib/api";
 import { getCurrentUser } from "@/lib/session";
 
 export default async function StoreLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const [user, genres] = await Promise.all([
+  const [user, genres, payments] = await Promise.all([
     getCurrentUser(),
     apiGet<GenreCount[]>("/genres", { revalidate: 300 }).catch(() => [] as GenreCount[]),
+    apiGet<PaymentConfig>("/payments/config", { revalidate: 300 }).catch(() => null),
   ]);
   return (
     <>
@@ -19,7 +20,7 @@ export default async function StoreLayout({ children }: Readonly<{ children: Rea
       <main id="main" className="flex-1">
         {children}
       </main>
-      <Footer />
+      <Footer paymentsTestMode={payments?.card.testMode ?? true} />
       <AskLauncher />
     </>
   );

@@ -32,6 +32,16 @@ describe('Books API (e2e)', () => {
     await app.close();
   });
 
+  it('sends security headers and no framework banner', async () => {
+    const res = await get('/api/books?limit=1').expect(200);
+    expect(res.headers['x-content-type-options']).toBe('nosniff');
+    expect(res.headers['x-frame-options']).toBe('DENY');
+    expect(res.headers['content-security-policy']).toContain(
+      "default-src 'none'",
+    );
+    expect(res.headers['x-powered-by']).toBeUndefined();
+  });
+
   it('lists live books with default pagination', async () => {
     const res = await get('/api/books').expect(200);
     const body = res.body as Page<BookSummary>;
