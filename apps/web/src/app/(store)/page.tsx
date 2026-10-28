@@ -92,7 +92,7 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="relative hidden h-[420px] rounded-[20px] bg-surface lg:block" aria-hidden>
+          <div className="relative hidden h-[420px] overflow-hidden rounded-[20px] bg-surface lg:block" aria-hidden>
             {fan.map((b, i) => (
               <div
                 key={b.id}

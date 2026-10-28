@@ -604,5 +604,10 @@
     "underPages": "Under {count} pages",
     "inStock": "In stock",
     "clear": "Clear"
+  },
+  "region": {
+    "label": "Language and currency",
+    "language": "Language",
+    "currency": "Currency"
   }
 }

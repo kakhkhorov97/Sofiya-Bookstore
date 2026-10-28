@@ -604,5 +604,10 @@
     "underPages": "{count}쪽 이하",
     "inStock": "재고 있음",
     "clear": "지우기"
+  },
+  "region": {
+    "label": "언어 및 통화",
+    "language": "언어",
+    "currency": "통화"
   }
 }

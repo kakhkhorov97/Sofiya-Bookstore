@@ -92,7 +92,7 @@ export function MobileMenu({
               <form action="/books" role="search" className="p-4">
                 <label className="flex items-center gap-2.5 rounded-full bg-surface px-4 py-2.5 text-ink-3 focus-within:ring-2 focus-within:ring-accent">
                   <Search size={18} aria-hidden />
-                  <span className="sr-only">Search books</span>
+                  <span className="sr-only">{t("common.searchBooks")}</span>
                   <input
                     name="q"
                     type="search"

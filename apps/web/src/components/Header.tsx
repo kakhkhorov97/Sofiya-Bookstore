@@ -2,12 +2,12 @@ import type { GenreCount, PublicUser } from "@sofiya/shared";
 import { Heart, Search, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
-import { CurrencySwitcher, FreeDeliveryNote } from "@/currency/CurrencySwitcher";
+import { FreeDeliveryNote } from "@/currency/CurrencySwitcher";
 import { AccountMenu } from "./AccountMenu";
 import { BasketLink } from "./BasketLink";
 import { MegaMenu } from "./MegaMenu";
 import { MobileMenu } from "./MobileMenu";
+import { RegionMenu } from "./RegionMenu";
 
 export async function Header({ user, genres }: { user: PublicUser | null; genres: GenreCount[] }) {
   const t = await getTranslations();
@@ -50,10 +50,7 @@ export async function Header({ user, genres }: { user: PublicUser | null; genres
           </label>
         </form>
         <div className="ml-auto flex items-center gap-0.5 md:ml-0">
-          <div className="mr-1 hidden items-center gap-1.5 sm:flex">
-            <LanguageSwitcher />
-            <CurrencySwitcher />
-          </div>
+          <RegionMenu />
           <Link
             href="/ask"
             aria-label={t("header.askLabel")}

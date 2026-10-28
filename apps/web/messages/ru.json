@@ -604,5 +604,10 @@
     "underPages": "До {count} стр.",
     "inStock": "В наличии",
     "clear": "Сбросить"
+  },
+  "region": {
+    "label": "Язык и валюта",
+    "language": "Язык",
+    "currency": "Валюта"
   }
 }
