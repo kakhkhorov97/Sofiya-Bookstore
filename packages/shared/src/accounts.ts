@@ -26,6 +26,8 @@ export interface PublicUser {
   displayName: string;
   role: UserRole;
   points: number;
+  // False until the address is confirmed; checkout and reviews need it.
+  emailVerified: boolean;
   createdAt: string;
 }
 
@@ -38,3 +40,12 @@ export const ResetPasswordInput = z
   .object({ token: z.string().min(20).max(200), password: Password })
   .strict();
 export type ResetPasswordInput = z.infer<typeof ResetPasswordInput>;
+
+// The link in the "Confirm your email" message.
+export const ConfirmEmailInput = z.object({ token: z.string().min(20).max(200) }).strict();
+export type ConfirmEmailInput = z.infer<typeof ConfirmEmailInput>;
+
+// Which ways of signing in are switched on.
+export interface AuthProviders {
+  google: boolean;
+}

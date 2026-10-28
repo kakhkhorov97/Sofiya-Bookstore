@@ -50,6 +50,13 @@
       "when": 1793149712499,
       "tag": "0006_password_reset",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793150712815,
+      "tag": "0007_email_verification_google",
+      "breakpoints": true
     }
   ]
 }

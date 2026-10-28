@@ -189,6 +189,28 @@ gcloud secrets add-iam-policy-binding sofiya-redis-url \
 If Redis is ever unreachable, the API falls back to per-instance memory
 limits instead of failing.
 
+## 7c. Optional: "Continue with Google"
+
+1. Google Cloud Console → **APIs & Services → OAuth consent screen**:
+   user type **External**, app name "Sofiya", your support email, and your
+   website's domain under authorised domains. The scopes needed are the
+   basic ones (`openid`, `email`, `profile`). Publish the app when you are
+   ready for everyone (while "Testing", only the test users you list can sign in).
+2. **APIs & Services → Credentials → Create credentials → OAuth client ID**,
+   type **Web application**. Authorised redirect URIs:
+   - `https://<your website>/api/auth/google/callback` (the `WEB_ORIGINS` URL)
+   - `http://localhost:3000/api/auth/google/callback` (local development)
+3. Store the secret and set the ID:
+
+```bash
+read -rs GSECRET && printf '%s' "$GSECRET" | gcloud secrets create sofiya-google-client-secret --data-file=- && unset GSECRET
+gcloud secrets add-iam-policy-binding sofiya-google-client-secret \
+  --member "serviceAccount:$API_SA" --role roles/secretmanager.secretAccessor
+```
+
+4. GitHub variable: `GOOGLE_CLIENT_ID` = the client ID (it is public). The
+   button appears on the sign-in and sign-up pages after the next deploy.
+
 ## 8. First deploy
 
 1. Push the `v2` branch to GitHub.

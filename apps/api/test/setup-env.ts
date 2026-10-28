@@ -21,3 +21,4 @@ process.env.CARD_CURRENCIES = 'KRW';
 // Emails are kept in memory for tests to read.
 process.env.EMAIL_PROVIDER = 'memory';
 process.env.WEB_ORIGINS = 'http://localhost:3000';
+process.env.GOOGLE_AUTH = 'fake';

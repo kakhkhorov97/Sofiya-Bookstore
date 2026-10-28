@@ -87,6 +87,11 @@ runs 45 fixed questions (`apps/api/src/ai/eval/questions.ts`: direct, paraphrase
 
 Without a key the site works normally: search is keyword-only, "If you like this" uses the same genre, and the Ask page says it is not switched on. Tests use an offline fake provider (`AI_PROVIDER=fake`), so they need no key.
 
+## Accounts: email confirmation and Google
+
+- **Sign up with email**: the account works at once for browsing, and a "Confirm your email" link (24 hours, one use, only a hash stored) is emailed. Ordering and writing reviews wait until the address is confirmed (`403` with `code: "EMAIL_NOT_VERIFIED"`); a banner offers **Resend email** (at most one a minute). Without an email service (`EMAIL_PROVIDER=off`) addresses are accepted as they are, since nobody could confirm them. Accounts created before confirmation existed count as confirmed, and so do admins created with `db:create-admin`.
+- **Continue with Google** (when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set): `GET /api/auth/google` sends the browser to Google with a random `state` and a PKCE challenge, remembered in a signed 10-minute cookie; the callback checks both, exchanges the code on the server and verifies Google's ID token (`google-auth-library`). Only emails Google has verified are accepted. The Google account is matched by its id, then by email (linking it to an existing account), or a new confirmed account is created. Linking to an account whose email was never confirmed also cancels that account's password and sessions, so whoever registered the address first cannot keep access. A forged or expired callback, a cancelled sign-in, an unverified Google email or a blocked account sends the browser back to the sign-in page with an explanation.
+
 ## Emails
 
 - **Forgot password**: `/forgot-password` emails a one-time link (`/reset-password?token=…`) valid for `PASSWORD_RESET_MINUTES` (30). The answer is the same whether or not the email has an account, at most one email a minute is sent per account, and only a SHA-256 hash of the token is stored. Resetting signs out every existing session (`users.sessions_valid_after` is checked against each session's issue time).
@@ -135,6 +140,10 @@ PostgreSQL via Drizzle ORM. Schema: `apps/api/src/db/schema.ts`; SQL migrations:
 | POST | `/api/auth/signup` | `{ email, password, displayName }`; sets the session cookie |
 | POST | `/api/auth/signin` | `{ email, password }`; rate limited per IP |
 | POST | `/api/auth/signout` | Clears the session cookie |
+| GET | `/api/auth/providers` | `{ google }`: which sign-in options are on |
+| GET | `/api/auth/google`, `/api/auth/google/callback` | Continue with Google (browser redirects, not fetch calls) |
+| POST | `/api/auth/email/confirm` | `{ token }` from the confirmation email; no session needed |
+| POST | `/api/auth/email/resend` | Signed in: emails a new confirmation link (at most one a minute) |
 | POST | `/api/auth/password/forgot` | `{ email }`; always 202. Emails a reset link if the account exists (rate limited) |
 | POST | `/api/auth/password/reset` | `{ token, password }`; sets the password, uses up the link and ends all sessions |
 | GET / PATCH | `/api/me` | Profile; only `displayName` can be changed |

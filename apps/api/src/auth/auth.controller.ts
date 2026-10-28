@@ -3,26 +3,36 @@ import {
   Controller,
   Get,
   HttpCode,
+  NotFoundException,
   Patch,
   Post,
+  Query,
+  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import {
+  ConfirmEmailInput,
   ForgotPasswordInput,
   ResetPasswordInput,
   SignInInput,
   SignUpInput,
   UpdateProfileInput,
 } from '@sofiya/shared';
-import type { PublicUser } from '@sofiya/shared';
-import type { Response } from 'express';
+import type { AuthProviders, PublicUser } from '@sofiya/shared';
+import type { Request, Response } from 'express';
 import { ZodPipe } from '../common/zod.pipe';
-import { loadEnv } from '../config/env';
+import { loadEnv, webUrl } from '../config/env';
 import { AuthGuard, CurrentUser } from './auth.guard';
 import type { SessionUser } from './auth.guard';
 import { SESSION_COOKIE, sessionCookieOptions, signSession } from './session';
+import { EmailVerificationService } from './email-verification.service';
+import {
+  GOOGLE_STATE_COOKIE,
+  GoogleAuthService,
+  GoogleSignInError,
+} from './google-auth.service';
 import { PasswordResetService } from './password-reset.service';
 import { toPublicUser, UsersService } from './users.service';
 
@@ -33,6 +43,8 @@ export class AuthController {
   constructor(
     private readonly users: UsersService,
     private readonly passwordReset: PasswordResetService,
+    private readonly verification: EmailVerificationService,
+    private readonly googleAuth: GoogleAuthService,
   ) {}
 
   private startSession(res: Response, userId: string) {
@@ -52,7 +64,8 @@ export class AuthController {
   ): Promise<PublicUser> {
     const user = await this.users.signUp(input);
     this.startSession(res, user.id);
-    return toPublicUser(user);
+    const verified = await this.verification.start(user);
+    return { ...toPublicUser(user), emailVerified: verified };
   }
 
   @Post('auth/signin')
@@ -66,6 +79,81 @@ export class AuthController {
     const user = await this.users.signIn(input);
     this.startSession(res, user.id);
     return toPublicUser(user);
+  }
+
+  @Get('auth/providers')
+  providers(): AuthProviders {
+    return { google: this.googleAuth.enabled };
+  }
+
+  // ---- Email confirmation ------------------------------------------------
+
+  @Post('auth/email/confirm')
+  @HttpCode(200)
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: env.AUTH_RATE_LIMIT, ttl: 60_000 } })
+  async confirmEmail(
+    @Body(new ZodPipe(ConfirmEmailInput)) input: ConfirmEmailInput,
+  ): Promise<{ confirmed: true }> {
+    await this.verification.confirm(input.token);
+    return { confirmed: true };
+  }
+
+  @Post('auth/email/resend')
+  @HttpCode(202)
+  @UseGuards(AuthGuard, ThrottlerGuard)
+  @Throttle({ default: { limit: env.AUTH_RATE_LIMIT, ttl: 60_000 } })
+  async resendConfirmation(
+    @CurrentUser() user: SessionUser,
+  ): Promise<{ sent: true }> {
+    await this.verification.start(user);
+    return { sent: true };
+  }
+
+  // ---- Continue with Google ---------------------------------------------
+
+  // Plain links, not fetch calls: the browser itself visits Google.
+  @Get('auth/google')
+  googleStart(
+    @Query('next') next: string | undefined,
+    @Res() res: Response,
+  ): void {
+    if (!this.googleAuth.enabled) throw new NotFoundException();
+    const { url, cookie, maxAgeMs } = this.googleAuth.start(next);
+    res.cookie(GOOGLE_STATE_COOKIE, cookie, {
+      httpOnly: true,
+      // Lax: the cookie must come back on Google's top-level redirect.
+      sameSite: 'lax',
+      secure: env.NODE_ENV === 'production',
+      path: '/api/auth/google',
+      maxAge: maxAgeMs,
+    });
+    res.redirect(302, url);
+  }
+
+  @Get('auth/google/callback')
+  async googleCallback(
+    @Query() query: Record<string, string | undefined>,
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<void> {
+    if (!this.googleAuth.enabled) throw new NotFoundException();
+    const cookies = req.cookies as Record<string, string> | undefined;
+    res.clearCookie(GOOGLE_STATE_COOKIE, { path: '/api/auth/google' });
+    const site = webUrl(env);
+    try {
+      const { user, next } = await this.googleAuth.finish({
+        code: query.code,
+        state: query.state,
+        error: query.error,
+        cookie: cookies?.[GOOGLE_STATE_COOKIE],
+      });
+      this.startSession(res, user.id);
+      res.redirect(302, `${site}${next}`);
+    } catch (err) {
+      const reason = err instanceof GoogleSignInError ? err.reason : 'failed';
+      res.redirect(302, `${site}/signin?google=${reason}`);
+    }
   }
 
   // 202 whether or not the email has an account.

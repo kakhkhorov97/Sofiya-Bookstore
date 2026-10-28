@@ -7,15 +7,12 @@ import {
 } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 import { sql } from 'drizzle-orm';
-import { createHash, randomBytes } from 'node:crypto';
 import { loadEnv, webUrl } from '../config/env';
 import type { Db } from '../db/client';
 import { InjectDb } from '../db/db.module';
 import { MAILER, type Mailer } from '../mail/mailer';
 import { passwordResetEmail } from '../mail/templates';
-
-const hashToken = (token: string) =>
-  createHash('sha256').update(token).digest('hex');
+import { hashToken, newToken } from './tokens';
 
 // One reset email per account per minute, whatever the request rate.
 const RESEND_AFTER = sql`interval '1 minute'`;
@@ -51,7 +48,7 @@ export class PasswordResetService {
       WHERE lower(u.email) = ${email} AND u.status = 'ACTIVE'`);
     if (!user || user.recent) return;
 
-    const token = randomBytes(32).toString('base64url');
+    const { token, hash } = newToken();
     const minutes = this.env.PASSWORD_RESET_MINUTES;
     await this.db.transaction(async (tx) => {
       // Only the newest link works.
@@ -60,7 +57,7 @@ export class PasswordResetService {
       );
       await tx.execute(sql`
         INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
-        VALUES (${user.id}, ${hashToken(token)}, now() + make_interval(mins => ${minutes}))`);
+        VALUES (${user.id}, ${hash}, now() + make_interval(mins => ${minutes}))`);
     });
     const link = `${webUrl(this.env)}/reset-password?token=${encodeURIComponent(token)}`;
     try {

@@ -92,6 +92,12 @@ const EnvSchema = z.object({
   // Public address of the website, for links in emails. Defaults to the
   // first WEB_ORIGINS entry.
   WEB_URL: z.url().optional(),
+  // "Continue with Google": an OAuth client (type "Web application") from
+  // Google Cloud Console. The button appears only when both are set.
+  GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+  GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+  // "fake" = offline Google for tests (never in production).
+  GOOGLE_AUTH: z.enum(['fake']).optional(),
   PASSWORD_RESET_MINUTES: z.coerce.number().int().min(5).max(240).default(30),
   // Shown to customers who choose bank transfer.
   BANK_NAME: z.string().max(100).optional(),
@@ -125,6 +131,11 @@ const ProductionEnv = EnvSchema.superRefine((env, ctx) => {
     env.EMAIL_PROVIDER !== 'log' && env.EMAIL_PROVIDER !== 'memory',
     'EMAIL_PROVIDER',
     'must be "resend" or "off" in production',
+  );
+  need(
+    env.GOOGLE_AUTH !== 'fake',
+    'GOOGLE_AUTH',
+    'cannot be "fake" in production',
   );
   need(
     env.PAYMENTS_PROVIDER !== 'fake',

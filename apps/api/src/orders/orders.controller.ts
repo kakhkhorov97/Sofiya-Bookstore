@@ -20,7 +20,12 @@ import {
 } from '@sofiya/shared';
 import type { Response } from 'express';
 import { z } from 'zod';
-import { AdminGuard, AuthGuard, CurrentUser } from '../auth/auth.guard';
+import {
+  AdminGuard,
+  AuthGuard,
+  CurrentUser,
+  VerifiedEmailGuard,
+} from '../auth/auth.guard';
 import type { SessionUser } from '../auth/auth.guard';
 import { ZodPipe } from '../common/zod.pipe';
 import { OrdersService } from './orders.service';
@@ -34,6 +39,7 @@ export class OrdersController {
 
   // 201 for a new order, 200 when the same idempotency key is replayed.
   @Post()
+  @UseGuards(VerifiedEmailGuard)
   async create(
     @CurrentUser() user: SessionUser,
     @Body(new ZodPipe(CreateOrderInput)) input: CreateOrderInput,

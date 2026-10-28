@@ -87,6 +87,25 @@ export class AdminGuard implements CanActivate {
   }
 }
 
+// Use after AuthGuard on actions that need a confirmed address (ordering,
+// reviewing). The code lets the website show "confirm your email" instead
+// of a generic error.
+@Injectable()
+export class VerifiedEmailGuard implements CanActivate {
+  canActivate(ctx: ExecutionContext): boolean {
+    const req = ctx.switchToHttp().getRequest<AuthedRequest>();
+    if (!req.user?.emailVerifiedAt) {
+      throw new ForbiddenException({
+        statusCode: 403,
+        code: 'EMAIL_NOT_VERIFIED',
+        message:
+          'Please confirm your email first: we sent you a link when you signed up.',
+      });
+    }
+    return true;
+  }
+}
+
 export const CurrentUser = createParamDecorator(
   (_: unknown, ctx: ExecutionContext): SessionUser => {
     const user = ctx.switchToHttp().getRequest<AuthedRequest>().user;

@@ -6,3 +6,4 @@ Disallow: /basket
 Disallow: /orders
 Disallow: /api/
 Disallow: /reset-password
+Disallow: /verify-email

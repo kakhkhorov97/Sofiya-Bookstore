@@ -17,11 +17,22 @@ async function main() {
     const passwordHash = await bcrypt.hash(input.password, 12);
     const updated = await db
       .update(users)
-      .set({ role: 'ADMIN', passwordHash, updatedAt: sql`now()` })
+      .set({
+        role: 'ADMIN',
+        passwordHash,
+        // The admin chose this address on the command line: it counts as confirmed.
+        emailVerifiedAt: sql`coalesce(${users.emailVerifiedAt}, now())`,
+        updatedAt: sql`now()`,
+      })
       .where(sql`lower(${users.email}) = ${input.email}`)
       .returning({ id: users.id });
     if (updated.length === 0) {
-      await db.insert(users).values({ ...input, passwordHash, role: 'ADMIN' });
+      await db.insert(users).values({
+        ...input,
+        passwordHash,
+        role: 'ADMIN',
+        emailVerifiedAt: sql`now()`,
+      });
     }
     console.log(`Admin ready: ${input.email}`);
   } finally {

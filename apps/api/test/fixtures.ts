@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { isDigital, type BookFormat } from '@sofiya/shared';
 import { randomUUID } from 'node:crypto';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
@@ -79,11 +79,22 @@ export async function stockOf(
   return row.stock;
 }
 
-// A signed-in browser: supertest's agent keeps the session cookie.
+// Shared by the fixtures that need to touch the database directly.
+let fixtureDb: ReturnType<typeof testDb> | null = null;
+const fixtureHandle = () => (fixtureDb ??= testDb());
+afterAll(async () => {
+  await fixtureDb?.close();
+  fixtureDb = null;
+});
+
+// A signed-in browser: supertest's agent keeps the session cookie. The
+// address counts as confirmed unless a test asks otherwise (the confirmation
+// link itself is tested in emails.e2e-spec.ts).
 export async function signedInAgent(
   app: INestApplication<App>,
   email = uniqueEmail(),
   password = 'correct horse battery',
+  { verified = true }: { verified?: boolean } = {},
 ) {
   const agent = request.agent(app.getHttpServer());
   await agent
@@ -91,6 +102,12 @@ export async function signedInAgent(
     .set('Origin', WEB_ORIGIN)
     .send({ email, password, displayName: 'Test Reader' })
     .expect(201);
+  if (verified) {
+    await fixtureHandle()
+      .db.update(users)
+      .set({ emailVerifiedAt: sql`now()` })
+      .where(eq(users.email, email));
+  }
   return { agent, email, password };
 }
 

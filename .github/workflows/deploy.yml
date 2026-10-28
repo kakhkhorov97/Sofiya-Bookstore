@@ -95,9 +95,10 @@ jobs:
           SECRETS="DATABASE_URL=sofiya-database-url:latest,AUTH_SECRET=sofiya-auth-secret:latest,PROXY_SECRET=sofiya-proxy-secret:latest,GEMINI_API_KEY=sofiya-gemini-api-key:latest,TOSS_SECRET_KEY=sofiya-toss-secret-key:latest"
           if [ "${{ vars.EMAIL_PROVIDER }}" = "resend" ]; then SECRETS="$SECRETS,RESEND_API_KEY=sofiya-resend-api-key:latest"; fi
           if [ "${{ vars.USE_REDIS }}" = "true" ]; then SECRETS="$SECRETS,REDIS_URL=sofiya-redis-url:latest"; fi
+          if [ -n "${{ vars.GOOGLE_CLIENT_ID }}" ]; then SECRETS="$SECRETS,GOOGLE_CLIENT_SECRET=sofiya-google-client-secret:latest"; fi
           gcloud run deploy sofiya-api --image "$IMAGE" --region "$REGION" \
             --service-account "${{ vars.GCP_API_RUNTIME_SA }}" \
-            --set-env-vars "^##^APP_VERSION=${{ github.sha }}##WEB_ORIGINS=${{ vars.WEB_ORIGINS }}##STORAGE_DRIVER=gcs##GCS_BUCKET=${{ vars.GCS_BUCKET }}##TOSS_CLIENT_KEY=${{ vars.TOSS_CLIENT_KEY }}##BANK_NAME=${{ vars.BANK_NAME }}##BANK_ACCOUNT_NUMBER=${{ vars.BANK_ACCOUNT_NUMBER }}##BANK_ACCOUNT_HOLDER=${{ vars.BANK_ACCOUNT_HOLDER }}##EMAIL_PROVIDER=${{ vars.EMAIL_PROVIDER || 'off' }}##EMAIL_FROM=${{ vars.EMAIL_FROM || 'Sofiya <onboarding@resend.dev>' }}" \
+            --set-env-vars "^##^APP_VERSION=${{ github.sha }}##WEB_ORIGINS=${{ vars.WEB_ORIGINS }}##STORAGE_DRIVER=gcs##GCS_BUCKET=${{ vars.GCS_BUCKET }}##TOSS_CLIENT_KEY=${{ vars.TOSS_CLIENT_KEY }}##BANK_NAME=${{ vars.BANK_NAME }}##BANK_ACCOUNT_NUMBER=${{ vars.BANK_ACCOUNT_NUMBER }}##BANK_ACCOUNT_HOLDER=${{ vars.BANK_ACCOUNT_HOLDER }}##EMAIL_PROVIDER=${{ vars.EMAIL_PROVIDER || 'off' }}##EMAIL_FROM=${{ vars.EMAIL_FROM || 'Sofiya <onboarding@resend.dev>' }}##GOOGLE_CLIENT_ID=${{ vars.GOOGLE_CLIENT_ID }}" \
             --set-secrets "$SECRETS" \
             --no-cpu-throttling --allow-unauthenticated --min-instances 0 --max-instances 3
 

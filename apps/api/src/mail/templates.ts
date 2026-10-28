@@ -48,6 +48,26 @@ export function passwordResetEmail(
   return { to, subject, text, html };
 }
 
+export function confirmEmailEmail(
+  to: string,
+  name: string,
+  link: string,
+  hours: number,
+): Email {
+  const subject = 'Confirm your email for Sofiya';
+  const text = `Hi ${name},\n\nWelcome to Sofiya! Please confirm this is your email address (the link works for ${hours} hours):\n${link}\n\nYou can browse right away; confirming lets you order and write reviews. If you didn't create an account, ignore this email.`;
+  const html = layout(
+    'Confirm your email',
+    [
+      `Hi ${esc(name)},`,
+      'Welcome to Sofiya! Please confirm this is your email address. You can browse right away; confirming lets you order and write reviews.',
+      `The link works for ${hours} hours. If you didn't create an account, ignore this email.`,
+    ],
+    { label: 'Confirm my email', url: link },
+  );
+  return { to, subject, text, html };
+}
+
 export type OrderEmailKind = 'placed' | 'confirmed' | 'delivered' | 'cancelled';
 
 export interface BankDetails {

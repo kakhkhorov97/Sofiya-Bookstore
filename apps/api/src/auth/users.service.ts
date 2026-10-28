@@ -26,6 +26,7 @@ export const toPublicUser = (u: UserRow): PublicUser => ({
   displayName: u.displayName,
   role: u.role,
   points: u.points,
+  emailVerified: u.emailVerifiedAt !== null,
   createdAt: u.createdAt.toISOString(),
 });
 

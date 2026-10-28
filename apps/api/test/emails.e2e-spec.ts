@@ -29,7 +29,11 @@ describe('Emails: password reset and order updates (e2e)', () => {
       .post(path)
       .set('Origin', WEB_ORIGIN)
       .send(body);
-  const sentTo = (email: string) => mailer.sent.filter((m) => m.to === email);
+  // Sign-up confirmations are tested in auth-verification.e2e-spec.ts.
+  const sentTo = (email: string) =>
+    mailer.sent.filter(
+      (m) => m.to === email && !m.subject.startsWith('Confirm your email'),
+    );
   const tokenFrom = (text: string) =>
     new URL(/http\S+/.exec(text)![0]).searchParams.get('token')!;
 

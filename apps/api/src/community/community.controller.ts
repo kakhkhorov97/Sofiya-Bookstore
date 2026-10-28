@@ -25,6 +25,7 @@ import {
   CurrentUser,
   OptionalAuthGuard,
   OptionalUser,
+  VerifiedEmailGuard,
 } from '../auth/auth.guard';
 import type { SessionUser } from '../auth/auth.guard';
 import { ZodPipe } from '../common/zod.pipe';
@@ -90,7 +91,7 @@ export class CommunityController {
   }
 
   @Put('books/:slug/reviews')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, VerifiedEmailGuard)
   saveReview(
     @CurrentUser() user: SessionUser,
     @Param('slug', Slug) slug: string,

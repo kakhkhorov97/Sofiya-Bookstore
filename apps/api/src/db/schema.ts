@@ -62,11 +62,37 @@ export const users = pgTable(
     sessionsValidAfter: timestamp('sessions_valid_after', {
       withTimezone: true,
     }),
+    // Set when the address is confirmed (emailed link, or a Google account
+    // whose email Google has verified). Checkout and reviews need it.
+    emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
+    // Google's stable account id ("sub") for "Continue with Google".
+    googleSub: text('google_sub'),
     ...timestamps,
   },
   (t) => [
     uniqueIndex('users_email_lower_key').on(sql`lower(${t.email})`),
+    uniqueIndex('users_google_sub_key').on(t.googleSub),
     check('users_points_nonnegative', sql`${t.points} >= 0`),
+  ],
+);
+
+// One-time "confirm your email" links; like reset links, only a hash is kept.
+export const emailVerificationTokens = pgTable(
+  'email_verification_tokens',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    tokenHash: text('token_hash').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('email_verification_tokens_hash').on(t.tokenHash),
+    index('email_verification_tokens_user_idx').on(t.userId),
   ],
 );
 
