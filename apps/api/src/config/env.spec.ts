@@ -24,6 +24,17 @@ describe('loadEnv', () => {
     expect(env.PORT).toBe(8080);
   });
 
+  it('trims values pasted with a trailing newline', () => {
+    const env = loadEnv({
+      TOSS_CLIENT_KEY: 'test_ck_abc\r\n',
+      GOOGLE_CLIENT_ID: ' id.apps.googleusercontent.com\n',
+      EMAIL_PROVIDER: 'log\r\n',
+    });
+    expect(env.TOSS_CLIENT_KEY).toBe('test_ck_abc');
+    expect(env.GOOGLE_CLIENT_ID).toBe('id.apps.googleusercontent.com');
+    expect(env.EMAIL_PROVIDER).toBe('log');
+  });
+
   it('refuses to start production without secrets and cloud storage', () => {
     const prod = {
       NODE_ENV: 'production',

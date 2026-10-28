@@ -160,11 +160,13 @@ export const webUrl = (env: Env): string =>
   );
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
-  // A blank line like `GEMINI_API_KEY=` in .env means "not set".
+  // A blank line like `GEMINI_API_KEY=` in .env means "not set". Values are
+  // trimmed: a key pasted into a CI variable or secret often carries a
+  // trailing newline, which breaks OAuth client ids and payment keys.
   const cleaned = Object.fromEntries(
-    Object.entries(source).filter(
-      ([, v]) => v !== undefined && v.trim() !== '',
-    ),
+    Object.entries(source)
+      .map(([k, v]) => [k, v?.trim()] as const)
+      .filter(([, v]) => v !== undefined && v !== ''),
   );
   const parsed = ProductionEnv.safeParse(cleaned);
   if (!parsed.success) {
