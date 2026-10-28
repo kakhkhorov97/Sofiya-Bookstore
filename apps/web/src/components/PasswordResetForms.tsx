@@ -2,7 +2,6 @@
 
 import { MailCheck } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { clientApi, ClientApiError } from "@/lib/client-api";
 import { inputClass } from "./AuthForm";
@@ -72,7 +71,6 @@ export function ForgotPasswordForm() {
 }
 
 export function ResetPasswordForm({ token }: { token: string }) {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -88,8 +86,8 @@ export function ResetPasswordForm({ token }: { token: string }) {
     setError(null);
     try {
       await clientApi("/auth/password/reset", { method: "POST", body: { token, password } });
-      router.replace("/signin?reset=1");
-      router.refresh();
+      // The reset ended every session: reload fully so nothing signed-in remains.
+      window.location.replace("/signin?reset=1");
     } catch (err) {
       setError(errorText(err));
       setBusy(false);

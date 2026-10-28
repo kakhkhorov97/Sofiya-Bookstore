@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState } from "react";
 import { BasketAction, BasketLine, basketReducer, itemCount, parseStoredBasket } from "./basket";
 
-const STORAGE_KEY = "sofiya.basket.v1";
+export const STORAGE_KEY = "sofiya.basket.v1";
 
 interface BasketContextValue {
   lines: BasketLine[];

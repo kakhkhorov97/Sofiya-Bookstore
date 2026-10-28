@@ -1,21 +1,23 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useCallback } from "react";
-import { useBasket } from "@/basket/BasketProvider";
+import { STORAGE_KEY as BASKET_KEY } from "@/basket/BasketProvider";
 import { clientApi } from "./client-api";
 import { clearRecent } from "./recent";
 
 // Signs out and forgets what this browser remembered for the reader, so the
 // next person at the same computer starts with an empty basket and no history.
+// A full page load (not a client-side navigation) drops Next.js's in-memory
+// copies of private pages, so Back cannot show the previous reader's account.
 export function useSignOut() {
-  const router = useRouter();
-  const { dispatch } = useBasket();
   return useCallback(async () => {
     await clientApi("/auth/signout", { method: "POST" }).catch(() => undefined);
-    dispatch({ type: "clear" });
+    try {
+      localStorage.removeItem(BASKET_KEY);
+    } catch {
+      // Storage unavailable: nothing was remembered.
+    }
     clearRecent();
-    router.replace("/");
-    router.refresh();
-  }, [dispatch, router]);
+    window.location.replace("/");
+  }, []);
 }

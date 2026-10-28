@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { clientApi, ClientApiError } from "@/lib/client-api";
 import { safeNext } from "@/lib/safe-next";
@@ -11,7 +11,6 @@ export const inputClass =
   "mt-1.5 block h-12 w-full rounded-[10px] border border-line bg-white px-3.5 text-base outline-none focus:border-accent focus:ring-[3px] focus:ring-accent-soft";
 
 export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
-  const router = useRouter();
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
   const [error, setError] = useState<string | null>(null);
@@ -30,8 +29,9 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
           ? { email: form.get("email"), password: form.get("password"), displayName: form.get("displayName") }
           : { email: form.get("email"), password: form.get("password") },
       });
-      router.replace(next);
-      router.refresh();
+      // Full page load so the header, the page and every cached view switch
+      // to the signed-in reader together.
+      window.location.assign(next);
     } catch (err) {
       setError(
         err instanceof ClientApiError && err.status === 429
