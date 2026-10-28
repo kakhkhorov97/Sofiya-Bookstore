@@ -17,6 +17,7 @@ export function AuthForm({ mode, alternative }: { mode: "signin" | "signup"; alt
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
   const t = useTranslations("auth");
+  const tRoot = useTranslations();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const signup = mode === "signup";
@@ -93,6 +94,22 @@ export function AuthForm({ mode, alternative }: { mode: "signin" | "signup"; alt
       <button type="submit" disabled={busy} className={`${buttonClass.primary} w-full`}>
         {busy ? t("pleaseWait") : signup ? t("createAccount") : t("signIn")}
       </button>
+      {signup && (
+        <p className="text-center text-[13px] text-ink-3">
+          {tRoot.rich("legal.agree", {
+            terms: (c) => (
+              <Link href="/terms" className="underline underline-offset-2 hover:text-ink">
+                {c}
+              </Link>
+            ),
+            privacy: (c) => (
+              <Link href="/privacy" className="underline underline-offset-2 hover:text-ink">
+                {c}
+              </Link>
+            ),
+          })}
+        </p>
+      )}
       {alternative}
       <p className="text-center text-[15px] text-ink-2">
         {signup ? t("haveAccount") : t("newHere")}{" "}

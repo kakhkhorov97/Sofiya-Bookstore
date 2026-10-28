@@ -37,10 +37,20 @@ export async function Footer({ paymentsTestMode = true }: { paymentsTestMode?: b
             ["/books?format=AUDIOBOOK", t("labels.format.AUDIOBOOK")],
           ]}
         />
-        <p className="col-span-2 border-t border-line pt-5 text-[13px] text-ink-3 md:col-span-4">
-          {t("footer.about")}
-          {paymentsTestMode && ` ${t("footer.testMode")}`}
-        </p>
+        <div className="col-span-2 flex flex-col gap-3 border-t border-line pt-5 text-[13px] text-ink-3 md:col-span-4 md:flex-row md:justify-between md:gap-10">
+          <p className="max-w-[90ch]">
+            {t("footer.about")}
+            {paymentsTestMode && ` ${t("footer.testMode")}`}
+          </p>
+          <nav aria-label={t("legal.legal")} className="flex shrink-0 gap-4 font-semibold text-ink-2">
+            <Link href="/privacy" className="hover:text-ink">
+              {t("legal.privacy")}
+            </Link>
+            <Link href="/terms" className="hover:text-ink">
+              {t("legal.terms")}
+            </Link>
+          </nav>
+        </div>
       </div>
     </footer>
   );

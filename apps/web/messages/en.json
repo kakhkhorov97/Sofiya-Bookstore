@@ -609,5 +609,89 @@
     "label": "Language and currency",
     "language": "Language",
     "currency": "Currency"
+  },
+  "legal": {
+    "updated": "Last updated {date}",
+    "privacy": "Privacy policy",
+    "terms": "Terms of service",
+    "legal": "Legal",
+    "agree": "By creating an account you agree to our <terms>Terms of service</terms> and <privacy>Privacy policy</privacy>."
+  },
+  "privacy": {
+    "title": "Privacy policy",
+    "metaDescription": "What Sofiya Bookstore collects, why, and how to have it changed or deleted.",
+    "intro": "Sofiya Bookstore (sofiya.store) is a portfolio project. This page explains what we collect when you use the site, why, and what you can ask us to do with it.",
+    "collect": {
+      "title": "What we collect",
+      "account": "Account: your name, email address, sign-up date and reading points. Your password is stored only as a secure hash; nobody can read it.",
+      "google": "Continue with Google: your name, email address and Google account ID. We never see your Google password.",
+      "orders": "Orders: the books, prices, currency, payment method and payment status. Card payments are handled by Toss Payments; we keep only the payment reference and receipt link, never your card details. We don’t ask for a delivery address, because nothing is shipped.",
+      "content": "Reviews and your wishlist, if you create them.",
+      "newsletter": "Newsletter: your email address, if you subscribe.",
+      "ask": "Ask Sofiya: your questions are sent to Google Gemini to write the answer. We keep the text of questions, without who asked, to improve answers. Please don’t put personal information in your questions.",
+      "technical": "Technical data: your IP address is used for a few minutes to limit repeated attempts (for example, wrong passwords). It is not saved with your account."
+    },
+    "cookies": {
+      "title": "Cookies and browser storage",
+      "p1": "We use only the cookies the site needs: sofiya_session keeps you signed in, sofiya_google is used for a few minutes during Google sign-in, and sofiya_locale and sofiya_currency remember your language and currency.",
+      "p2": "Your basket and recently viewed books are kept in your own browser. We use no advertising or tracking cookies and no analytics."
+    },
+    "processors": {
+      "title": "Services we use",
+      "p1": "Google Cloud hosts the site (Seoul region), Neon stores the database, Toss Payments processes card payments, Resend sends our emails, and Google provides sign-in and the Gemini AI. Each only gets the data it needs to do that job."
+    },
+    "retention": {
+      "title": "How long we keep data",
+      "p1": "Account data is kept while your account exists. Order records are kept as long as needed for accounting. Email confirmation and password reset links expire and are stored only as hashes."
+    },
+    "rights": {
+      "title": "Your choices",
+      "p1": "You can change your name and password in your account settings. To get a copy of your data, correct it, delete your account or leave the newsletter, email <mail></mail> and we will reply within 30 days."
+    },
+    "contact": {
+      "title": "Contact",
+      "p1": "Questions about this policy: <mail></mail>."
+    }
+  },
+  "terms": {
+    "title": "Terms of service",
+    "metaDescription": "The rules for using Sofiya Bookstore.",
+    "intro": "By using sofiya.store you agree to these terms. Please read them; they are short.",
+    "demo": {
+      "title": "A demo shop",
+      "p1": "Sofiya is a portfolio project. The catalogue lists real public-domain and freely licensed books, but prices, stock and orders are demo data and nothing is shipped. Card payments run in Toss test mode, so no real money is charged."
+    },
+    "accounts": {
+      "title": "Your account",
+      "p1": "Give accurate information, keep your password to yourself, and use one account per person. We may block accounts used to abuse the service."
+    },
+    "orders": {
+      "title": "Orders and payments",
+      "p1": "An order is confirmed when it is paid. Unpaid card orders are cancelled automatically after a short time, and you can cancel an order yourself until it is confirmed."
+    },
+    "reviews": {
+      "title": "Reviews",
+      "p1": "Reviews must be your own words and about the book. We may remove reviews that are offensive, illegal, spam or off-topic."
+    },
+    "ai": {
+      "title": "Ask Sofiya",
+      "p1": "Recommendations are written by AI and can be wrong. Check the book page before you buy."
+    },
+    "availability": {
+      "title": "Availability",
+      "p1": "The site is provided as it is, without guarantees. We may change features or stop the service at any time."
+    },
+    "liability": {
+      "title": "Liability",
+      "p1": "As far as the law allows, we are not responsible for indirect losses from using the site."
+    },
+    "changes": {
+      "title": "Changes",
+      "p1": "We may update these terms. The date at the top shows the latest version."
+    },
+    "contact": {
+      "title": "Contact",
+      "p1": "Questions about these terms: <mail></mail>."
+    }
   }
 }
