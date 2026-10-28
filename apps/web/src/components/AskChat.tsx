@@ -47,7 +47,6 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
     setFilters((f) => ({ ...f, maxPrice: undefined }));
   }
   const [showFilters, setShowFilters] = useState(false);
-  const bottom = useRef<HTMLDivElement>(null);
   const started = useRef(false);
   const abort = useRef<AbortController | null>(null);
 
@@ -55,9 +54,13 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
   const latestSources = [...turns].reverse().find((t) => t.role === "assistant" && t.sources)?.sources ?? [];
   const latestCited = [...turns].reverse().find((t) => t.role === "assistant" && t.cited)?.cited ?? [];
 
+  // Bring each new question to the top of the screen once, when it is sent.
+  // Following every streamed word made the page jump on phones.
+  const lastQuestionId = [...turns].reverse().find((t) => t.role === "user")?.id;
   useEffect(() => {
-    bottom.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [turns]);
+    if (lastQuestionId === undefined) return;
+    document.getElementById(`turn-${lastQuestionId}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [lastQuestionId]);
 
   useEffect(() => () => abort.current?.abort(), []);
 
@@ -133,7 +136,7 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
   const activeFilters = Object.values(filters).filter((v) => v !== undefined && v !== false).length;
 
   return (
-    <div className="mx-auto w-[min(1240px,calc(100%-32px))] py-8">
+    <div className="mx-auto w-[min(1240px,calc(100%-32px))] pb-32 pt-8 lg:pb-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="flex items-center gap-2.5 font-display text-4xl font-extrabold tracking-[-0.03em] sm:text-5xl">
@@ -187,7 +190,7 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
             <ol className="space-y-5" aria-live="polite">
               {turns.map((t) =>
                 t.role === "user" ? (
-                  <li key={t.id} className="flex flex-col items-end gap-1">
+                  <li key={t.id} id={`turn-${t.id}`} className="flex scroll-mt-24 flex-col items-end gap-1">
                     <p className="max-w-[80%] rounded-[16px_16px_4px_16px] bg-ink px-4 py-3 font-medium text-white">{t.text}</p>
                     {t.note && <span className="text-xs font-semibold text-ink-3">{t.note}</span>}
                   </li>
@@ -230,7 +233,9 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
               e.preventDefault();
               void send(input);
             }}
-            className="sticky bottom-4 mt-6 rounded-[16px] border-[1.5px] border-ink bg-white p-2 shadow-[0_8px_24px_rgba(21,23,28,0.08)] focus-within:ring-[3px] focus-within:ring-accent-soft"
+            // Phones: pinned to the bottom of the screen, since the found books
+            // come after the chat. Desktop: sticky within the chat column.
+            className="fixed inset-x-4 bottom-4 z-10 rounded-[16px] lg:sticky lg:inset-x-auto lg:mt-6 border-[1.5px] border-ink bg-white p-2 shadow-[0_8px_24px_rgba(21,23,28,0.08)] focus-within:ring-[3px] focus-within:ring-accent-soft"
           >
             <div className="flex items-end gap-2">
               <label className="flex-1">
@@ -279,7 +284,6 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
           <p className="mt-3 text-center text-xs text-ink-3">
             {t("ask.disclaimer")}
           </p>
-          <div ref={bottom} />
         </section>
 
         <aside aria-label={t("ask.found")} className="min-w-0 lg:sticky lg:top-24">
@@ -306,7 +310,8 @@ export function AskChat({ enabled, configured }: { enabled: boolean; configured:
 // Only the latest answer's numbers match the side panel; older answers link
 // straight to the book they cited.
 function AssistantTurn({ turn, latest }: { turn: Turn; latest: boolean }) {
-  const parts = splitCitations(turn.text);
+  // The model is asked for plain text; drop any Markdown bold that slips through.
+  const parts = splitCitations(turn.text.replace(/\*\*/g, ""));
   const t = useTranslations();
   const valid = new Set((turn.sources ?? []).map((s) => s.n));
   return (
