@@ -6,6 +6,8 @@ import { BooksModule } from './books/books.module';
 import { CommunityModule } from './community/community.module';
 import { DbModule } from './db/db.module';
 import { HealthController } from './health/health.controller';
+import { RedisModule } from './redis/redis.module';
+import { MailModule } from './mail/mail.module';
 import { PaymentsModule } from './payments/payments.module';
 import { OrdersModule } from './orders/orders.module';
 import { StorageModule } from './storage/storage.module';
@@ -17,6 +19,8 @@ import { StorageModule } from './storage/storage.module';
     AiModule,
     BooksModule,
     AuthModule,
+    RedisModule,
+    MailModule,
     PaymentsModule,
     OrdersModule,
     CommunityModule,

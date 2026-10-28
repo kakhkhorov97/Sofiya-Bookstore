@@ -7,7 +7,7 @@ import { clientApi, ClientApiError } from "@/lib/client-api";
 import { safeNext } from "@/lib/safe-next";
 import { buttonClass, Notice } from "./ui";
 
-const inputClass =
+export const inputClass =
   "mt-1.5 block h-12 w-full rounded-[10px] border border-line bg-white px-3.5 text-base outline-none focus:border-accent focus:ring-[3px] focus:ring-accent-soft";
 
 export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
@@ -60,7 +60,14 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
         <input name="email" type="email" required autoComplete="email" className={inputClass} />
       </label>
       <label className="block text-sm font-semibold">
-        Password
+        <span className="flex items-baseline justify-between">
+          Password
+          {!signup && (
+            <Link href="/forgot-password" className="text-sm font-semibold text-accent hover:text-accent-ink">
+              Forgot password?
+            </Link>
+          )}
+        </span>
         <input
           name="password"
           type="password"

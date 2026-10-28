@@ -38,6 +38,7 @@ import {
   type PaymentGateway,
 } from '../payments/gateway';
 import { toPaymentView, type PaymentColumns } from '../payments/payment-view';
+import { OrderEmailsService } from './order-emails.service';
 
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 
@@ -131,6 +132,7 @@ export class OrdersService implements OnModuleInit, OnModuleDestroy {
   constructor(
     @InjectDb() private readonly db: Db,
     @Inject(PAYMENT_GATEWAY) private readonly gateway: PaymentGateway | null,
+    private readonly emails: OrderEmailsService,
   ) {}
 
   onModuleInit(): void {
@@ -188,7 +190,13 @@ export class OrdersService implements OnModuleInit, OnModuleDestroy {
           input.paymentMethod,
         ),
       );
-      return { order: await this.getView(orderId), created: true };
+      const order = await this.getView(orderId);
+      // Card orders get their email once paid; bank transfers need the
+      // payment instructions now.
+      if (order.payment.method === 'BANK_TRANSFER') {
+        this.emails.notify('placed', order);
+      }
+      return { order, created: true };
     } catch (err) {
       // A parallel request with the same key won the race.
       if (pgErrorCode(err) === UNIQUE_VIOLATION) {
@@ -359,7 +367,9 @@ export class OrdersService implements OnModuleInit, OnModuleDestroy {
       }
       await this.restoreStock(tx, orderId);
     });
-    return this.getView(orderId);
+    const order = await this.getView(orderId);
+    this.emails.notify('cancelled', order);
+    return order;
   }
 
   // The browser returns from the Toss window with a paymentKey. The order is
@@ -448,7 +458,9 @@ export class OrdersService implements OnModuleInit, OnModuleDestroy {
       // A paid order is confirmed straight away, so it earns its point now.
       if (row) await this.awardPoints(tx, orderId, row.user_id);
     });
-    return this.getView(orderId);
+    const order = await this.getView(orderId);
+    this.emails.notify('confirmed', order);
+    return order;
   }
 
   // Why a confirmation could not claim the order, or the already-paid order
@@ -484,7 +496,7 @@ export class OrdersService implements OnModuleInit, OnModuleDestroy {
   // Unpaid card orders hold stock, so they are cancelled after a while.
   // Orders mid-confirmation are left alone.
   async expireUnpaidCardOrders(): Promise<number> {
-    return this.db.transaction(async (tx) => {
+    const ids = await this.db.transaction(async (tx) => {
       const expired = await tx.execute<{ id: string }>(sql`
         UPDATE orders SET status = 'CANCELLED', updated_at = now(),
           payment_error = 'Not paid in time'
@@ -495,8 +507,11 @@ export class OrdersService implements OnModuleInit, OnModuleDestroy {
       if (expired.length) {
         this.logger.log(`Cancelled ${expired.length} unpaid card order(s)`);
       }
-      return expired.length;
+      return expired.map((e) => e.id);
     });
+    for (const id of ids)
+      this.emails.notify('cancelled', await this.getView(id));
+    return ids.length;
   }
 
   async setStatusByAdmin(
@@ -607,7 +622,16 @@ export class OrdersService implements OnModuleInit, OnModuleDestroy {
         }
       }
     });
-    return this.getView(orderId);
+    const order = await this.getView(orderId);
+    const kind = (
+      {
+        IN_PROCESS: 'confirmed',
+        DELIVERED: 'delivered',
+        CANCELLED: 'cancelled',
+      } as const
+    )[input.status as 'IN_PROCESS' | 'DELIVERED' | 'CANCELLED'];
+    if (kind) this.emails.notify(kind, order);
+    return order;
   }
 
   // Once per order (legacy defect: toggling the status farmed points).

@@ -13,6 +13,15 @@ import { terms } from './text';
 
 // Reciprocal Rank Fusion constant; 60 is the value from the original paper.
 const RRF_K = 60;
+// A keyword hit only in the description (one shared word, like "bug" in
+// "The Gold-Bug") is weak evidence, so it counts half against a meaning
+// match. Hits on the title or author keep full weight. Measured with
+// npm run ai:eval: equal weights let such words push the right book down.
+const WEAK_KEYWORD_WEIGHT = 0.5;
+
+// hybrid is what the site uses; the single halves exist for the evaluation
+// (npm run ai:eval) to show what each contributes.
+export type RankMode = 'hybrid' | 'keyword' | 'meaning';
 const CANDIDATES = 60;
 const QUERY_CACHE_SIZE = 500;
 const EMBED_TIMEOUT_MS = 3500;
@@ -140,6 +149,7 @@ export class RetrievalService {
     filters: AskFilters = {},
     limit = 10,
     currency: Currency = DEFAULT_CURRENCY,
+    mode: RankMode = 'hybrid',
   ): Promise<Ranked[]> {
     const where = this.filterSql(filters, currency);
     // OR of the question's meaningful words, so a sentence still finds
@@ -155,12 +165,16 @@ export class RetrievalService {
     const partial = sql`(b.title ILIKE ${like} ESCAPE '\\' OR b.author ILIKE ${like} ESCAPE '\\')`;
 
     const [keywordRows, vector] = await Promise.all([
-      this.db.execute<{ id: string }>(sql`
-        SELECT b.id FROM books b
+      mode === 'meaning'
+        ? []
+        : this.db.execute<{ id: string; strong: boolean }>(sql`
+        SELECT b.id,
+          (${partial} OR to_tsvector('english', b.title || ' ' || b.author) @@ ${anyWord}) AS strong
+        FROM books b
         WHERE ${where} AND (b.search @@ ${anyWord} OR ${partial})
         ORDER BY ${partial} DESC, ts_rank_cd(b.search, ${anyWord}) DESC, b.views DESC
         LIMIT ${CANDIDATES}`),
-      this.queryVector(query),
+      mode === 'keyword' ? null : this.queryVector(query),
     ]);
 
     // Nearest neighbours always exist, so meaning matches need two tests:
@@ -182,11 +196,20 @@ export class RetrievalService {
     );
 
     const scores = new Map<string, number>();
-    const add = (ids: { id: string }[]) =>
+    const add = (ids: { id: string; weight?: number }[]) =>
       ids.forEach((r, i) =>
-        scores.set(r.id, (scores.get(r.id) ?? 0) + 1 / (RRF_K + i + 1)),
+        scores.set(
+          r.id,
+          (scores.get(r.id) ?? 0) + (r.weight ?? 1) / (RRF_K + i + 1),
+        ),
       );
-    add(keywordRows);
+    add(
+      keywordRows.map((r) => ({
+        id: r.id,
+        // Weights only matter when there is a meaning list to compete with.
+        weight: r.strong || mode === 'keyword' ? 1 : WEAK_KEYWORD_WEIGHT,
+      })),
+    );
     add(vectorRows);
 
     const percent = matchPercents(

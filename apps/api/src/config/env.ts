@@ -75,6 +75,24 @@ const EnvSchema = z.object({
     .min(5)
     .max(1440)
     .default(30),
+  // Optional shared state for several API instances: rate limits and the
+  // daily AI cap. redis:// or rediss:// (TLS, e.g. Upstash). Without it each
+  // instance counts in memory.
+  REDIS_URL: z
+    .string()
+    .regex(/^rediss?:\/\//, 'must start with redis:// or rediss://')
+    .optional(),
+  // Email: "resend" sends through resend.com, "log" prints emails in the API
+  // terminal (default locally), "off" disables email (default in production),
+  // "memory" is for tests. Production refuses log/memory: reset links must
+  // never end up in server logs.
+  EMAIL_PROVIDER: z.enum(['resend', 'log', 'memory', 'off']).optional(),
+  RESEND_API_KEY: z.string().min(1).optional(),
+  EMAIL_FROM: z.string().min(3).default('Sofiya <onboarding@resend.dev>'),
+  // Public address of the website, for links in emails. Defaults to the
+  // first WEB_ORIGINS entry.
+  WEB_URL: z.url().optional(),
+  PASSWORD_RESET_MINUTES: z.coerce.number().int().min(5).max(240).default(30),
   // Shown to customers who choose bank transfer.
   BANK_NAME: z.string().max(100).optional(),
   BANK_ACCOUNT_NUMBER: z.string().max(100).optional(),
@@ -84,6 +102,13 @@ const EnvSchema = z.object({
 // Production must not start half-configured: a missing secret or local
 // cover storage would only show up later as lost uploads or 500s.
 const ProductionEnv = EnvSchema.superRefine((env, ctx) => {
+  if (env.EMAIL_PROVIDER === 'resend' && !env.RESEND_API_KEY) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['RESEND_API_KEY'],
+      message: 'required when EMAIL_PROVIDER is "resend"',
+    });
+  }
   if (env.NODE_ENV !== 'production') return;
   const need = (ok: boolean, path: string, message: string) => {
     if (!ok) ctx.addIssue({ code: 'custom', path: [path], message });
@@ -95,6 +120,11 @@ const ProductionEnv = EnvSchema.superRefine((env, ctx) => {
     env.STORAGE_DRIVER === 'gcs',
     'STORAGE_DRIVER',
     'must be "gcs" in production',
+  );
+  need(
+    env.EMAIL_PROVIDER !== 'log' && env.EMAIL_PROVIDER !== 'memory',
+    'EMAIL_PROVIDER',
+    'must be "resend" or "off" in production',
   );
   need(
     env.PAYMENTS_PROVIDER !== 'fake',
@@ -111,6 +141,12 @@ const ProductionEnv = EnvSchema.superRefine((env, ctx) => {
 });
 
 export type Env = z.infer<typeof EnvSchema>;
+
+export const webUrl = (env: Env): string =>
+  (env.WEB_URL ?? allowedOrigins(env)[0] ?? 'http://localhost:3000').replace(
+    /\/$/,
+    '',
+  );
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   // A blank line like `GEMINI_API_KEY=` in .env means "not set".

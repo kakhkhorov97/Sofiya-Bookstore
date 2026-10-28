@@ -43,6 +43,13 @@
       "when": 1793088025429,
       "tag": "0005_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793149712499,
+      "tag": "0006_password_reset",
+      "breakpoints": true
     }
   ]
 }

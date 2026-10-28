@@ -44,7 +44,7 @@ export class AskController {
     @Req() req: Request,
     @Res() res: Response,
   ): Promise<void> {
-    this.ask.checkAvailable();
+    await this.ask.checkAvailable();
 
     res.status(200);
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');

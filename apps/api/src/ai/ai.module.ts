@@ -1,5 +1,5 @@
 import { Logger, Module } from '@nestjs/common';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { throttlerModule } from '../redis/redis.module';
 import { loadEnv } from '../config/env';
 import { AskController } from './ask.controller';
 import { AskService } from './ask.service';
@@ -8,7 +8,7 @@ import { AI_PROVIDER, createProvider } from './provider';
 import { RetrievalService } from './retrieval.service';
 
 @Module({
-  imports: [ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }])],
+  imports: [throttlerModule()],
   controllers: [AskController],
   providers: [
     {

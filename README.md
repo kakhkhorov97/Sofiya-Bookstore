@@ -75,9 +75,27 @@ Cards are only offered in `CARD_CURRENCIES` (won by default: Toss needs a separa
    ```
 3. Start the site with `npm run dev` and open http://localhost:3000/ask.
 
-How it works: each book's title, author, genre and description is embedded (`gemini-embedding-001`, 768 dimensions) into `book_embeddings` (pgvector, HNSW index). A question is matched by meaning and by keywords (Postgres full text on the question's meaningful words, plus partial title/author), and the two rankings are fused with Reciprocal Rank Fusion. Meaning matches count only when the best book reaches `AI_MIN_SIMILARITY` (0.60) and the others are within `AI_SIMILARITY_WINDOW` (0.06) of it; on this catalogue real matches score 0.62–0.72 and off-topic or nonsense questions stay below 0.60. The top 5 books are sent to Gemini with a prompt that allows recommending only those numbered books; the server keeps only citations that point at them. No candidates means no model call. Answers come from `GEMINI_CHAT_MODEL` (`gemini-3.5-flash-lite`, about 1–2 s); if it fails or sends nothing within 10 s, `GEMINI_FALLBACK_MODEL` (`gemini-3.6-flash`) is tried once. If both fail, the matching books are still shown. Model names are settings because Google retires models for new keys (as happened to `gemini-2.5-flash`). Limits: `AI_RATE_LIMIT` questions per minute per visitor and `AI_DAILY_CAP` per day.
+How it works: each book's title, author, genre and description is embedded (`gemini-embedding-001`, 768 dimensions) into `book_embeddings` (pgvector, HNSW index). A question is matched by meaning and by keywords (Postgres full text on the question's meaningful words, plus partial title/author), and the two rankings are fused with Reciprocal Rank Fusion (a keyword hit only in a description counts half; hits on the title or author count fully). Meaning matches count only when the best book reaches `AI_MIN_SIMILARITY` (0.60) and the others are within `AI_SIMILARITY_WINDOW` (0.06) of it; on this catalogue real matches score 0.62–0.72 and off-topic or nonsense questions stay below 0.60. The top 5 books are sent to Gemini with a prompt that allows recommending only those numbered books; the server keeps only citations that point at them. No candidates means no model call. Answers come from `GEMINI_CHAT_MODEL` (`gemini-3.5-flash-lite`, about 1–2 s); if it fails or sends nothing within 10 s, `GEMINI_FALLBACK_MODEL` (`gemini-3.6-flash`) is tried once. If both fail, the matching books are still shown. Model names are settings because Google retires models for new keys (as happened to `gemini-2.5-flash`). Limits: `AI_RATE_LIMIT` questions per minute per visitor and `AI_DAILY_CAP` per day (shared by every instance when `REDIS_URL` is set).
+
+### Measuring retrieval quality
+
+```bash
+npm run ai:eval -w @sofiya/api
+```
+
+runs 45 fixed questions (`apps/api/src/ai/eval/questions.ts`: direct, paraphrased, themed, and unanswerable) through hybrid, keyword-only and meaning-only retrieval and writes [`docs/rag-eval.md`](docs/rag-eval.md) with hit@1, hit@5, MRR and the share of unanswerable questions that correctly return nothing. Latest run: hybrid finds a correct book in the top five for every question (hit@5 100%, hit@1 93%, MRR 0.95) against keyword-only hit@5 85%, and returns nothing for all unanswerable questions. Re-run it after changing retrieval, prompts' sources or the catalogue.
 
 Without a key the site works normally: search is keyword-only, "If you like this" uses the same genre, and the Ask page says it is not switched on. Tests use an offline fake provider (`AI_PROVIDER=fake`), so they need no key.
+
+## Emails
+
+- **Forgot password**: `/forgot-password` emails a one-time link (`/reset-password?token=…`) valid for `PASSWORD_RESET_MINUTES` (30). The answer is the same whether or not the email has an account, at most one email a minute is sent per account, and only a SHA-256 hash of the token is stored. Resetting signs out every existing session (`users.sessions_valid_after` is checked against each session's issue time).
+- **Order emails**: when a bank-transfer order is placed (with the account details), when an order is paid or confirmed, delivered, and cancelled (saying whether a card payment was refunded). They are sent in the background, so email problems never affect the order.
+- `EMAIL_PROVIDER`: `log` (default locally: emails are printed in the API terminal, so reset links can be clicked from there), `resend` (with `RESEND_API_KEY` and `EMAIL_FROM` on a verified domain), or `off` (default in production). Production refuses `log`, so reset links never end up in server logs.
+
+## Shared limits (Redis)
+
+Set `REDIS_URL` (`redis://…`, or `rediss://…` for Upstash) to keep rate limits and the daily AI cap in Redis, shared by every API instance. Without it each instance counts in memory, which is fine for one instance. If Redis becomes unreachable the API falls back to memory instead of failing. `REDIS_TEST_URL=redis://127.0.0.1:6390 npx jest src/redis` runs the Redis tests against a real server.
 
 ## Database
 
@@ -117,6 +135,8 @@ PostgreSQL via Drizzle ORM. Schema: `apps/api/src/db/schema.ts`; SQL migrations:
 | POST | `/api/auth/signup` | `{ email, password, displayName }`; sets the session cookie |
 | POST | `/api/auth/signin` | `{ email, password }`; rate limited per IP |
 | POST | `/api/auth/signout` | Clears the session cookie |
+| POST | `/api/auth/password/forgot` | `{ email }`; always 202. Emails a reset link if the account exists (rate limited) |
+| POST | `/api/auth/password/reset` | `{ token, password }`; sets the password, uses up the link and ends all sessions |
 | GET / PATCH | `/api/me` | Profile; only `displayName` can be changed |
 | POST | `/api/orders` | `{ idempotencyKey, currency, paymentMethod, lines: [{ formatId, quantity }] }`; `currency` is KRW (default) or USD, `paymentMethod` is BANK_TRANSFER (default) or CARD. Prices come from the database. 201 new, 200 replay |
 | POST | `/api/orders/:id/payments/toss/confirm` | `{ paymentKey, amount }` from the Toss success redirect. Confirms with Toss for the stored total; a repeat with the same key returns the paid order |

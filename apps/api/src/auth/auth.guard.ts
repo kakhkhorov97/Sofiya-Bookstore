@@ -7,7 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { loadEnv } from '../config/env';
+import { loadEnv, type Env } from '../config/env';
 import type { users } from '../db/schema';
 import { SESSION_COOKIE, verifySession } from './session';
 import { UsersService } from './users.service';
@@ -18,6 +18,28 @@ interface AuthedRequest extends Request {
   user?: SessionUser;
 }
 
+// The signed-in, active user for this request, or null. A session issued
+// before the user's sessions_valid_after (a password reset) no longer counts.
+async function sessionUser(
+  env: Env,
+  usersService: UsersService,
+  req: AuthedRequest,
+): Promise<SessionUser | null> {
+  const cookies = req.cookies as Record<string, string> | undefined;
+  const token = cookies?.[SESSION_COOKIE];
+  const session = token ? verifySession(env, token) : null;
+  if (!session) return null;
+  const user = await usersService.findActive(session.userId);
+  if (!user) return null;
+  if (
+    user.sessionsValidAfter &&
+    session.issuedAt < user.sessionsValidAfter.getTime()
+  ) {
+    return null;
+  }
+  return user;
+}
+
 @Injectable()
 export class AuthGuard implements CanActivate {
   private readonly env = loadEnv();
@@ -26,10 +48,7 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
     const req = ctx.switchToHttp().getRequest<AuthedRequest>();
-    const cookies = req.cookies as Record<string, string> | undefined;
-    const token = cookies?.[SESSION_COOKIE];
-    const userId = token ? verifySession(this.env, token) : null;
-    const user = userId ? await this.usersService.findActive(userId) : null;
+    const user = await sessionUser(this.env, this.usersService, req);
     if (!user) throw new UnauthorizedException('Please sign in first');
     req.user = user;
     return true;
@@ -45,10 +64,7 @@ export class OptionalAuthGuard implements CanActivate {
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
     const req = ctx.switchToHttp().getRequest<AuthedRequest>();
-    const cookies = req.cookies as Record<string, string> | undefined;
-    const token = cookies?.[SESSION_COOKIE];
-    const userId = token ? verifySession(this.env, token) : null;
-    const user = userId ? await this.usersService.findActive(userId) : null;
+    const user = await sessionUser(this.env, this.usersService, req);
     if (user) req.user = user;
     return true;
   }

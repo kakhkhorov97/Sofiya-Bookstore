@@ -18,3 +18,6 @@ process.env.PAYMENTS_PROVIDER = 'fake';
 process.env.TOSS_CLIENT_KEY = '';
 process.env.TOSS_SECRET_KEY = '';
 process.env.CARD_CURRENCIES = 'KRW';
+// Emails are kept in memory for tests to read.
+process.env.EMAIL_PROVIDER = 'memory';
+process.env.WEB_ORIGINS = 'http://localhost:3000';

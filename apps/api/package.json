@@ -26,11 +26,13 @@
     "db:seed": "tsx --env-file=.env src/db/seed/seed.ts",
     "db:studio": "drizzle-kit studio",
     "db:create-admin": "tsx --env-file=.env src/db/create-admin.ts",
-    "ai:index": "tsx --env-file=.env src/ai/indexer.ts"
+    "ai:index": "tsx --env-file=.env src/ai/indexer.ts",
+    "ai:eval": "tsx --env-file=.env src/ai/eval/run.ts"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.22.0",
     "@google/genai": "^1.30.0",
+    "@nest-lab/throttler-storage-redis": "1.2.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
@@ -39,6 +41,7 @@
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "drizzle-orm": "^0.45.4",
+    "ioredis": "5.11.1",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.5.0",
     "postgres": "^3.4.9",

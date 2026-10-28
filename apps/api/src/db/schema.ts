@@ -57,11 +57,38 @@ export const users = pgTable(
     role: userRoleEnum('role').notNull().default('USER'),
     status: userStatusEnum('status').notNull().default('ACTIVE'),
     points: integer('points').notNull().default(0),
+    // Sessions issued before this moment are rejected (set when the password
+    // is reset, so a stolen session stops working). Whole seconds, like JWT iat.
+    sessionsValidAfter: timestamp('sessions_valid_after', {
+      withTimezone: true,
+    }),
     ...timestamps,
   },
   (t) => [
     uniqueIndex('users_email_lower_key').on(sql`lower(${t.email})`),
     check('users_points_nonnegative', sql`${t.points} >= 0`),
+  ],
+);
+
+// One-time password reset links. Only a SHA-256 hash of the token is kept,
+// so a database leak cannot be used to reset passwords.
+export const passwordResetTokens = pgTable(
+  'password_reset_tokens',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    tokenHash: text('token_hash').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('password_reset_tokens_hash').on(t.tokenHash),
+    index('password_reset_tokens_user_idx').on(t.userId),
   ],
 );
 

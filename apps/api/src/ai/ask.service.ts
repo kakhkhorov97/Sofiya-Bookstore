@@ -19,6 +19,7 @@ import { loadEnv } from '../config/env';
 import type { Db } from '../db/client';
 import { InjectDb } from '../db/db.module';
 import { AI_PROVIDER, AiProvider, ChatTurn } from './provider';
+import { DAILY_COUNTER, type DailyCounter } from '../redis/daily-counter';
 import { RetrievalService } from './retrieval.service';
 import { bestPassage } from './text';
 
@@ -64,30 +65,28 @@ export function buildContext(
 export class AskService {
   private readonly logger = new Logger(AskService.name);
   private readonly env = loadEnv();
-  private usage = { day: '', count: 0 };
 
   constructor(
     @InjectDb() private readonly db: Db,
     @Inject(AI_PROVIDER) private readonly provider: AiProvider | null,
     private readonly retrieval: RetrievalService,
+    @Inject(DAILY_COUNTER) private readonly daily: DailyCounter,
   ) {}
 
-  // Fails fast, before the response is turned into an event stream.
-  checkAvailable(): void {
+  // Fails fast, before the response is turned into an event stream. The
+  // daily cap is shared by every instance when Redis is configured.
+  async checkAvailable(): Promise<void> {
     if (!this.provider) {
       throw new ServiceUnavailableException(
         "Ask Sofiya isn't switched on yet.",
       );
     }
-    const today = new Date().toISOString().slice(0, 10);
-    if (this.usage.day !== today) this.usage = { day: today, count: 0 };
-    if (this.usage.count >= this.env.AI_DAILY_CAP) {
+    if (!(await this.daily.tryTake('ask', this.env.AI_DAILY_CAP))) {
       throw new HttpException(
         'Ask Sofiya has answered a lot of questions today. Please use search, or try again tomorrow.',
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
-    this.usage.count++;
   }
 
   async findSources(

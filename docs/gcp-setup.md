@@ -151,6 +151,44 @@ In GitHub → Settings → Secrets and variables → Actions → **Variables**:
 
 None of these are secrets; real secrets stay in Secret Manager.
 
+## 7b. Optional: emails (Resend) and shared limits (Upstash Redis)
+
+Both are free at low volume, and the site works without them: without
+email, "Forgot password" says it isn't available and no order emails go
+out; without Redis, each API instance keeps its own rate limits.
+
+**Emails with Resend**
+
+1. Create an account at resend.com, add and verify your domain (it gives
+   you DNS records to add), and create an API key.
+2. Store the key and switch email on:
+
+```bash
+read -rs RESEND && printf '%s' "$RESEND" | gcloud secrets create sofiya-resend-api-key --data-file=- && unset RESEND
+gcloud secrets add-iam-policy-binding sofiya-resend-api-key \
+  --member "serviceAccount:$API_SA" --role roles/secretmanager.secretAccessor
+```
+
+3. GitHub variables: `EMAIL_PROVIDER` = `resend`, `EMAIL_FROM` =
+   `Sofiya <hello@your-domain>` (an address on the verified domain).
+
+**Shared limits with Upstash Redis**
+
+1. Create a Redis database at upstash.com in the region nearest
+   `$REGION`, and copy its `rediss://…` connection string (with password).
+2. Store it and switch it on:
+
+```bash
+read -rs REDIS && printf '%s' "$REDIS" | gcloud secrets create sofiya-redis-url --data-file=- && unset REDIS
+gcloud secrets add-iam-policy-binding sofiya-redis-url \
+  --member "serviceAccount:$API_SA" --role roles/secretmanager.secretAccessor
+```
+
+3. GitHub variable: `USE_REDIS` = `true`.
+
+If Redis is ever unreachable, the API falls back to per-instance memory
+limits instead of failing.
+
 ## 8. First deploy
 
 1. Push the `v2` branch to GitHub.

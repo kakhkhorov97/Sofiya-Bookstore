@@ -10,6 +10,14 @@ const SESSION_DAYS = 7;
 // effect immediately (legacy defect: the whole member document was the JWT).
 interface SessionClaims {
   sub: string;
+  iat: number;
+}
+
+export interface Session {
+  userId: string;
+  // When the token was issued (ms), checked against the user's
+  // sessions_valid_after so a password reset ends older sessions.
+  issuedAt: number;
 }
 
 function secret(env: Env): string {
@@ -25,12 +33,14 @@ export function signSession(env: Env, userId: string): string {
   });
 }
 
-export function verifySession(env: Env, token: string): string | null {
+export function verifySession(env: Env, token: string): Session | null {
   try {
     const claims = jwt.verify(token, secret(env), {
       algorithms: ['HS256'],
     }) as SessionClaims;
-    return typeof claims.sub === 'string' ? claims.sub : null;
+    return typeof claims.sub === 'string' && typeof claims.iat === 'number'
+      ? { userId: claims.sub, issuedAt: claims.iat * 1000 }
+      : null;
   } catch {
     return null;
   }

@@ -1,3 +1,4 @@
+import { MemoryDailyCounter } from '../redis/daily-counter';
 import { HttpException } from '@nestjs/common';
 import type { AskSource, BookSummary } from '@sofiya/shared';
 import { createProvider } from './provider';
@@ -77,14 +78,16 @@ describe('AI switched off', () => {
     expect(createProvider(loadEnv({}))).toBeNull();
   });
 
-  it('answers 503 instead of failing later', () => {
-    const service = new AskService({} as never, null, {} as never);
-    expect(() => service.checkAvailable()).toThrow(HttpException);
-    try {
-      service.checkAvailable();
-    } catch (err) {
-      expect((err as HttpException).getStatus()).toBe(503);
-    }
+  it('answers 503 instead of failing later', async () => {
+    const service = new AskService(
+      {} as never,
+      null,
+      {} as never,
+      new MemoryDailyCounter(),
+    );
+    const err = await service.checkAvailable().catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(HttpException);
+    expect((err as HttpException).getStatus()).toBe(503);
   });
 });
 

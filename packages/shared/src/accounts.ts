@@ -28,3 +28,13 @@ export interface PublicUser {
   points: number;
   createdAt: string;
 }
+
+// "Forgot password": always answered the same way, whether or not the
+// email has an account, so the form cannot be used to find members.
+export const ForgotPasswordInput = z.object({ email: Email }).strict();
+export type ForgotPasswordInput = z.infer<typeof ForgotPasswordInput>;
+
+export const ResetPasswordInput = z
+  .object({ token: z.string().min(20).max(200), password: Password })
+  .strict();
+export type ResetPasswordInput = z.infer<typeof ResetPasswordInput>;
