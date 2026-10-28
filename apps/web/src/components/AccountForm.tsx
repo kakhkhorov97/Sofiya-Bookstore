@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { clientApi, ClientApiError } from "@/lib/client-api";
+import { PasswordInput } from "./PasswordInput";
 import { buttonClass, Notice } from "./ui";
 
 const inputClass =
@@ -84,16 +85,16 @@ export function ChangePasswordForm() {
     <form onSubmit={onSubmit} className="mt-4 max-w-[420px] space-y-3">
       <label className="block text-sm font-semibold">
         {t("current")}
-        <input name="currentPassword" type="password" required maxLength={128} autoComplete="current-password" className={inputClass} />
+        <PasswordInput name="currentPassword" required maxLength={128} autoComplete="current-password" />
       </label>
       <label className="block text-sm font-semibold">
         {t("new")}
-        <input name="newPassword" type="password" required minLength={8} maxLength={128} autoComplete="new-password" className={inputClass} />
+        <PasswordInput name="newPassword" required minLength={8} maxLength={128} autoComplete="new-password" />
         <span className="mt-1.5 block font-normal text-ink-3">{t("newHint")}</span>
       </label>
       <label className="block text-sm font-semibold">
         {t("repeat")}
-        <input name="repeat" type="password" required minLength={8} maxLength={128} autoComplete="new-password" className={inputClass} />
+        <PasswordInput name="repeat" required minLength={8} maxLength={128} autoComplete="new-password" />
       </label>
       <button type="submit" disabled={busy} className={buttonClass.dark}>
         {busy ? t("changing") : t("change")}

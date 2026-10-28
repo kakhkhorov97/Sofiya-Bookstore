@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { clientApi, ClientApiError } from "@/lib/client-api";
 import { inputClass } from "./AuthForm";
+import { PasswordInput } from "./PasswordInput";
 import { buttonClass, Notice } from "./ui";
 
 const isStatus = (err: unknown, status: number) => err instanceof ClientApiError && err.status === status;
@@ -109,12 +110,12 @@ export function ResetPasswordForm({ token }: { token: string }) {
       )}
       <label className="block text-sm font-semibold">
         {t("newPassword")}
-        <input name="password" type="password" required minLength={8} maxLength={128} autoComplete="new-password" className={inputClass} />
+        <PasswordInput name="password" required minLength={8} maxLength={128} autoComplete="new-password" />
         <span className="mt-1.5 block font-normal text-ink-3">{t("atLeast8")}</span>
       </label>
       <label className="block text-sm font-semibold">
         {t("repeatPassword")}
-        <input name="confirm" type="password" required minLength={8} maxLength={128} autoComplete="new-password" className={inputClass} />
+        <PasswordInput name="confirm" required minLength={8} maxLength={128} autoComplete="new-password" />
       </label>
       <button type="submit" disabled={busy} className={`${buttonClass.primary} w-full`}>
         {busy ? t("saving") : t("setPassword")}

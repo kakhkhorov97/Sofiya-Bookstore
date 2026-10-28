@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { clientApi, ClientApiError } from "@/lib/client-api";
 import { safeNext } from "@/lib/safe-next";
+import { PasswordInput } from "./PasswordInput";
 import { buttonClass, Notice } from "./ui";
 
 export const inputClass =
@@ -80,14 +81,12 @@ export function AuthForm({ mode, alternative }: { mode: "signin" | "signup"; alt
             </Link>
           )}
         </span>
-        <input
+        <PasswordInput
           name="password"
-          type="password"
           required
           minLength={signup ? 8 : 1}
           maxLength={128}
           autoComplete={signup ? "new-password" : "current-password"}
-          className={inputClass}
         />
         {signup && <span className="mt-1.5 block font-normal text-ink-3">{t("atLeast8")}</span>}
       </label>
