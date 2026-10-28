@@ -25,9 +25,9 @@ export function GoogleButton({ next }: { next: string }) {
 export function OrDivider() {
   const t = useTranslations("google");
   return (
-    <div className="mt-6 flex items-center gap-3 text-sm text-ink-3" role="separator">
+    <div className="flex items-center gap-3 text-sm text-ink-3" role="separator">
       <span className="h-px flex-1 bg-line" />
-      {t("orEmail")}
+      {t("or")}
       <span className="h-px flex-1 bg-line" />
     </div>
   );

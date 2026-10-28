@@ -21,14 +21,18 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
     <div className="mx-auto w-[min(420px,calc(100%-32px))] py-14">
       <h1 className="font-display text-4xl font-extrabold tracking-[-0.03em]">{t("signUpTitle")}</h1>
       <p className="mt-2 text-ink-2">{t("signUpIntro")}</p>
-      {providers.google && (
-        <div className="mt-8">
-          <GoogleButton next={safeNext(next, "/")} />
-          <OrDivider />
-        </div>
-      )}
       <Suspense>
-        <AuthForm mode="signup" />
+        <AuthForm
+          mode="signup"
+          alternative={
+            providers.google && (
+              <>
+                <OrDivider />
+                <GoogleButton next={safeNext(next, "/")} />
+              </>
+            )
+          }
+        />
       </Suspense>
     </div>
   );

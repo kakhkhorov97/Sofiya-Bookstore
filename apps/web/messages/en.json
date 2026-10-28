@@ -112,7 +112,7 @@
   },
   "google": {
     "continue": "Continue with Google",
-    "orEmail": "or with email"
+    "or": "or"
   },
   "accountMenu": {
     "settings": "Account settings",

@@ -11,7 +11,9 @@ import { buttonClass, Notice } from "./ui";
 export const inputClass =
   "mt-1.5 block h-12 w-full rounded-[10px] border border-line bg-white px-3.5 text-base outline-none focus:border-accent focus:ring-[3px] focus:ring-accent-soft";
 
-export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
+// `alternative` (the Google button) sits under the main button, so email
+// stays the first thing people see.
+export function AuthForm({ mode, alternative }: { mode: "signin" | "signup"; alternative?: React.ReactNode }) {
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
   const t = useTranslations("auth");
@@ -91,6 +93,7 @@ export function AuthForm({ mode }: { mode: "signin" | "signup" }) {
       <button type="submit" disabled={busy} className={`${buttonClass.primary} w-full`}>
         {busy ? t("pleaseWait") : signup ? t("createAccount") : t("signIn")}
       </button>
+      {alternative}
       <p className="text-center text-[15px] text-ink-2">
         {signup ? t("haveAccount") : t("newHere")}{" "}
         <Link href={otherHref} className="font-semibold text-accent underline underline-offset-2">

@@ -36,19 +36,23 @@ export default async function SignInPage({
           <Notice tone={google === "cancelled" ? "warn" : "bad"}>{googleError}</Notice>
         </div>
       )}
-      {providers.google && (
-        <div className="mt-8">
-          <GoogleButton next={safeNext(next, "/")} />
-          <OrDivider />
-        </div>
-      )}
       {reset === "1" && (
         <div className="mt-6">
           <Notice tone="ok">{t("passwordChanged")}</Notice>
         </div>
       )}
       <Suspense>
-        <AuthForm mode="signin" />
+        <AuthForm
+          mode="signin"
+          alternative={
+            providers.google && (
+              <>
+                <OrDivider />
+                <GoogleButton next={safeNext(next, "/")} />
+              </>
+            )
+          }
+        />
       </Suspense>
     </div>
   );

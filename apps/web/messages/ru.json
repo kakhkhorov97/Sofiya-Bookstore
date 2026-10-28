@@ -112,7 +112,7 @@
   },
   "google": {
     "continue": "Продолжить с Google",
-    "orEmail": "или по электронной почте"
+    "or": "или"
   },
   "accountMenu": {
     "settings": "Настройки аккаунта",
